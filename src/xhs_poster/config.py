@@ -79,6 +79,18 @@ class Settings(BaseSettings):
     def today_pool_path(self) -> Path:
         return self.data_dir / "today-pool.json"
 
+    @property
+    def contents_path(self) -> Path:
+        return self.data_dir / "contents.json"
+
+    @property
+    def publish_log_path(self) -> Path:
+        return self.data_dir / "publish-log.json"
+
+    @property
+    def phase3_artifacts_dir(self) -> Path:
+        return self.data_dir / "artifacts" / "phase3"
+
     def merchant_edit_url(self, product_id: str) -> str:
         return self.merchant_edit_url_template.format(product_id=product_id)
 
@@ -87,3 +99,4 @@ class Settings(BaseSettings):
         self.merchant_profile_dir.mkdir(parents=True, exist_ok=True)
         self.consumer_profile_dir.mkdir(parents=True, exist_ok=True)
         self.images_dir.mkdir(parents=True, exist_ok=True)
+        self.phase3_artifacts_dir.mkdir(parents=True, exist_ok=True)

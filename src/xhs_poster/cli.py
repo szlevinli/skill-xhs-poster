@@ -8,6 +8,7 @@ import typer
 from .auth import LoginRequiredError, login_site, probe_site_session
 from .models import SiteName
 from .phase1 import build_phase1_payload
+from .phase3 import build_phase3_payload
 
 
 app = typer.Typer(
@@ -67,6 +68,27 @@ def phase1_command(
         limit=limit,
         images_per_product=images_per_product,
         force_download=force_download,
+    )
+    emit_json(payload)
+    raise typer.Exit(code=exit_code)
+
+
+@app.command("phase3")
+def phase3_command(
+    product_id: Annotated[str | None, typer.Option("--product-id", help="指定要发布的商品 ID")] = None,
+    angle: Annotated[int | None, typer.Option("--angle", help="指定 contents.json 中的 angle")] = None,
+    title: Annotated[str | None, typer.Option("--title", help="直接指定发布标题")] = None,
+    content: Annotated[str | None, typer.Option("--content", help="直接指定发布正文")] = None,
+    topic_keyword: Annotated[str | None, typer.Option("--topic-keyword", help="显式指定要选择的话题关键词")] = None,
+    image_paths: Annotated[list[str] | None, typer.Option("--image-path", help="显式指定图片路径，可重复传入")] = None,
+) -> None:
+    payload, exit_code = build_phase3_payload(
+        product_id=product_id,
+        angle=angle,
+        title=title,
+        content=content,
+        topic_keyword=topic_keyword,
+        image_paths=image_paths,
     )
     emit_json(payload)
     raise typer.Exit(code=exit_code)
