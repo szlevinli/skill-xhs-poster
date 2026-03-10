@@ -116,6 +116,18 @@ def extract_topic_keyword(tags: str) -> str | None:
     return match.group(1).strip()
 
 
+def merge_content_and_tags(content: str, tags: str) -> str:
+    normalized_content = (content or "").strip()
+    normalized_tags = re.sub(r"\s+", " ", (tags or "")).strip()
+    if not normalized_tags:
+        return normalized_content
+    if normalized_tags in normalized_content:
+        return normalized_content
+    if not normalized_content:
+        return normalized_tags
+    return f"{normalized_content}\n\n{normalized_tags}"
+
+
 def resolve_publish_inputs(
     settings: Settings,
     product_id: str,
@@ -132,7 +144,8 @@ def resolve_publish_inputs(
 
     draft = pick_content_draft(load_contents_bundle(settings), product_id, angle=angle)
     resolved_topic = topic_keyword or extract_topic_keyword(draft.tags)
-    return draft.title, draft.content, resolved_topic, draft
+    final_content = merge_content_and_tags(draft.content, draft.tags)
+    return draft.title, final_content, resolved_topic, draft
 
 
 def save_phase3_artifacts(page, settings: Settings, product_id: str) -> dict:

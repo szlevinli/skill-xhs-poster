@@ -7,6 +7,7 @@ from contextlib import contextmanager
 from playwright.sync_api import BrowserContext, Error, Page, Playwright, sync_playwright
 
 from .config import Settings
+from .models import SiteName
 
 
 class SessionExpiredError(RuntimeError):
@@ -132,19 +133,41 @@ def open_product_list_page(
     raise RuntimeError("未能从首页进入商品管理列表页。")
 
 
+def launch_site_context(
+    playwright: Playwright,
+    settings: Settings,
+    site: SiteName,
+    *,
+    headless: bool = False,
+) -> BrowserContext:
+    settings.ensure_directories()
+    configure_playwright_browser_path(settings)
+    profile_dir = (
+        settings.merchant_profile_dir if site == "merchant" else settings.consumer_profile_dir
+    )
+    return playwright.chromium.launch_persistent_context(
+        user_data_dir=str(profile_dir),
+        headless=headless,
+        accept_downloads=True,
+    )
+
+
 def launch_merchant_context(
     playwright: Playwright,
     settings: Settings,
     *,
     headless: bool = False,
 ) -> BrowserContext:
-    settings.ensure_directories()
-    configure_playwright_browser_path(settings)
-    return playwright.chromium.launch_persistent_context(
-        user_data_dir=str(settings.merchant_profile_dir),
-        headless=headless,
-        accept_downloads=True,
-    )
+    return launch_site_context(playwright, settings, "merchant", headless=headless)
+
+
+def launch_consumer_context(
+    playwright: Playwright,
+    settings: Settings,
+    *,
+    headless: bool = False,
+) -> BrowserContext:
+    return launch_site_context(playwright, settings, "consumer", headless=headless)
 
 
 @contextmanager
@@ -156,6 +179,21 @@ def merchant_context(
     configure_playwright_browser_path(settings)
     with sync_playwright() as playwright:
         context = launch_merchant_context(playwright, settings, headless=headless)
+        try:
+            yield context
+        finally:
+            context.close()
+
+
+@contextmanager
+def consumer_context(
+    settings: Settings,
+    *,
+    headless: bool = False,
+):
+    configure_playwright_browser_path(settings)
+    with sync_playwright() as playwright:
+        context = launch_consumer_context(playwright, settings, headless=headless)
         try:
             yield context
         finally:

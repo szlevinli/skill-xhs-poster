@@ -27,13 +27,29 @@ def _site_profile_dir(settings: Settings, site: SiteName) -> str:
     return str(settings.consumer_profile_dir)
 
 
-def _is_authenticated_page(page: Page, site: SiteName) -> bool:
+def _has_consumer_auth_cookies(context: BrowserContext) -> bool:
+    cookie_names = {cookie.get("name", "") for cookie in context.cookies()}
+    return "web_session" in cookie_names or "id_token" in cookie_names
+
+
+def _consumer_has_logged_in_markers(page: Page) -> bool:
+    try:
+        body_text = page.locator("body").inner_text(timeout=2_000)
+    except Error:
+        return False
+    markers = ("创作中心", "发布", "通知")
+    return all(marker in body_text for marker in markers)
+
+
+def _is_authenticated_page(page: Page, site: SiteName, context: BrowserContext) -> bool:
     url = page.url.lower()
-    if "customer.xiaohongshu.com" in url or "login" in url:
+    if "customer.xiaohongshu.com" in url or "login" in url or "/website-login/error" in url:
         return False
     if site == "merchant":
         return "ark.xiaohongshu.com" in url
-    return "www.xiaohongshu.com" in url or "xiaohongshu.com/explore" in url
+    if "www.xiaohongshu.com" not in url:
+        return False
+    return _has_consumer_auth_cookies(context) and _consumer_has_logged_in_markers(page)
 
 
 def _build_session_info(
@@ -94,7 +110,7 @@ def probe_site_session(
         deadline = time.monotonic() + timeout_ms / 1000
         while time.monotonic() < deadline:
             page = get_alive_page(context, page)
-            if _is_authenticated_page(page, site):
+            if _is_authenticated_page(page, site, context):
                 return _build_session_info(
                     site=site,
                     authenticated=True,
@@ -102,17 +118,19 @@ def probe_site_session(
                     settings=settings,
                 )
 
+            remaining_ms = max(1, int((deadline - time.monotonic()) * 1000))
+            if site == "consumer":
+                page.wait_for_timeout(min(500, remaining_ms))
+                continue
             try:
-                remaining_ms = max(1, int((deadline - time.monotonic()) * 1000))
                 page.wait_for_function(
-                    f"""
-                    () => {{
+                    """
+                    () => {
                         const url = window.location.href.toLowerCase();
-                        if (url.includes('customer.xiaohongshu.com') || url.includes('login')) {{
-                            return false;
-                        }}
-                        return url.includes('{('ark.xiaohongshu.com' if site == 'merchant' else 'www.xiaohongshu.com')}');
-                    }}
+                        return !url.includes('customer.xiaohongshu.com')
+                          && !url.includes('login')
+                          && url.includes('ark.xiaohongshu.com');
+                    }
                     """,
                     timeout=min(2_000, remaining_ms),
                 )
@@ -147,23 +165,25 @@ def login_site(
         if timeout_ms <= 0:
             while True:
                 page = get_alive_page(context, page)
-                if _is_authenticated_page(page, site):
+                if _is_authenticated_page(page, site, context):
                     return _build_session_info(
                         site=site,
                         authenticated=True,
                         checked_url=page.url,
                         settings=settings,
                     )
+                if site == "consumer":
+                    page.wait_for_timeout(500)
+                    continue
                 try:
                     page.wait_for_function(
-                        f"""
-                        () => {{
+                        """
+                        () => {
                             const url = window.location.href.toLowerCase();
-                            if (url.includes('customer.xiaohongshu.com') || url.includes('login')) {{
-                                return false;
-                            }}
-                            return url.includes('{('ark.xiaohongshu.com' if site == 'merchant' else 'www.xiaohongshu.com')}');
-                        }}
+                            return !url.includes('customer.xiaohongshu.com')
+                              && !url.includes('login')
+                              && url.includes('ark.xiaohongshu.com');
+                        }
                         """,
                         timeout=0,
                     )
@@ -173,24 +193,26 @@ def login_site(
             deadline = time.monotonic() + timeout_ms / 1000
             while time.monotonic() < deadline:
                 page = get_alive_page(context, page)
-                if _is_authenticated_page(page, site):
+                if _is_authenticated_page(page, site, context):
                     return _build_session_info(
                         site=site,
                         authenticated=True,
                         checked_url=page.url,
                         settings=settings,
                     )
+                remaining_ms = max(1, int((deadline - time.monotonic()) * 1000))
+                if site == "consumer":
+                    page.wait_for_timeout(min(500, remaining_ms))
+                    continue
                 try:
-                    remaining_ms = max(1, int((deadline - time.monotonic()) * 1000))
                     page.wait_for_function(
-                        f"""
-                        () => {{
+                        """
+                        () => {
                             const url = window.location.href.toLowerCase();
-                            if (url.includes('customer.xiaohongshu.com') || url.includes('login')) {{
-                                return false;
-                            }}
-                            return url.includes('{('ark.xiaohongshu.com' if site == 'merchant' else 'www.xiaohongshu.com')}');
-                        }}
+                            return !url.includes('customer.xiaohongshu.com')
+                              && !url.includes('login')
+                              && url.includes('ark.xiaohongshu.com');
+                        }
                         """,
                         timeout=min(2_000, remaining_ms),
                     )
