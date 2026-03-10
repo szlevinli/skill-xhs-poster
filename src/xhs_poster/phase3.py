@@ -109,23 +109,13 @@ def pick_content_draft(
     raise RuntimeError(f"商品 {product_id} 在 contents.json 中不存在 angle={angle} 的内容草稿。")
 
 
-def extract_topic_keyword(tags: str) -> str | None:
-    match = re.search(r"#([^\s#]+)", tags or "")
-    if not match:
-        return None
-    return match.group(1).strip()
-
-
-def merge_content_and_tags(content: str, tags: str) -> str:
-    normalized_content = (content or "").strip()
-    normalized_tags = re.sub(r"\s+", " ", (tags or "")).strip()
-    if not normalized_tags:
-        return normalized_content
-    if normalized_tags in normalized_content:
-        return normalized_content
-    if not normalized_content:
-        return normalized_tags
-    return f"{normalized_content}\n\n{normalized_tags}"
+def extract_topic_keywords(tags: str) -> list[str]:
+    keywords: list[str] = []
+    for match in re.findall(r"#([^\s#]+)", tags or ""):
+        normalized = match.strip()
+        if normalized and normalized not in keywords:
+            keywords.append(normalized)
+    return keywords
 
 
 def resolve_publish_inputs(
@@ -134,18 +124,17 @@ def resolve_publish_inputs(
     *,
     title: str | None,
     content: str | None,
-    topic_keyword: str | None,
+    topic_keywords: list[str] | None,
     angle: int | None,
-) -> tuple[str, str, str | None, ContentDraft | None]:
+) -> tuple[str, str, list[str], ContentDraft | None]:
     if title or content:
         if not title or not content:
             raise RuntimeError("显式传参发布时，`title` 和 `content` 必须同时提供。")
-        return title, content, topic_keyword, None
+        return title, content, topic_keywords or [], None
 
     draft = pick_content_draft(load_contents_bundle(settings), product_id, angle=angle)
-    resolved_topic = topic_keyword or extract_topic_keyword(draft.tags)
-    final_content = merge_content_and_tags(draft.content, draft.tags)
-    return draft.title, final_content, resolved_topic, draft
+    resolved_topics = topic_keywords or extract_topic_keywords(draft.tags)
+    return draft.title, draft.content.strip(), resolved_topics, draft
 
 
 def save_phase3_artifacts(page, settings: Settings, product_id: str) -> dict:
@@ -184,7 +173,7 @@ def run_phase3(
     angle: int | None = None,
     title: str | None = None,
     content: str | None = None,
-    topic_keyword: str | None = None,
+    topic_keywords: list[str] | None = None,
     image_paths: list[str] | None = None,
     headless: bool | None = None,
     settings: Settings | None = None,
@@ -196,12 +185,12 @@ def run_phase3(
 
     today_pool = load_today_pool(settings)
     product = resolve_product(today_pool, product_id)
-    final_title, final_content, final_topic, draft = resolve_publish_inputs(
+    final_title, final_content, final_topics, draft = resolve_publish_inputs(
         settings,
         product.id,
         title=title,
         content=content,
-        topic_keyword=topic_keyword,
+        topic_keywords=topic_keywords,
         angle=angle,
     )
     final_image_paths = resolve_image_paths(
@@ -217,30 +206,33 @@ def run_phase3(
         page = open_product_list_page(context, page, settings)
         list_page = ProductListPage(page, settings)
         publish_page = list_page.open_publish_page(product.id)
-
-        publish_page.upload_images(final_image_paths)
-        title_selector = publish_page.fill_title(final_title)
-        content_selector = publish_page.fill_content(final_content)
-        topic_result = publish_page.add_topic(final_topic) if final_topic else None
-        product_binding = publish_page.add_product(product.id)
-        publish_page.click_publish()
-        publish_result = publish_page.verify_success()
-        artifacts = None
-        if not publish_result.get("success"):
+        try:
+            publish_page.upload_images(final_image_paths)
+            title_selector = publish_page.fill_title(final_title)
+            content_selector = publish_page.fill_content(final_content)
+            topic_results = [publish_page.add_topic(topic_keyword) for topic_keyword in final_topics]
+            product_binding = publish_page.add_product(product.id)
+            publish_page.click_publish()
+            publish_result = publish_page.verify_success()
+            artifacts = None
+            if not publish_result.get("success"):
+                artifacts = save_phase3_artifacts(publish_page, settings, product.id)
+        except Exception as exc:
             artifacts = save_phase3_artifacts(publish_page, settings, product.id)
+            raise RuntimeError(f"{exc} artifacts={json.dumps(artifacts, ensure_ascii=False)}") from exc
 
     result = Phase3ExecutionResult(
         product_id=product.id,
         product_name=product.name,
         title=final_title,
         content=final_content,
-        topic_keyword=final_topic,
+        topic_keywords=final_topics,
         angle=draft.angle if draft else angle,
         angle_name=draft.angle_name if draft else None,
         image_paths=final_image_paths,
         title_selector=title_selector,
         content_selector=content_selector,
-        topic_result=topic_result,
+        topic_results=topic_results,
         product_binding=product_binding,
         publish_result=publish_result,
         artifacts=artifacts,
@@ -264,7 +256,7 @@ def build_phase3_payload(
     angle: int | None = None,
     title: str | None = None,
     content: str | None = None,
-    topic_keyword: str | None = None,
+    topic_keywords: list[str] | None = None,
     image_paths: list[str] | None = None,
 ) -> tuple[dict, int]:
     try:
@@ -273,7 +265,7 @@ def build_phase3_payload(
             angle=angle,
             title=title,
             content=content,
-            topic_keyword=topic_keyword,
+            topic_keywords=topic_keywords,
             image_paths=image_paths,
         )
         if result.publish_result.get("success"):

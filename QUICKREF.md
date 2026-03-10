@@ -6,120 +6,67 @@
 阶段1（准备）      阶段2（内容）        阶段3（发布）
     │                │                  │
     ▼                ▼                  ▼
-获取10个商品  →  生成50篇内容  →  批量发布笔记
-下载30张图片      （LLM+Tavily）    （支持断点续传）
+拉取商品      →  主图分析+LLM生成  →  单条发布
+下载主图           contents.json      （每次一条，无编排）
 ```
 
-## 阶段脚本
-
-### 阶段1：准备商品和图片
-```bash
-~/.openclaw/workspace/skills/xiaohongshu-product-poster/scripts/phase1-prepare.sh
-
-# 输出
-# - ~/.openclaw/workspace/xiaohongshu-data/today-pool.json
-# - ~/.openclaw/workspace/xiaohongshu-data/images/{商品ID}/{1,2,3}.jpg
-```
-
-### 阶段2：生成笔记内容
-```bash
-~/.openclaw/workspace/skills/xiaohongshu-product-poster/scripts/phase2-generate.sh
-
-# 依赖：阶段1完成
-# 使用Tavily搜索热门笔记作为参考
-# 为每个商品生成5篇不同角度内容
-
-# 输出
-# - ~/.openclaw/workspace/xiaohongshu-data/contents.json
-```
-
-### 阶段3：发布笔记
-```bash
-~/.openclaw/workspace/skills/xiaohongshu-product-poster/scripts/phase3-publish.sh
-
-# 依赖：阶段1和阶段2完成
-# 支持断点续传（当天中断可恢复）
-```
-
-## 手动执行完整流程
+## CLI 命令
 
 ```bash
-# 1. 准备（早上）
-./phase1-prepare.sh
+# 入口
+uv run xhs-poster
 
-# 2. 生成内容（上午）
-./phase2-generate.sh
+# 登录（首次或过期时）
+uv run xhs-poster login merchant
 
-# 3. 发布（晚上）
-./phase3-publish.sh
-```
+# 探测登录态
+uv run xhs-poster auth probe merchant
 
-## Cron 配置（待验证后配置）
+# 阶段1：准备商品和图片
+uv run xhs-poster phase1 --limit 10 --images-per-product 3
 
-```bash
-# 每天早上8点：准备商品和图片
-0 8 * * * /bin/bash /Users/levin/.openclaw/workspace/skills/xiaohongshu-product-poster/scripts/phase1-prepare.sh >> /tmp/xhs-phase1.log 2>&1
+# 阶段2 前置（可选）：生成趋势信号
+uv run xhs-poster prepare-trends --keyword 抓夹
 
-# 每天上午10点：生成内容
-0 10 * * * /bin/bash /Users/levin/.openclaw/workspace/skills/xiaohongshu-product-poster/scripts/phase2-generate.sh >> /tmp/xhs-phase2.log 2>&1
+# 阶段2：生成内容
+uv run xhs-poster phase2 --keyword 抓夹 --contents-per-product 5
 
-# 每天晚上8点：发布笔记
-0 20 * * * /bin/bash /Users/levin/.openclaw/workspace/skills/xiaohongshu-product-poster/scripts/phase3-publish.sh >> /tmp/xhs-phase3.log 2>&1
+# 阶段3：发布单条（每次一条，支持多话题；不传则默认使用草稿 tags 中全部 #话题）
+uv run xhs-poster phase3 --angle 1
+uv run xhs-poster phase3 --angle 2 --topic-keyword 抓夹 --topic-keyword 发饰
+uv run xhs-poster phase3 --product-id XXX --angle 3 --topic-keyword 韩系 --topic-keyword 复古
 ```
 
 ## 数据文件
 
 ```
-~/.openclaw/workspace/xiaohongshu-data/
-├── today-pool.json          # 阶段1输出：今日商品池
-├── images/                  # 商品图片
-│   └── {商品ID}/
-│       ├── 1.jpg
-│       ├── 2.jpg
-│       └── 3.jpg
-├── contents.json            # 阶段2输出：生成的内容
-└── tavily-search-results.json  # Tavily搜索结果
+xiaohongshu-data/
+├── today-pool.json      # 阶段1输出
+├── contents.json        # 阶段2输出
+├── trend-signals.json   # prepare-trends 输出（可选）
+├── publish-log.json     # 发布记录（仅追加，不参与编排）
+└── images/{商品ID}/     # 商品主图
 ```
 
-## 辅助脚本（publish-manager.py）
+## 环境配置
 
-```bash
-# 检查今日配额
-python3 ~/.openclaw/workspace/skills/xiaohongshu-product-poster/scripts/publish-manager.py can-publish
+复制 `.env.example` 为 `.env`，填写 LLM 配置（如 Moonshot）：
 
-# 查看今日统计
-python3 ~/.openclaw/workspace/skills/xiaohongshu-product-poster/scripts/publish-manager.py stats
-
-# 查看当前发布位置（断点恢复）
-python3 ~/.openclaw/workspace/skills/xiaohongshu-product-poster/scripts/publish-manager.py get-position
-
-# 重置今日记录（谨慎）
-python3 ~/.openclaw/workspace/skills/xiaohongshu-product-poster/scripts/publish-manager.py reset-today
+```
+MOONSHOT_API_KEY=sk-xxx
+MOONSHOT_MODEL=moonshot-v1-8k
+LLM_BASE_URL=https://api.moonshot.cn/v1
 ```
 
 ## 故障排除
 
-### 阶段1失败
-- 检查登录状态：`agent-browser state load ~/.openclaw/workspace/xiaohongshu-auth.json`
-- 删除商品池重新执行：`rm ~/.openclaw/workspace/xiaohongshu-data/today-pool.json`
+| 问题 | 检查 |
+|------|------|
+| phase1 失败 | `auth probe merchant`，未登录则 `login merchant` |
+| phase2 失败 | today-pool.json 存在、LLM 配置正确、主图存在 |
+| phase3 失败 | phase1/2 完成、登录态、contents.json 有对应草稿 |
 
-### 阶段2失败
-- 检查阶段1是否完成：`ls ~/.openclaw/workspace/xiaohongshu-data/today-pool.json`
-- 检查Tavily搜索是否正常
+## 更多文档
 
-### 阶段3失败
-- 检查阶段1和2是否完成
-- 检查今日配额：`publish-manager.py can-publish`
-- 中断后重新运行会自动恢复
-
-## 内容生成说明
-
-阶段2使用动态内容生成策略：
-- 使用Tavily搜索当天热门发夹笔记
-- LLM根据搜索结果自主决定每篇内容角度
-- 不固定角度模板，保证内容多样性
-
-## 完整文档
-
-- `SKILL.md` - 完整技能文档
-- `QUICKREF.md` - 本快速参考
+- `SKILL.md` — 完整技能文档
+- `REFERENCE.md` — 数据格式、规划中的编排逻辑

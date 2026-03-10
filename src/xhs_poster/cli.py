@@ -112,7 +112,7 @@ def phase3_command(
     angle: Annotated[int | None, typer.Option("--angle", help="使用 contents.json 中该商品的第几条草稿（1～N）")] = None,
     title: Annotated[str | None, typer.Option("--title", help="直接指定标题（与 --content 一起用时忽略 contents.json）")] = None,
     content: Annotated[str | None, typer.Option("--content", help="直接指定正文（与 --title 一起用时忽略 contents.json）")] = None,
-    topic_keyword: Annotated[str | None, typer.Option("--topic-keyword", help="指定话题关键词，不传则从草稿 tags 取第一个 #")] = None,
+    topic_keywords: Annotated[list[str] | None, typer.Option("--topic-keyword", help="指定话题关键词，可多次传入；不传则从草稿 tags 提取全部 #")] = None,
     image_paths: Annotated[list[str] | None, typer.Option("--image-path", help="指定图片路径，可多次传入，不传则用 today-pool 主图")] = None,
 ) -> None:
     payload, exit_code = build_phase3_payload(
@@ -120,7 +120,7 @@ def phase3_command(
         angle=angle,
         title=title,
         content=content,
-        topic_keyword=topic_keyword,
+        topic_keywords=topic_keywords,
         image_paths=image_paths,
     )
     emit_json(payload)

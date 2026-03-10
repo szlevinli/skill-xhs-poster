@@ -198,13 +198,13 @@ class Phase3ExecutionResult(BaseModel):
     product_name: str
     title: str
     content: str
-    topic_keyword: str | None = None
+    topic_keywords: list[str] = Field(default_factory=list)
     angle: int | None = None
     angle_name: str | None = None
     image_paths: list[str] = Field(default_factory=list)
     title_selector: str
     content_selector: str
-    topic_result: dict | None = None
+    topic_results: list[dict] = Field(default_factory=list)
     product_binding: dict = Field(default_factory=dict)
     publish_result: dict = Field(default_factory=dict)
     log_path: str | None = None
