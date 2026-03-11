@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "xiaohongshu-product-poster"
 version = "0.1.0"
-description = "Add your description here"
+description = "小红书商家后台自动化：拉取商品与主图、生成种草文案、发布笔记。CLI 三阶段独立执行（prepare-products → generate-content → publish-note）。"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
@@ -17,6 +17,9 @@ dependencies = [
     "rich>=14.3.3",
     "typer>=0.24.1",
 ]
+
+[project.urls]
+Repository = "https://github.com/openclaw/xiaohongshu-product-poster"
 
 [project.scripts]
 xhs-poster = "xhs_poster.cli:main"
