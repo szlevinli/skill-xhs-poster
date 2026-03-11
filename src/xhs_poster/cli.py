@@ -1,11 +1,18 @@
 from __future__ import annotations
 
 import json
+from pathlib import Path
 from typing import Annotated
 
 import typer
 
-from .auth import LoginRequiredError, login_site, probe_site_session
+from .auth import (
+    LoginRequiredError,
+    export_site_auth_state,
+    import_site_auth_state,
+    login_site,
+    probe_site_session,
+)
 from .models import Phase3DedupScope, Phase3PlanMode, SiteName
 from .phase1 import build_phase1_payload
 from .phase2 import build_phase2_payload
@@ -21,7 +28,7 @@ from .trend_signals import build_trend_signals_payload
 APP_HELP = """小红书商家端自动发帖工具。输出为 JSON，便于脚本或下游消费。
 
 流程：prepare-products（拉商品与主图）→ prepare-trends（可选，生成趋势信号）→ generate-content（生成文案）→ publish-note（发布笔记）。
-首次使用需先执行 login merchant 完成商家端登录。"""
+首次使用需先执行 login merchant 完成本机登录；云服务器部署推荐使用 auth export / auth import 迁移登录态。"""
 auth_app = typer.Typer(add_completion=False, no_args_is_help=True, help="探测商家端/用户端是否已登录。")
 login_app = typer.Typer(add_completion=False, no_args_is_help=True, help="拉起浏览器，等待人工完成扫码登录。")
 
@@ -46,23 +53,55 @@ def auth_probe(
     raise typer.Exit(code=0 if payload.authenticated else 2)
 
 
-@login_app.command("merchant", help="打开商家端登录页，等待扫码；成功后退出码 0，未完成则 2。prepare-products / publish-note 依赖此登录态。")
+@auth_app.command("export", help="从本地已登录 profile 导出 auth-state JSON，便于上传到云服务器。")
+def auth_export(
+    site: Annotated[SiteName, typer.Argument(help="站点：merchant（商家端）或 consumer（用户端）")],
+    output: Annotated[Path | None, typer.Option("--output", help="导出的 auth-state 文件路径")] = None,
+    timeout_ms: Annotated[int, typer.Option("--timeout-ms", help="登录态校验毫秒数")] = 8_000,
+) -> None:
+    try:
+        payload = export_site_auth_state(site, output_path=output, timeout_ms=timeout_ms)
+        emit_json(payload.model_dump(mode="json"))
+        raise typer.Exit(code=0)
+    except LoginRequiredError as exc:
+        emit_json(exc.session.model_dump(mode="json"))
+        raise typer.Exit(code=2)
+
+
+@auth_app.command("import", help="导入 auth-state JSON 到本机/服务器默认路径，并立即做无头校验。")
+def auth_import(
+    site: Annotated[SiteName, typer.Argument(help="站点：merchant（商家端）或 consumer（用户端）")],
+    input_path: Annotated[Path | None, typer.Option("--input", help="待导入的 auth-state 文件路径")] = None,
+    timeout_ms: Annotated[int, typer.Option("--timeout-ms", help="导入后校验毫秒数")] = 8_000,
+) -> None:
+    try:
+        payload = import_site_auth_state(site, input_path=input_path, timeout_ms=timeout_ms)
+        emit_json(payload.model_dump(mode="json"))
+        raise typer.Exit(code=0)
+    except LoginRequiredError as exc:
+        emit_json(exc.session.model_dump(mode="json"))
+        raise typer.Exit(code=2)
+
+
+@login_app.command("merchant", help="打开商家端登录页，等待扫码；成功后退出码 0，未完成则 2。成功后会写入本地 profile，可继续执行 auth export merchant 导出云端复用的 auth-state。")
 def login_merchant(
     timeout_ms: Annotated[int, typer.Option("--timeout-ms", help="等待登录的毫秒数，0 表示一直等")] = 0,
+    debug_auth: Annotated[bool, typer.Option("--debug-auth", help="登录成功/失败时写出截图、HTML 与 cookie 摘要")] = False,
 ) -> None:
-    _run_login("merchant", timeout_ms)
+    _run_login("merchant", timeout_ms, debug_auth=debug_auth)
 
 
-@login_app.command("consumer", help="打开用户端（小红书 App 同账号）登录页，等待扫码；当前流程主要用商家端。")
+@login_app.command("consumer", help="打开用户端（小红书 App 同账号）登录页，等待扫码；成功后会写入本地 profile。当前流程主要用商家端。")
 def login_consumer(
     timeout_ms: Annotated[int, typer.Option("--timeout-ms", help="等待登录的毫秒数，0 表示一直等")] = 0,
+    debug_auth: Annotated[bool, typer.Option("--debug-auth", help="登录成功/失败时写出截图、HTML 与 cookie 摘要")] = False,
 ) -> None:
-    _run_login("consumer", timeout_ms)
+    _run_login("consumer", timeout_ms, debug_auth=debug_auth)
 
 
-def _run_login(site: SiteName, timeout_ms: int) -> None:
+def _run_login(site: SiteName, timeout_ms: int, *, debug_auth: bool = False) -> None:
     try:
-        payload = login_site(site, timeout_ms=timeout_ms)
+        payload = login_site(site, timeout_ms=timeout_ms, debug_auth=debug_auth)
         emit_json(payload.model_dump(mode="json"))
         raise typer.Exit(code=0)
     except LoginRequiredError as exc:

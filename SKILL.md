@@ -5,6 +5,7 @@ description: |
   三阶段独立执行（prepare-products 准备 → generate-content 内容 → publish-note 发布），通过 JSON 文件传递数据。
   使用 CLI `uv run xhs-poster` 执行。需商家端登录；generate-content 依赖 LLM。
   使用场景：拉取商品主图、生成种草文案、按需发布单条笔记或批量编排发布。
+  支持 macOS 登录后导出 auth-state，并在云服务器导入后无头运行。
 ---
 
 # 小红书商品笔记自动发布
@@ -55,7 +56,8 @@ description: |
 
 - Python 3.13+，`uv` 包管理器
 - 配置 LLM（`.env` 中 `MOONSHOT_API_KEY` 等，见 `.env.example`）
-- 首次使用需先执行 `login merchant` 完成商家端登录
+- 本机首次使用需先执行 `login merchant` 完成商家端登录
+- 云服务器部署推荐使用 `auth export merchant` / `auth import merchant` 迁移登录态
 
 ### 执行流程
 
@@ -65,6 +67,9 @@ cd ~/.openclaw/workspace/skills/xiaohongshu-product-poster
 
 # 1. 登录（首次或 session 过期时）
 uv run xhs-poster login merchant
+
+# 1.1 可选：导出 auth-state，供云服务器导入复用
+uv run xhs-poster auth export merchant --output ./merchant-state.json
 
 # 2. 准备商品和图片
 uv run xhs-poster prepare-products --limit 10 --images-per-product 3
@@ -92,6 +97,10 @@ uv run xhs-poster run-publish-plan --mode random --count 3 --seed 42
 # 探测登录态
 uv run xhs-poster auth probe merchant
 
+# 导出 / 导入 auth-state
+uv run xhs-poster auth export merchant --output ./merchant-state.json
+uv run xhs-poster auth import merchant --input ./merchant-state.json
+
 # 查看各命令帮助
 uv run xhs-poster prepare-products --help
 uv run xhs-poster generate-content --help
@@ -100,7 +109,11 @@ uv run xhs-poster publish-note --help
 
 ### AI 调用时的参数与顺序
 
-**执行顺序**：先 `auth probe merchant`；若未登录（退出码非 0），提示用户执行 `login merchant`（会打开浏览器，需人工完成）。登录就绪后：prepare-products → 可选 prepare-trends → generate-content → 按需多次 publish-note。
+**执行顺序**：
+
+- 本机交互式流程：先 `auth probe merchant`；若未登录（退出码非 0），提示用户执行 `login merchant`（会打开浏览器，需人工完成）。
+- 云服务器流程：在 macOS 执行 `login merchant` → `auth export merchant`，把生成的 `merchant-state.json` 上传到服务器，再执行 `auth import merchant` → `auth probe merchant`。
+- 登录就绪后再执行：prepare-products → 可选 prepare-trends → generate-content → 按需多次 publish-note。
 
 **keyword**：`--keyword` 不传时，prepare-trends 默认使用「发饰」；generate-content 会从 `today-pool.json` 中商品名按固定词表（抓夹、发夹、鲨鱼夹、发饰、头饰）推断。建议：prepare-products 完成后读取 today-pool 商品名推断一个 keyword，对 prepare-trends 与 generate-content 使用同一 keyword。
 
@@ -119,11 +132,14 @@ uv run xhs-poster publish-note --help
 ├── phase2-report.json       # 阶段2报告
 ├── publish-log.json         # 发布日志（仅追加）
 ├── phase3-published.json    # phase3 成功账本（编排去重使用）
+├── auth/
+│   └── merchant-state.json  # 导出的 auth-state，云服务器无头运行优先使用
 ├── images/                  # 商品主图
 │   └── {商品ID}/
 │       ├── 1.jpg
 │       └── ...
-└── profiles/merchant/       # 商家端登录态
+├── profiles/merchant/       # 本机 Playwright profile 登录态
+└── artifacts/auth/          # 登录诊断产物（--debug-auth 时写入）
 
 {project_root}/references/
 └── history-notes/           # 历史笔记 YAML（供 prepare-trends）
@@ -195,7 +211,14 @@ LLM_BASE_URL=https://api.moonshot.cn/v1
 ### prepare-products 失败
 - 检查登录：`uv run xhs-poster auth probe merchant`（退出码 0 表示已登录）
 - 未登录：`uv run xhs-poster login merchant`
+- 云服务器未登录：检查是否已执行 `auth import merchant --input ./merchant-state.json`
 - 网络错误（如 Connection reset）：重试或减小 `--limit`
+
+### auth-state 迁移失败
+- 本机导出前先确认已登录：`uv run xhs-poster login merchant`
+- 导入后校验：`uv run xhs-poster auth probe merchant`
+- 需要定位登录问题时，使用：`uv run xhs-poster login merchant --debug-auth`
+- `auth-state` 过期后，需要回到 macOS 重新登录并重新导出
 
 ### generate-content 失败
 - 检查 prepare-products 是否完成：`today-pool.json` 存在

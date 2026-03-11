@@ -73,6 +73,22 @@ class Settings(BaseSettings):
         default_factory=_default_playwright_browsers_path,
         description="Playwright 浏览器缓存路径，按平台自动选择默认值。",
     )
+    merchant_auth_state_path_override: Path | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "XHS_POSTER_MERCHANT_AUTH_STATE_PATH",
+            "MERCHANT_AUTH_STATE_PATH",
+        ),
+        description="商家端 auth-state 文件路径，默认位于 data_dir/auth/merchant-state.json。",
+    )
+    consumer_auth_state_path_override: Path | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "XHS_POSTER_CONSUMER_AUTH_STATE_PATH",
+            "CONSUMER_AUTH_STATE_PATH",
+        ),
+        description="用户端 auth-state 文件路径，默认位于 data_dir/auth/consumer-state.json。",
+    )
 
     @property
     def data_dir(self) -> Path:
@@ -89,6 +105,18 @@ class Settings(BaseSettings):
     @property
     def images_dir(self) -> Path:
         return self.data_dir / "images"
+
+    @property
+    def auth_dir(self) -> Path:
+        return self.data_dir / "auth"
+
+    @property
+    def merchant_auth_state_path(self) -> Path:
+        return self.merchant_auth_state_path_override or self.auth_dir / "merchant-state.json"
+
+    @property
+    def consumer_auth_state_path(self) -> Path:
+        return self.consumer_auth_state_path_override or self.auth_dir / "consumer-state.json"
 
     @property
     def today_pool_path(self) -> Path:
@@ -146,13 +174,21 @@ class Settings(BaseSettings):
     def phase2_artifacts_dir(self) -> Path:
         return self.data_dir / "artifacts" / "phase2"
 
+    @property
+    def auth_artifacts_dir(self) -> Path:
+        return self.data_dir / "artifacts" / "auth"
+
     def merchant_edit_url(self, product_id: str) -> str:
         return self.merchant_edit_url_template.format(product_id=product_id)
 
     def ensure_directories(self) -> None:
         self.data_dir.mkdir(parents=True, exist_ok=True)
+        self.auth_dir.mkdir(parents=True, exist_ok=True)
+        self.merchant_auth_state_path.parent.mkdir(parents=True, exist_ok=True)
+        self.consumer_auth_state_path.parent.mkdir(parents=True, exist_ok=True)
         self.merchant_profile_dir.mkdir(parents=True, exist_ok=True)
         self.consumer_profile_dir.mkdir(parents=True, exist_ok=True)
         self.images_dir.mkdir(parents=True, exist_ok=True)
         self.phase3_artifacts_dir.mkdir(parents=True, exist_ok=True)
         self.phase2_artifacts_dir.mkdir(parents=True, exist_ok=True)
+        self.auth_artifacts_dir.mkdir(parents=True, exist_ok=True)

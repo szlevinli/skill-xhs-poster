@@ -38,15 +38,19 @@ class TodayPool(BaseModel):
 SiteName = Literal["merchant", "consumer"]
 SessionStatus = Literal["authenticated", "login_required"]
 BrowserMode = Literal["headless", "headful"]
+AuthSource = Literal["auth_state", "profile", "missing"]
 
 
 class SessionInfo(BaseModel):
     site: SiteName
     status: SessionStatus
     authenticated: bool
+    auth_source: AuthSource
+    attempted_auth_sources: list[AuthSource] = Field(default_factory=list)
     browser_mode: BrowserMode
     checked_url: str
     profile_dir: str
+    auth_state_path: str | None = None
     home_url: str
     message: str
 

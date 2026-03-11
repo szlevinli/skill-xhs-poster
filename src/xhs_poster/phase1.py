@@ -63,7 +63,7 @@ def run_phase1(
     session = require_authenticated_session("merchant", settings)
     run_headless = session.browser_mode == "headless" if headless is None else headless
 
-    with merchant_context(settings, headless=run_headless) as context:
+    with merchant_context(settings, headless=run_headless, auth_source=session.auth_source) as context:
         page = context.pages[0] if context.pages else context.new_page()
         page = get_alive_page(context, page)
         page = open_product_list_page(context, page, settings)
