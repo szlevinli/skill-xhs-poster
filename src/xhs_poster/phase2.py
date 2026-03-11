@@ -33,7 +33,7 @@ from .trend_signals import build_trend_signals_from_history_refs
 def load_today_pool(settings: Settings) -> TodayPool:
     if not settings.today_pool_path.exists():
         raise RuntimeError(
-            f"未找到 today-pool.json，请先执行 phase1：{settings.today_pool_path}"
+            f"未找到 today-pool.json，请先执行 prepare-products：{settings.today_pool_path}"
         )
     return TodayPool.model_validate_json(settings.today_pool_path.read_text(encoding="utf-8"))
 

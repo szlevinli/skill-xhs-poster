@@ -170,6 +170,33 @@ def launch_consumer_context(
     return launch_site_context(playwright, settings, "consumer", headless=headless)
 
 
+def close_context_safely(context: BrowserContext) -> None:
+    errors: list[str] = []
+
+    for page in list(context.pages):
+        if page.is_closed():
+            continue
+        try:
+            page.close(run_before_unload=False)
+        except Error as exc:
+            errors.append(f"page.close: {exc}")
+
+    browser = context.browser
+    if browser is not None:
+        try:
+            browser.close()
+        except Error as exc:
+            errors.append(f"browser.close: {exc}")
+    else:
+        try:
+            context.close()
+        except Error as exc:
+            errors.append(f"context.close: {exc}")
+
+    if errors:
+        raise RuntimeError("; ".join(errors))
+
+
 @contextmanager
 def merchant_context(
     settings: Settings,
@@ -182,7 +209,7 @@ def merchant_context(
         try:
             yield context
         finally:
-            context.close()
+            close_context_safely(context)
 
 
 @contextmanager
@@ -197,4 +224,4 @@ def consumer_context(
         try:
             yield context
         finally:
-            context.close()
+            close_context_safely(context)

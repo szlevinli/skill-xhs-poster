@@ -216,6 +216,107 @@ class Phase3Success(BaseModel):
     data: Phase3ExecutionResult
 
 
+Phase3DedupScope = Literal["today", "ever"]
+Phase3PlanMode = Literal["sequential", "random"]
+
+
+class Phase3PublishedRecord(BaseModel):
+    date: str
+    published_at: str
+    product_id: str
+    product_name: str
+    angle: int
+    angle_name: str | None = None
+    title: str
+    topic_keywords: list[str] = Field(default_factory=list)
+    status: Literal["success"] = "success"
+    publish_log_path: str | None = None
+    dedupe_key: str
+
+
+class Phase3PublishedLedger(BaseModel):
+    records: list[Phase3PublishedRecord] = Field(default_factory=list)
+
+
+class Phase3Candidate(BaseModel):
+    date: str
+    product_id: str
+    product_name: str
+    angle: int
+    angle_name: str
+    title: str
+    topic_keywords: list[str] = Field(default_factory=list)
+    image_count: int = 0
+    published_today: bool = False
+    published_ever: bool = False
+    eligible: bool = True
+    ineligible_reason: str | None = None
+
+
+class Phase3CandidatesResult(BaseModel):
+    date: str
+    exclude_published: Phase3DedupScope
+    candidates: list[Phase3Candidate] = Field(default_factory=list)
+
+
+class Phase3PlanItem(BaseModel):
+    product_id: str
+    product_name: str
+    angle: int
+    angle_name: str
+    title: str
+    topic_keywords: list[str] = Field(default_factory=list)
+    selection_reason: str
+
+
+class Phase3PlanResult(BaseModel):
+    date: str
+    mode: Phase3PlanMode
+    dedupe_scope: Phase3DedupScope
+    count_requested: int
+    count_selected: int
+    seed: int | None = None
+    items: list[Phase3PlanItem] = Field(default_factory=list)
+
+
+class Phase3RunPlanItemResult(BaseModel):
+    product_id: str
+    product_name: str
+    angle: int
+    angle_name: str
+    status: Literal["success", "failed"]
+    phase3_result: Phase3ExecutionResult | None = None
+    error: str | None = None
+
+
+class Phase3RunPlanResult(BaseModel):
+    date: str
+    mode: Phase3PlanMode
+    dedupe_scope: Phase3DedupScope
+    count_requested: int
+    count_selected: int
+    count_attempted: int
+    count_succeeded: int
+    count_failed: int
+    seed: int | None = None
+    results: list[Phase3RunPlanItemResult] = Field(default_factory=list)
+
+
+class Phase3CandidatesSuccess(BaseModel):
+    status: Literal["ok"] = "ok"
+    data: Phase3CandidatesResult
+
+
+class Phase3PlanSuccess(BaseModel):
+    status: Literal["ok"] = "ok"
+    data: Phase3PlanResult
+
+
+class Phase3RunPlanSuccess(BaseModel):
+    status: Literal["ok"] = "ok"
+    data: Phase3RunPlanResult
+
+
 class Phase2ExecutionResult(BaseModel):
     date: str
     keyword: str

@@ -1,6 +1,6 @@
 # 小红书商品笔记自动发布 - 参考文档
 
-本文档提供数据格式、内容策略及规划中的编排逻辑，供实现或扩展时参考。
+本文档提供数据格式、内容策略及当前已实现的编排/账本逻辑，供实现或扩展时参考。
 
 ---
 
@@ -48,11 +48,35 @@
 
 ### publish-log.json
 
-每次 phase3 发布成功或失败后追加一条记录，结构由 `Phase3ExecutionResult` 决定。**当前实现不读取此文件做编排**。
+每次 `publish-note` 发布成功或失败后追加一条记录，结构由 `Phase3ExecutionResult` 决定。该文件用于追踪发布过程，不承担去重职责。
+
+### phase3-published.json
+
+`publish-note` 成功账本，供 `list-publish-candidates` / `plan-publish` / `run-publish-plan` 去重使用：
+
+```json
+{
+  "records": [
+    {
+      "date": "2026-03-11",
+      "published_at": "2026-03-11T18:20:31+08:00",
+      "product_id": "691e83b0b4ade0001551defc",
+      "product_name": "商品名",
+      "angle": 1,
+      "angle_name": "颜色颜值",
+      "title": "标题",
+      "topic_keywords": ["抓夹", "复古"],
+      "status": "success",
+      "publish_log_path": "xiaohongshu-data/publish-log.json",
+      "dedupe_key": "2026-03-11:691e83b0b4ade0001551defc:1"
+    }
+  ]
+}
+```
 
 ---
 
-## 内容角度（phase2 每商品 5 篇）
+## 内容角度（generate-content 每商品 5 篇）
 
 | angle | angle_name | 编写思路 |
 |-------|------------|----------|
@@ -64,7 +88,7 @@
 
 ---
 
-## phase3 参数说明
+## publish-note 参数说明
 
 | 参数 | 说明 | 默认 |
 |------|------|------|
@@ -75,16 +99,16 @@
 | `--topic-keyword` | 话题关键词，可多次传入；不传则从草稿 tags 提取全部 # | - |
 | `--image-path` | 指定图片路径，可多次传入 | today-pool 主图 |
 
-### 话题与正文中的标签（phase3）
+### 话题与正文中的标签（publish-note）
 
 - **话题**（多个）：通过 `add_topic(topic_keyword)` 逐个在编辑器中输入 `#关键词` 并点选平台下拉，与后台话题数据关联（带浏览数等），**有单独的数据交互**。
-- **正文**：phase3 只填充草稿 `content`，不再把 `draft.tags` 追加到正文末尾。
+- **正文**：publish-note 只填充草稿 `content`，不再把 `draft.tags` 追加到正文末尾。
 - **默认行为**：若未显式传入 `--topic-keyword`，会从草稿 `tags`（如 `#抓夹 #韩系 #复古`）中提取全部 `#标签`，并逐个作为平台话题添加。
 - 效果：正文与平台话题完全分离；`#抓夹 #韩系 #复古` 这类标签只通过 `add_topic` 添加，不在正文中重复出现。
 
 ---
 
-## 阶段2 内容生成流程（实际实现）
+## generate-content 流程（实际实现）
 
 1. 读取 `today-pool.json` 和商品主图
 2. 分析主图提取视觉特征（`image_facts`、`product-facts.json`）
@@ -96,27 +120,31 @@
 
 ---
 
-## 规划中的编排逻辑（未实现）
+## 已实现的编排逻辑
 
-以下为 SKILL.md 历史描述中的目标设计，**当前代码未实现**：
+### 新命令
 
-### 发帖策略
+- `list-publish-candidates`
+  - 列出 `contents.json` 中全部 `(product_id, angle)` 候选
+  - 标记 `published_today` / `published_ever` / `eligible`
+- `plan-publish`
+  - 按 `--mode sequential|random` 生成待发布清单
+  - 支持 `--count`、`--date`、`--dedupe-scope today|ever`、`--seed`
+- `run-publish-plan`
+  - 先生成计划，再逐条调用 `publish-note`
+  - 成功后立即写入 `phase3-published.json`
+  - 单条失败不会回滚已成功项
 
-- 每天锁定 10 个商品作为「今日商品池」
-- 10 个商品轮流发，每个商品每天最多 5 篇
-- 每天总上限 50 篇（小红书限制）
-- 支持中断恢复：记录每个商品已发篇数，恢复时从断点继续
+### 去重规则
 
-### 编排实现思路
+- 默认去重范围：`today`
+- 去重键：`(date, product_id, angle)`
+- `ever` 模式下，任何历史成功发布过的 `(product_id, angle)` 都会被排除
 
-需要额外实现「编排层」：
+### 兼容性
 
-1. 读取 `publish-log.json` 或独立状态文件，统计今日每个商品已发篇数
-2. 计算下一个应发的 `product_id` 和 `angle`
-3. 调用 `uv run xhs-poster phase3 --product-id X --angle Y`
-4. 循环直到今日 50 篇或所有商品发满
-
-可参考历史文档中的 `publish-manager.py` 设计（`can-publish`、`get-position`、`record` 等），但该脚本当前不存在于项目中。
+- 旧版 `phase3-published.json` 若使用 `entries` 结构，当前代码会自动兼容读取
+- 新写入统一使用 `records` 结构
 
 ---
 
@@ -124,4 +152,4 @@
 
 - **2026-03-05**：phase3 发布流程已跑通（手动创作 → 上传图文 → 填写标题/正文 → 添加话题 → 发布）
 - **2026-03-10**：阶段2 已改为「主图分析 + LLM + 可选趋势」，不再依赖 xiaohongshu-mcp 抓热门笔记
-- **已知**：phase3 不实现编排，批量发布需由调用方（脚本或人工）多次调用并指定 `--angle`
+- **已知**：`run-publish-plan` 会真实发布，测试时应优先使用 `list-publish-candidates` 或 `plan-publish`

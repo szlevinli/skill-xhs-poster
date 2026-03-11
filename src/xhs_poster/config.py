@@ -123,6 +123,10 @@ class Settings(BaseSettings):
         return self.data_dir / "publish-log.json"
 
     @property
+    def phase3_published_path(self) -> Path:
+        return self.data_dir / "phase3-published.json"
+
+    @property
     def phase3_artifacts_dir(self) -> Path:
         return self.data_dir / "artifacts" / "phase3"
 

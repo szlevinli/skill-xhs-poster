@@ -2,9 +2,9 @@
 name: xiaohongshu-product-poster
 description: |
   小红书商家后台自动化工具：从商品管理拉取商品、生成笔记内容、发布笔记。
-  三阶段独立执行（phase1 准备 → phase2 内容 → phase3 发布），通过 JSON 文件传递数据。
-  使用 CLI `uv run xhs-poster` 执行。需商家端登录；phase2 依赖 LLM。
-  使用场景：拉取商品主图、生成种草文案、按需发布单条笔记。
+  三阶段独立执行（prepare-products 准备 → generate-content 内容 → publish-note 发布），通过 JSON 文件传递数据。
+  使用 CLI `uv run xhs-poster` 执行。需商家端登录；generate-content 依赖 LLM。
+  使用场景：拉取商品主图、生成种草文案、按需发布单条笔记或批量编排发布。
 ---
 
 # 小红书商品笔记自动发布
@@ -13,7 +13,7 @@ description: |
 
 当用户表达「发小红书商品笔记」「拉商品并生成/发布笔记」「从商家后台拉商品写种草文案」等意图时，使用本 skill。入口为在技能目录下执行 `uv run xhs-poster` 子命令。
 
-## 心智模型：三阶段工作流
+## 心智模型：工作流
 
 本技能采用**三阶段独立执行**的设计，各阶段通过文件传递数据，支持独立调度。
 
@@ -32,8 +32,8 @@ description: |
 │  └────┬────┘         └────┬────┘         └────┬────┘          │
 │       │                   │                   │                 │
 │       ▼                   ▼                   ▼                 │
-│  today-pool.json     contents.json      publish-log.json        │
-│  (商品+图片)         (标题+正文+标签)    (发布记录，仅追加)        │
+│  today-pool.json     contents.json      publish-log.json /      │
+│  (商品+图片)         (标题+正文+标签)    phase3-published.json   │
 │                                                                  │
 └─────────────────────────────────────────────────────────────────┘
 ```
@@ -42,10 +42,10 @@ description: |
 
 | 阶段 | 职责 | 输入 | 输出 | 依赖 |
 |------|------|------|------|------|
-| **phase1** | 拉取商品和主图 | 商家后台 | `today-pool.json` + 图片 | 商家端登录 |
+| **prepare-products** | 拉取商品和主图 | 商家后台 | `today-pool.json` + 图片 | 商家端登录 |
 | **prepare-trends** | 生成趋势信号（可选） | `references/history-notes/*.yaml` | `trend-signals.json` | 无 |
-| **phase2** | 生成笔记内容 | `today-pool.json` + 主图 + LLM | `contents.json` | phase1、LLM |
-| **phase3** | 发布单条笔记 | `today-pool.json` + `contents.json` | 发布到小红书 + 追加日志 | phase1、phase2、商家端登录 |
+| **generate-content** | 生成笔记内容 | `today-pool.json` + 主图 + LLM | `contents.json` | prepare-products、LLM |
+| **publish-note** | 发布单条笔记 | `today-pool.json` + `contents.json` | 发布到小红书 + 追加日志/账本 | prepare-products、generate-content、商家端登录 |
 
 ---
 
@@ -67,18 +67,23 @@ cd ~/.openclaw/workspace/skills/xiaohongshu-product-poster
 uv run xhs-poster login merchant
 
 # 2. 准备商品和图片
-uv run xhs-poster phase1 --limit 10 --images-per-product 3
+uv run xhs-poster prepare-products --limit 10 --images-per-product 3
 
-# 3. 生成趋势信号（可选，不跑则 phase2 用本地兜底）
+# 3. 生成趋势信号（可选，不跑则 generate-content 用本地兜底）
 uv run xhs-poster prepare-trends --keyword 抓夹
 
 # 4. 生成内容
-uv run xhs-poster phase2 --keyword 抓夹 --contents-per-product 5
+uv run xhs-poster generate-content --keyword 抓夹 --contents-per-product 5
 
 # 5. 发布单条笔记（支持多话题；不传 `--topic-keyword` 则使用草稿 tags 中全部 #话题）
-uv run xhs-poster phase3 --angle 1
-uv run xhs-poster phase3 --angle 2 --topic-keyword 抓夹 --topic-keyword 发饰
-uv run xhs-poster phase3 --angle 3 --topic-keyword 韩系 --topic-keyword 复古
+uv run xhs-poster publish-note --angle 1
+uv run xhs-poster publish-note --angle 2 --topic-keyword 抓夹 --topic-keyword 发饰
+uv run xhs-poster publish-note --angle 3 --topic-keyword 韩系 --topic-keyword 复古
+
+# 6. 编排层：列候选 / 生成计划 / 批量发布
+uv run xhs-poster list-publish-candidates
+uv run xhs-poster plan-publish --mode sequential --count 3
+uv run xhs-poster run-publish-plan --mode random --count 3 --seed 42
 ```
 
 ### 常用命令
@@ -88,18 +93,18 @@ uv run xhs-poster phase3 --angle 3 --topic-keyword 韩系 --topic-keyword 复古
 uv run xhs-poster auth probe merchant
 
 # 查看各命令帮助
-uv run xhs-poster phase1 --help
-uv run xhs-poster phase2 --help
-uv run xhs-poster phase3 --help
+uv run xhs-poster prepare-products --help
+uv run xhs-poster generate-content --help
+uv run xhs-poster publish-note --help
 ```
 
 ### AI 调用时的参数与顺序
 
-**执行顺序**：先 `auth probe merchant`；若未登录（退出码非 0），提示用户执行 `login merchant`（会打开浏览器，需人工完成）。登录就绪后：phase1 → 可选 prepare-trends → phase2 → 按需多次 phase3。
+**执行顺序**：先 `auth probe merchant`；若未登录（退出码非 0），提示用户执行 `login merchant`（会打开浏览器，需人工完成）。登录就绪后：prepare-products → 可选 prepare-trends → generate-content → 按需多次 publish-note。
 
-**keyword**：`--keyword` 不传时，prepare-trends 默认使用「发饰」；phase2 会从 `today-pool.json` 中商品名按固定词表（抓夹、发夹、鲨鱼夹、发饰、头饰）推断。建议：phase1 完成后读取 today-pool 商品名推断一个 keyword，对 prepare-trends 与 phase2 使用同一 keyword。
+**keyword**：`--keyword` 不传时，prepare-trends 默认使用「发饰」；generate-content 会从 `today-pool.json` 中商品名按固定词表（抓夹、发夹、鲨鱼夹、发饰、头饰）推断。建议：prepare-products 完成后读取 today-pool 商品名推断一个 keyword，对 prepare-trends 与 generate-content 使用同一 keyword。
 
-**输出与错误**：命令成功时 stdout 为 JSON（含 `status`、`data` 等），便于解析并决定下一步（如根据生成条数决定调用几次 phase3）。失败时退出码非 0，错误信息在 payload 或 stderr 中，可据此重试或报错。
+**输出与错误**：命令成功时 stdout 为 JSON（含 `status`、`data` 等），便于解析并决定下一步（如根据生成条数决定调用几次 publish-note）。失败时退出码非 0，错误信息在 payload 或 stderr 中，可据此重试或报错。
 
 ---
 
@@ -112,7 +117,8 @@ uv run xhs-poster phase3 --help
 ├── product-facts.json       # 阶段2中间：主图分析结果
 ├── trend-signals.json       # prepare-trends 输出
 ├── phase2-report.json       # 阶段2报告
-├── publish-log.json         # 发布记录（仅追加，不自动编排）
+├── publish-log.json         # 发布日志（仅追加）
+├── phase3-published.json    # phase3 成功账本（编排去重使用）
 ├── images/                  # 商品主图
 │   └── {商品ID}/
 │       ├── 1.jpg
@@ -125,30 +131,36 @@ uv run xhs-poster phase3 --help
 
 ---
 
-## 阶段3 行为说明
+## 发布行为说明
 
-**phase3 只负责「发」，不负责编排**：
+**publish-note 是单次发布执行器，编排由独立命令承担**：
 
 - 每次调用发布**一条**笔记
 - 不传 `--product-id` 时取 today-pool 第一个商品
 - 不传 `--angle` 时取该商品第一条草稿
 - 正文只使用草稿 `content`，不会再把 `tags` 拼到正文末尾
 - 话题通过 `add_topic()` 单独添加；不传 `--topic-keyword` 时，默认从草稿 `tags` 中提取全部 `#话题`
-- 不判断哪些已发、哪些未发；`publish-log.json` 仅作记录，不参与编排
-- 批量发布由**调用方**（脚本或 AI）多次调用 phase3 并传入 `--product-id` / `--angle`，本 skill 不实现编排逻辑
+- 单次 `publish-note` 成功后会把 `(date, product_id, angle)` 追加到 `phase3-published.json`
+- `list-publish-candidates`：列出所有 `(product_id, angle)` 候选，并标记今日/历史是否已发布
+- `plan-publish`：按 `sequential` 或 `random` 生成待发布清单，但不执行
+- `run-publish-plan`：按计划逐条执行发布；默认去重范围为 `today`
 
-**批量发布示例**（需由调用方编排）：
+**编排示例**：
 
 ```bash
-# 手动发 3 条：商品1 的 angle 1/2/3
-uv run xhs-poster phase3 --angle 1
-uv run xhs-poster phase3 --angle 2 --topic-keyword 抓夹 --topic-keyword 发饰
-uv run xhs-poster phase3 --angle 3 --topic-keyword 韩系 --topic-keyword 复古
+# 查看今日可发布候选
+uv run xhs-poster list-publish-candidates
+
+# 顺序选 3 条，不执行
+uv run xhs-poster plan-publish --mode sequential --count 3
+
+# 随机发布 3 条，同一天不重复 product_id + angle
+uv run xhs-poster run-publish-plan --mode random --count 3 --seed 42
 ```
 
 ---
 
-## 内容生成约束（phase2）
+## 内容生成约束（generate-content）
 
 **禁止内容**：
 - ❌ 不提及价格（如"便宜"、"贵"、"性价比"、"值"等）
@@ -180,18 +192,18 @@ LLM_BASE_URL=https://api.moonshot.cn/v1
 
 ## 故障排除
 
-### 阶段1失败
+### prepare-products 失败
 - 检查登录：`uv run xhs-poster auth probe merchant`（退出码 0 表示已登录）
 - 未登录：`uv run xhs-poster login merchant`
 - 网络错误（如 Connection reset）：重试或减小 `--limit`
 
-### 阶段2失败
-- 检查 phase1 是否完成：`today-pool.json` 存在
+### generate-content 失败
+- 检查 prepare-products 是否完成：`today-pool.json` 存在
 - 检查 LLM 配置：`.env` 中 API Key 正确
 - 检查主图：`xiaohongshu-data/images/{商品ID}/` 下有图片
 
-### 阶段3失败
-- 检查 phase1 和 phase2 是否完成
+### publish-note 失败
+- 检查 prepare-products 和 generate-content 是否完成
 - 检查登录态
 - 检查 `contents.json` 中是否有对应商品和 angle 的草稿
 
@@ -199,5 +211,5 @@ LLM_BASE_URL=https://api.moonshot.cn/v1
 
 ## 更多文档
 
-- [REFERENCE.md](REFERENCE.md) — 详细说明、数据格式、规划中的编排逻辑
+- [REFERENCE.md](REFERENCE.md) — 详细说明、数据格式、编排与账本逻辑
 - [QUICKREF.md](QUICKREF.md) — 快速参考

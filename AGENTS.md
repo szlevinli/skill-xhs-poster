@@ -11,9 +11,9 @@ Runtime outputs are written to `xiaohongshu-data/`, including `today-pool.json`,
 - `uv sync`: install Python 3.13 dependencies from `pyproject.toml` and `uv.lock`.
 - `uv run xhs-poster --help`: inspect the full CLI surface.
 - `uv run xhs-poster login merchant`: open the merchant login flow and persist the Playwright profile.
-- `uv run xhs-poster phase1 --limit 10 --images-per-product 3`: fetch products and images.
-- `uv run xhs-poster phase2 --keyword 抓夹 --contents-per-product 5`: generate content from phase1 outputs.
-- `uv run xhs-poster phase3 --angle 1`: publish one draft.
+- `uv run xhs-poster prepare-products --limit 10 --images-per-product 3`: fetch products and images.
+- `uv run xhs-poster generate-content --keyword 抓夹 --contents-per-product 5`: generate content from product/image inputs.
+- `uv run xhs-poster publish-note --angle 1`: publish one draft.
 - `uv run python -m compileall src`: lightweight smoke check for syntax and import errors.
 
 ## Coding Style & Naming Conventions
@@ -22,7 +22,7 @@ Use 4-space indentation, type hints, and `from __future__ import annotations` in
 
 ## Testing Guidelines
 
-There is no formal automated test suite yet. Validate changes with targeted CLI runs and inspect the generated JSON artifacts in `xiaohongshu-data/`. At minimum, run `uv run python -m compileall src` before opening a PR. For workflow changes, document the exact command used for verification, for example `uv run xhs-poster phase2 --keyword 发饰`.
+There is no formal automated test suite yet. Validate changes with targeted CLI runs and inspect the generated JSON artifacts in `xiaohongshu-data/`. At minimum, run `uv run python -m compileall src` before opening a PR. For workflow changes, document the exact command used for verification, for example `uv run xhs-poster generate-content --keyword 发饰`.
 
 ## Commit & Pull Request Guidelines
 

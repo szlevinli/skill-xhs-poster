@@ -6,16 +6,21 @@ from typing import Annotated
 import typer
 
 from .auth import LoginRequiredError, login_site, probe_site_session
-from .models import SiteName
+from .models import Phase3DedupScope, Phase3PlanMode, SiteName
 from .phase1 import build_phase1_payload
 from .phase2 import build_phase2_payload
-from .phase3 import build_phase3_payload
+from .phase3 import (
+    build_phase3_candidates_payload,
+    build_phase3_payload,
+    build_phase3_plan_payload,
+    build_phase3_run_plan_payload,
+)
 from .trend_signals import build_trend_signals_payload
 
 
 APP_HELP = """小红书商家端自动发帖工具。输出为 JSON，便于脚本或下游消费。
 
-流程：phase1（拉商品与主图）→ prepare-trends（可选，生成趋势信号）→ phase2（生成文案）→ phase3（发布笔记）。
+流程：prepare-products（拉商品与主图）→ prepare-trends（可选，生成趋势信号）→ generate-content（生成文案）→ publish-note（发布笔记）。
 首次使用需先执行 login merchant 完成商家端登录。"""
 auth_app = typer.Typer(add_completion=False, no_args_is_help=True, help="探测商家端/用户端是否已登录。")
 login_app = typer.Typer(add_completion=False, no_args_is_help=True, help="拉起浏览器，等待人工完成扫码登录。")
@@ -41,7 +46,7 @@ def auth_probe(
     raise typer.Exit(code=0 if payload.authenticated else 2)
 
 
-@login_app.command("merchant", help="打开商家端登录页，等待扫码；成功后退出码 0，未完成则 2。phase1/phase3 依赖此登录态。")
+@login_app.command("merchant", help="打开商家端登录页，等待扫码；成功后退出码 0，未完成则 2。prepare-products / publish-note 依赖此登录态。")
 def login_merchant(
     timeout_ms: Annotated[int, typer.Option("--timeout-ms", help="等待登录的毫秒数，0 表示一直等")] = 0,
 ) -> None:
@@ -65,8 +70,8 @@ def _run_login(site: SiteName, timeout_ms: int) -> None:
         raise typer.Exit(code=2)
 
 
-@app.command("phase1", help="从商家后台拉取商品列表与主图，写出 today-pool.json，需已登录商家端。")
-def phase1_command(
+@app.command("prepare-products", help="从商家后台同步商品与主图，写出 today-pool.json，需已登录商家端。")
+def prepare_products_command(
     limit: Annotated[int, typer.Option("--limit", help="最多提取商品数量")] = 10,
     images_per_product: Annotated[int, typer.Option("--images-per-product", help="每个商品下载的主图数量")] = 3,
     force_download: Annotated[bool, typer.Option("--force-download", help="强制重新下载图片，覆盖已有")] = False,
@@ -80,8 +85,8 @@ def phase1_command(
     raise typer.Exit(code=exit_code)
 
 
-@app.command("phase2", help="按 today-pool 与主图生成种草文案，写出 contents.json；依赖 LLM 配置与可选 trend-signals。")
-def phase2_command(
+@app.command("generate-content", help="基于 today-pool 与主图生成待发布笔记内容，写出 contents.json；依赖 LLM 配置与可选 trend-signals。")
+def generate_content_command(
     keyword: Annotated[str | None, typer.Option("--keyword", help="类目/趋势关键词，未指定则从商品名推断")] = None,
     contents_per_product: Annotated[int, typer.Option("--contents-per-product", help="每个商品生成的文案条数")] = 5,
     search_limit: Annotated[int, typer.Option("--search-limit", help="（预留，当前未使用）")] = 20,
@@ -97,7 +102,7 @@ def phase2_command(
     raise typer.Exit(code=exit_code)
 
 
-@app.command("prepare-trends", help="从 references/history-notes 生成 trend-signals.json，供 phase2 使用；可选，不跑则 phase2 用本地兜底。")
+@app.command("prepare-trends", help="从 references/history-notes 生成 trend-signals.json，供 generate-content 使用；可选，不跑则 generate-content 用本地兜底。")
 def prepare_trends_command(
     keyword: Annotated[str | None, typer.Option("--keyword", help="趋势关键词，默认 发饰")] = None,
 ) -> None:
@@ -106,8 +111,8 @@ def prepare_trends_command(
     raise typer.Exit(code=exit_code)
 
 
-@app.command("phase3", help="从 contents.json 取一条草稿发布到商家端笔记；不指定 angle 则发该商品第一条。需已登录商家端。")
-def phase3_command(
+@app.command("publish-note", help="从 contents.json 取一条草稿发布到商家端笔记；不指定 angle 则发该商品第一条。需已登录商家端。")
+def publish_note_command(
     product_id: Annotated[str | None, typer.Option("--product-id", help="要发笔记的商品 ID，不传则取 today-pool 第一个")] = None,
     angle: Annotated[int | None, typer.Option("--angle", help="使用 contents.json 中该商品的第几条草稿（1～N）")] = None,
     title: Annotated[str | None, typer.Option("--title", help="直接指定标题（与 --content 一起用时忽略 contents.json）")] = None,
@@ -122,6 +127,63 @@ def phase3_command(
         content=content,
         topic_keywords=topic_keywords,
         image_paths=image_paths,
+    )
+    emit_json(payload)
+    raise typer.Exit(code=exit_code)
+
+
+@app.command("list-publish-candidates", help="列出 contents.json 中全部可发布候选，并标记今日/历史是否已发布。")
+def list_publish_candidates_command(
+    date: Annotated[str | None, typer.Option("--date", help="按指定日期评估去重，默认今天")] = None,
+    exclude_published: Annotated[
+        Phase3DedupScope, typer.Option("--exclude-published", help="去重范围：today 或 ever")
+    ] = "today",
+) -> None:
+    payload, exit_code = build_phase3_candidates_payload(
+        date=date,
+        exclude_published=exclude_published,
+    )
+    emit_json(payload)
+    raise typer.Exit(code=exit_code)
+
+
+@app.command("plan-publish", help="按顺序或随机策略生成一组待发布候选，但不执行发布。")
+def plan_publish_command(
+    mode: Annotated[Phase3PlanMode, typer.Option("--mode", help="计划模式：sequential 或 random")] = "sequential",
+    count: Annotated[int, typer.Option("--count", help="计划选择的候选数量")] = 1,
+    date: Annotated[str | None, typer.Option("--date", help="按指定日期评估去重，默认今天")] = None,
+    dedupe_scope: Annotated[
+        Phase3DedupScope, typer.Option("--dedupe-scope", help="去重范围：today 或 ever")
+    ] = "today",
+    seed: Annotated[int | None, typer.Option("--seed", help="随机模式的随机种子")] = None,
+) -> None:
+    payload, exit_code = build_phase3_plan_payload(
+        mode=mode,
+        count=count,
+        date=date,
+        dedupe_scope=dedupe_scope,
+        seed=seed,
+    )
+    emit_json(payload)
+    raise typer.Exit(code=exit_code)
+
+
+@app.command("run-publish-plan", help="按顺序或随机策略批量执行发布，并将成功记录写入 phase3-published.json。")
+def run_publish_plan_command(
+    mode: Annotated[Phase3PlanMode, typer.Option("--mode", help="执行模式：sequential 或 random")] = "sequential",
+    count: Annotated[int, typer.Option("--count", help="本次尝试发布的数量")] = 1,
+    date: Annotated[str | None, typer.Option("--date", help="按指定日期评估去重，默认今天")] = None,
+    dedupe_scope: Annotated[
+        Phase3DedupScope, typer.Option("--dedupe-scope", help="去重范围：today 或 ever")
+    ] = "today",
+    seed: Annotated[int | None, typer.Option("--seed", help="随机模式的随机种子")] = None,
+) -> None:
+    payload, exit_code = build_phase3_run_plan_payload(
+        mode=mode,
+        count=count,
+        date=date,
+        dedupe_scope=dedupe_scope,
+        seed=seed,
     )
     emit_json(payload)
     raise typer.Exit(code=exit_code)
