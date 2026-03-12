@@ -27,7 +27,7 @@ from .trend_signals import build_trend_signals_payload
 
 APP_HELP = """小红书商家端自动发帖工具。输出为 JSON，便于脚本或下游消费。
 
-流程：prepare-products（拉商品与主图）→ prepare-trends（可选，生成趋势信号）→ generate-content（生成文案）→ publish-note（发布笔记）。
+流程：prepare-products（拉商品与主图，支持 phase1-state 断点续传）→ prepare-trends（可选，生成趋势信号）→ generate-content（生成文案）→ publish-note（发布笔记）。
 首次使用需先执行 login merchant 完成本机登录；云服务器部署推荐使用 auth export / auth import 迁移登录态。"""
 auth_app = typer.Typer(add_completion=False, no_args_is_help=True, help="探测商家端/用户端是否已登录。")
 login_app = typer.Typer(add_completion=False, no_args_is_help=True, help="拉起浏览器，等待人工完成扫码登录。")
@@ -109,9 +109,9 @@ def _run_login(site: SiteName, timeout_ms: int, *, debug_auth: bool = False) -> 
         raise typer.Exit(code=2)
 
 
-@app.command("prepare-products", help="从商家后台同步商品与主图，写出 today-pool.json，需已登录商家端。")
+@app.command("prepare-products", help="从商家后台同步商品与主图，实时写出 phase1-state.json，并收敛更新 today-pool.json；支持断点续传，需已登录商家端。")
 def prepare_products_command(
-    limit: Annotated[int, typer.Option("--limit", help="最多提取商品数量")] = 10,
+    limit: Annotated[int, typer.Option("--limit", help="目标成功商品数量；会在当前列表中继续补位，直到凑够或候选耗尽")] = 10,
     images_per_product: Annotated[int, typer.Option("--images-per-product", help="每个商品下载的主图数量")] = 3,
     force_download: Annotated[bool, typer.Option("--force-download", help="强制重新下载图片，覆盖已有")] = False,
 ) -> None:

@@ -31,8 +31,65 @@ class ProductImages(BaseModel):
 
 class TodayPool(BaseModel):
     date: str
+    status: Literal["partial", "complete"] = "complete"
+    generated_at: str = ""
     products: list[ProductSummary]
     images: dict[str, list[str]]
+    failed_products: list["ProductFailure"] = Field(default_factory=list)
+
+
+Phase1RunStatus = Literal["running", "partial", "complete", "failed"]
+Phase1FetchStatus = Literal["pending", "in_progress", "complete", "failed"]
+Phase1ArtifactStatus = Literal["missing", "partial", "complete"]
+
+
+class Phase1ImagesArtifact(BaseModel):
+    status: Phase1ArtifactStatus = "missing"
+    paths: list[str] = Field(default_factory=list)
+    count: int = 0
+    source: str = ""
+
+
+class Phase1Artifacts(BaseModel):
+    images: Phase1ImagesArtifact = Field(default_factory=Phase1ImagesArtifact)
+
+
+class Phase1ProductState(BaseModel):
+    product_id: str
+    product_name: str
+    list_discovered: bool = False
+    fetch_status: Phase1FetchStatus = "pending"
+    attempt_count: int = 0
+    last_error: str | None = None
+    updated_at: str = ""
+    artifacts: Phase1Artifacts = Field(default_factory=Phase1Artifacts)
+
+
+class Phase1State(BaseModel):
+    date: str
+    run_status: Phase1RunStatus = "running"
+    started_at: str = ""
+    updated_at: str = ""
+    completed_at: str | None = None
+    target_total: int = 0
+    processed_count: int = 0
+    success_count: int = 0
+    failed_count: int = 0
+    skipped_count: int = 0
+    products: dict[str, Phase1ProductState] = Field(default_factory=dict)
+
+
+class Phase1ExecutionResult(BaseModel):
+    date: str
+    run_status: Literal["complete", "partial"]
+    progress_ref: str
+    today_pool_path: str
+    total_products: int
+    success_count: int
+    failed_count: int
+    skipped_count: int
+    failed_products: list["ProductFailure"] = Field(default_factory=list)
+    today_pool: TodayPool
 
 
 SiteName = Literal["merchant", "consumer"]
@@ -62,11 +119,6 @@ class SkillError(BaseModel):
     site: SiteName | None = None
     login: SessionInfo | None = None
     details: dict | None = None
-
-
-class Phase1Success(BaseModel):
-    status: Literal["ok"] = "ok"
-    data: TodayPool
 
 
 class ContentDraft(BaseModel):
@@ -342,3 +394,8 @@ class Phase2ExecutionResult(BaseModel):
 class Phase2Success(BaseModel):
     status: Literal["ok"] = "ok"
     data: Phase2ExecutionResult
+
+
+class Phase1Success(BaseModel):
+    status: Literal["ok", "partial"] = "ok"
+    data: Phase1ExecutionResult

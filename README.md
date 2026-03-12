@@ -1,6 +1,6 @@
 # 小红书商品笔记自动发布
 
-小红书商家后台自动化工具：从商品管理拉取商品与主图、生成种草文案、发布笔记。CLI 三阶段独立执行（prepare-products → generate-content → publish-note），通过 JSON 文件传递数据。
+小红书商家后台自动化工具：从商品管理拉取商品与主图、生成种草文案、发布笔记。CLI 三阶段独立执行（prepare-products → generate-content → publish-note），通过 JSON 文件传递数据。`prepare-products` 现支持断点续传、收敛执行，并实时写出 `phase1-state.json`。
 
 ## 前置条件
 
@@ -17,13 +17,13 @@
 安装后可直接在终端使用 `xhs-poster` 命令（请将 `OWNER/REPO` 替换为你的 GitHub 用户名/组织与仓库名）：
 
 ```bash
-uv tool install 'xiaohongshu-product-poster @ git+https://github.com/OWNER/REPO.git'
+uv tool install 'xiaohongshu-product-poster @ git+https://github.com/szlevinli/skill-xhs-poster.git'
 ```
 
 ### 方式二：克隆仓库后在项目内使用
 
 ```bash
-git clone https://github.com/OWNER/REPO.git
+git clone https://github.com/szlevinli/skill-xhs-poster.git
 cd REPO
 uv sync
 ```
@@ -33,7 +33,7 @@ uv sync
 ### 方式三：安装到当前环境的 site-packages
 
 ```bash
-uv pip install 'xiaohongshu-product-poster @ git+https://github.com/OWNER/REPO.git'
+uv pip install 'xiaohongshu-product-poster @ git+https://github.com/szlevinli/skill-xhs-poster.git'
 ```
 
 安装完成后可直接运行 `xhs-poster`（若该环境在 PATH 中）。
@@ -47,7 +47,7 @@ uv run xhs-poster login merchant
 # 2. 可选：导出 auth-state，供云服务器导入复用
 uv run xhs-poster auth export merchant --output ./merchant-state.json
 
-# 3. 拉取商品与主图
+# 3. 拉取商品与主图（支持断点续传；可轮询 phase1-state.json 查看进度）
 uv run xhs-poster prepare-products --limit 10 --images-per-product 3
 
 # 4. 生成趋势信号（可选）
@@ -61,6 +61,22 @@ uv run xhs-poster publish-note --angle 1
 ```
 
 更多子命令与参数见 `uv run xhs-poster --help`。完整流程与 AI 调用说明见 [SKILL.md](SKILL.md)，开发与贡献见 [AGENTS.md](AGENTS.md)。
+
+## Phase1 行为说明
+
+`prepare-products` 现在是收敛式执行：
+
+- 每处理完一个商品就更新 `xiaohongshu-data/phase1-state.json`
+- 只要已有成功商品，就会同步刷新 `xiaohongshu-data/today-pool.json`
+- `--limit 10` 的语义是“尽量得到 10 个成功商品”，不是“只检查前 10 个商品”
+- 若列表前面的商品没有可用主图，会继续尝试后续商品补位，直到成功商品达到目标数量或当前候选耗尽
+- 已完成且图片齐全的商品，默认跳过，不会重复进入详情页或重新下载
+- 只有缺失、失败或显式传 `--force-download` 时，才会重新抓取
+- 每个商品最多保留前 3 张主图；若只有 1 或 2 张主图，也仍视为成功商品
+- 只有 0 张主图的商品才会被排除在 phase2 和 phase3 之外
+- 若本次只成功了一部分商品，`today-pool.json` 会带 `status: "partial"`，但仍可供后续阶段消费已成功商品
+
+`phase1-state.json` 适合云服务器或 AI 编排层轮询，不建议依赖 stdout 流式事件。
 
 ## 云服务器部署登录态
 
@@ -87,6 +103,7 @@ uv run xhs-poster prepare-products --limit 10 --images-per-product 3
 - `auth import` 会自动把文件复制到默认 `xiaohongshu-data/auth/merchant-state.json`，无需手动放到 `auth/` 目录。
 - `auth-state` 过期后，请回到 macOS 重新登录并重新导出。
 - 兼容方案仍可上传 `xiaohongshu-data/profiles/merchant/`，但 macOS 到 Linux 的整份 profile 复用不保证稳定，建议仅作兜底。
+- 云端执行 `prepare-products` 时，可轮询 `xiaohongshu-data/phase1-state.json` 判断当前处理进度和失败商品。
 
 ## 本地验证仅 auth-state 生效
 

@@ -154,6 +154,7 @@ def resolve_image_paths(
     *,
     image_paths: list[str] | None = None,
     limit: int = 3,
+    min_count: int = 1,
 ) -> list[str]:
     if image_paths:
         resolved = [str(Path(path)) for path in image_paths if Path(path).exists()]
@@ -181,10 +182,12 @@ def resolve_image_paths(
                     continue
                 resolved.append(path)
                 seen.add(path)
+                if len(resolved) >= limit:
+                    break
 
-    if len(resolved) < limit:
+    if len(resolved) < min_count:
         raise RuntimeError(
-            f"商品 {product_id} 可用图片不足 {limit} 张，当前仅找到 {len(resolved)} 张。"
+            f"商品 {product_id} 缺少可用主图，当前仅找到 {len(resolved)} 张。"
         )
     return resolved[:limit]
 

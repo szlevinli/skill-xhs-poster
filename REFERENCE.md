@@ -6,23 +6,85 @@
 
 ## 数据格式
 
+### phase1-state.json
+
+`prepare-products` 的实时状态与断点续传检查点：
+
+```json
+{
+  "date": "2026-03-12",
+  "run_status": "partial",
+  "started_at": "2026-03-12T09:20:00+08:00",
+  "updated_at": "2026-03-12T09:23:10+08:00",
+  "completed_at": "2026-03-12T09:23:10+08:00",
+  "target_total": 10,
+  "processed_count": 10,
+  "success_count": 8,
+  "failed_count": 2,
+  "skipped_count": 5,
+  "products": {
+    "商品ID": {
+      "product_id": "商品ID",
+      "product_name": "商品名",
+      "list_discovered": true,
+      "fetch_status": "complete",
+      "attempt_count": 1,
+      "last_error": null,
+      "updated_at": "2026-03-12T09:22:31+08:00",
+      "artifacts": {
+        "images": {
+          "status": "complete",
+          "paths": ["/path/to/1.jpg", "/path/to/2.jpg", "/path/to/3.jpg"],
+          "count": 3,
+          "source": "existing_files"
+        }
+      }
+    }
+  }
+}
+```
+
+说明：
+
+- `target_total` 表示本次希望收敛到的成功商品数
+- `success_count` 表示当前已成功进入商品池的商品数
+- phase1 会继续尝试后续候选商品补位，直到 `success_count >= target_total` 或当前候选耗尽
+
 ### today-pool.json
 
 ```json
 {
   "date": "2026-03-10",
+  "status": "partial",
+  "generated_at": "2026-03-10T09:23:10+08:00",
   "products": [
     {
       "id": "商品ID",
-      "name": "商品名称",
-      "create_time": "上架时间"
+      "name": "商品名称"
     }
   ],
   "images": {
     "商品ID": ["/path/to/1.jpg", "/path/to/2.jpg", "/path/to/3.jpg"]
-  }
+  },
+  "failed_products": [
+    {
+      "product_id": "失败商品ID",
+      "product_name": "失败商品名称",
+      "reason": "失败原因"
+    }
+  ]
 }
 ```
+
+说明：
+
+- `today-pool.json.products` 只包含当前已成功准备的商品
+- `prepare-products --limit N` 的语义是“尽量得到 N 个成功商品”
+- 若前面的商品没有可用主图，phase1 会继续尝试后续商品补位
+- 每个商品最多保留前 3 张主图；若只有 1 或 2 张主图，也仍会进入 `today-pool.json`
+- 只有 0 张主图的商品才会被排除在 phase2/phase3 之外
+- `status: "partial"` 表示阶段1部分成功，phase2/phase3 仍可消费成功商品
+- `phase1-state.json` 是 AI/云端编排层的实时进度来源
 
 ### contents.json
 
@@ -98,6 +160,13 @@
 | `--content` | 直接指定正文 | - |
 | `--topic-keyword` | 话题关键词，可多次传入；不传则从草稿 tags 提取全部 # | - |
 | `--image-path` | 指定图片路径，可多次传入 | today-pool 主图 |
+
+### phase1 主图规则
+
+- 每个商品最多下载前 3 张主图
+- 若商品只有 1 或 2 张主图，则按实际数量下载并视为成功商品
+- 若商品 0 张主图，则视为该商品不完整，不进入 `today-pool.json.products`
+- phase2 与 phase3 允许消费只有 1 张或 2 张主图的商品
 
 ### 话题与正文中的标签（publish-note）
 

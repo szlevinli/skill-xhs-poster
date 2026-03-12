@@ -28,10 +28,10 @@ class ProductDetailPage:
     def open(self, product_id: str) -> None:
         self.page.goto(
             self.settings.merchant_edit_url(product_id),
-            wait_until="networkidle",
+            wait_until="domcontentloaded",
             timeout=30_000,
         )
-        self.page.wait_for_load_state("networkidle")
+        self.page.wait_for_timeout(1_500)
 
     def open_graphic_info_tab(self) -> None:
         tab = self.page.get_by_text("图文信息", exact=True).first
@@ -104,19 +104,22 @@ class ProductDetailPage:
         force_download: bool = False,
     ) -> ProductImages:
         qimg_urls, strategy, ci_domain_count = self.extract_qimg_urls(limit=max(limit, 5))
+        required_count = min(limit, len(qimg_urls))
+        if required_count == 0:
+            raise RuntimeError(f"商品 {product.id} 未提取到可用主图。")
         product_dir = self.settings.images_dir / product.id
         product_dir.mkdir(parents=True, exist_ok=True)
 
         if not force_download:
             existing_images = self._load_existing_images(product_dir, qimg_urls, limit=limit)
-            if len(existing_images) >= limit:
+            if len(existing_images) >= required_count:
                 return ProductImages(
                     product_id=product.id,
                     product_name=product.name,
                     qimg_urls=qimg_urls,
                     download_strategy="existing_files",
                     ci_domain_count=ci_domain_count,
-                    downloaded_images=existing_images[:limit],
+                    downloaded_images=existing_images[:required_count],
                 )
 
         downloaded_images: list[DownloadedImage] = []
@@ -146,8 +149,8 @@ class ProductDetailPage:
                     )
                 )
 
-        if len(downloaded_images) < limit:
-            raise RuntimeError(f"商品 {product.id} 仅下载到 {len(downloaded_images)} 张主图。")
+        if not downloaded_images:
+            raise RuntimeError(f"商品 {product.id} 未下载到任何主图。")
 
         bundle = ProductImages(
             product_id=product.id,

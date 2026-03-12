@@ -123,6 +123,10 @@ class Settings(BaseSettings):
         return self.data_dir / "today-pool.json"
 
     @property
+    def phase1_state_path(self) -> Path:
+        return self.data_dir / "phase1-state.json"
+
+    @property
     def contents_path(self) -> Path:
         return self.data_dir / "contents.json"
 
