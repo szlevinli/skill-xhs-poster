@@ -284,28 +284,53 @@ def list_phase3_candidates(
     )
 
 
+def _candidate_sequential_sort_key(
+    candidate: Phase3Candidate,
+    *,
+    product_order: dict[str, int],
+) -> tuple[int, int, str]:
+    return (
+        candidate.angle,
+        product_order.get(candidate.product_id, 10**9),
+        candidate.product_id,
+    )
+
+
 def build_phase3_plan(
     *,
     mode: Phase3PlanMode,
-    count: int,
+    count: int | None,
     settings: Settings | None = None,
     date: str | None = None,
     dedupe_scope: Phase3DedupScope = "today",
     seed: int | None = None,
 ) -> Phase3PlanResult:
-    if count <= 0:
+    if count is not None and count <= 0:
         raise RuntimeError("`count` 必须大于 0。")
     settings = settings or Settings()
+    today_pool = load_today_pool(settings)
+    product_order = {
+        product.id: index
+        for index, product in enumerate(today_pool.products)
+    }
     candidates_result = list_phase3_candidates(
         settings=settings,
         date=date,
         exclude_published=dedupe_scope,
     )
     eligible = [candidate for candidate in candidates_result.candidates if candidate.eligible]
+    resolved_count = len(eligible) if count is None else count
     if mode == "random":
         rng = random.Random(seed)
         rng.shuffle(eligible)
-    selected = eligible[:count]
+    else:
+        eligible.sort(
+            key=lambda candidate: _candidate_sequential_sort_key(
+                candidate,
+                product_order=product_order,
+            )
+        )
+    selected = eligible[:resolved_count]
     items = [
         Phase3PlanItem(
             sequence=index + 1,
@@ -323,7 +348,7 @@ def build_phase3_plan(
         date=candidates_result.date,
         mode=mode,
         dedupe_scope=dedupe_scope,
-        count_requested=count,
+        count_requested=resolved_count,
         count_selected=len(items),
         seed=seed,
         items=items,
@@ -593,7 +618,7 @@ def build_phase3_candidates_payload(
 def build_phase3_plan_payload(
     *,
     mode: Phase3PlanMode,
-    count: int,
+    count: int | None,
     date: str | None = None,
     dedupe_scope: Phase3DedupScope = "today",
     seed: int | None = None,

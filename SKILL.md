@@ -118,6 +118,7 @@ phase3 在概念上分成两步：
 - `plan-publish`
   - 生成待发布计划
   - 默认写入 `publish-plan.json`
+  - 不传 `--count` 时，默认选择当天剩余全部可发布候选
   - 只做选择，不执行发布
 - `run-publish-plan`
   - 执行已保存的发布计划
@@ -129,6 +130,7 @@ phase3 在概念上分成两步：
 - 想知道“有哪些可以发”：用 `list-publish-candidates`
 - 想显式查看并保存一份计划：用 `plan-publish`
 - 想真正开始发：直接用 `run-publish-plan`
+- AI 执行 `plan-publish` 时，除非用户明确指定数量，否则不需要自己计算 `count`
 
 ### 发布 1 篇
 
@@ -155,6 +157,16 @@ phase3 在概念上分成两步：
 6. 若当天没有计划，`run-publish-plan` 会自动生成当天计划
 7. 不要无必要地手工循环多次 `publish-note`
 
+### 仅生成计划
+
+当用户说“生成今天的发布计划”“先排一下今天剩余可发内容”时：
+
+1. 检查 `today-pool.json`
+2. 检查 `contents.json`
+3. 默认执行 `uv run xhs-poster plan-publish --mode sequential`
+4. 不要默认自己先计算 `count`
+5. 只有用户明确说“生成 5 条计划”这类数量要求时，才传 `--count N`
+
 ### 去重与上限
 
 - 默认去重范围：`today`
@@ -172,7 +184,7 @@ phase3 在概念上分成两步：
 | “发布 5 篇笔记”      | 直接执行 `run-publish-plan --count 5`；若当天没有计划，会自动先生成计划                                   |
 | “继续发布几篇”       | 基于现有候选和发布账本继续增量发布                                                                        |
 | “看看有哪些可以发”   | 执行 `list-publish-candidates`                                                                            |
-| “先生成一个发布计划” | 执行 `plan-publish`                                                                                       |
+| “先生成一个发布计划” | 执行 `plan-publish`；默认覆盖当天剩余全部可发布候选                                                      |
 | “重新抓商品”         | 执行 `prepare-products`，必要时用 `--force-download`                                                      |
 | “重新生成文案”       | 执行 `generate-content`                                                                                   |
 | “重新下载图片”       | 执行 `prepare-products --force-download`                                                                  |
@@ -193,6 +205,7 @@ uv run xhs-poster prepare-products --limit 10 --images-per-product 3
 uv run xhs-poster generate-content --keyword 抓夹 --contents-per-product 5
 uv run xhs-poster publish-note --angle 1
 uv run xhs-poster list-publish-candidates
+uv run xhs-poster plan-publish --mode sequential
 uv run xhs-poster plan-publish --mode sequential --count 5
 uv run xhs-poster run-publish-plan --mode sequential --count 5
 ```

@@ -189,7 +189,7 @@ def list_publish_candidates_command(
 @app.command("plan-publish", help="按顺序或随机策略生成并保存待发布计划，但不执行发布；推荐作为 AI 发布前的编排步骤。")
 def plan_publish_command(
     mode: Annotated[Phase3PlanMode, typer.Option("--mode", help="计划模式：sequential 或 random")] = "sequential",
-    count: Annotated[int, typer.Option("--count", help="计划选择的候选数量")] = 1,
+    count: Annotated[int | None, typer.Option("--count", help="计划选择的候选数量；不传则默认选择今天剩余全部可发布候选")] = None,
     date: Annotated[str | None, typer.Option("--date", help="按指定日期评估去重，默认今天")] = None,
     dedupe_scope: Annotated[
         Phase3DedupScope, typer.Option("--dedupe-scope", help="去重范围：today 或 ever")
