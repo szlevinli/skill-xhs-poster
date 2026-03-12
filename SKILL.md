@@ -2,10 +2,10 @@
 name: xiaohongshu-product-poster
 description: |
   小红书商家后台自动化工具：从商品管理拉取商品、生成笔记内容、发布笔记。
-  三阶段独立执行（prepare-products 准备 → generate-content 内容 → publish-note 发布），通过 JSON 文件传递数据。
+  三阶段独立执行（prepare-products 准备 → generate-content 内容 → phase3 编排/发布），通过 JSON 文件传递数据。
   prepare-products 支持断点续传与收敛执行，会实时写出 phase1-state.json 并增量更新 today-pool.json。
   使用 CLI `uv run xhs-poster` 执行。需商家端登录；generate-content 依赖 LLM。
-  使用场景：拉取商品主图、生成种草文案、按需发布单条笔记或批量编排发布。
+  使用场景：拉取商品主图、生成种草文案、按需查看候选、生成发布计划、执行单篇或批量发布。
   支持 macOS 登录后导出 auth-state，并在云服务器导入后无头运行。
 ---
 
@@ -29,7 +29,7 @@ AI 使用本 skill 时，默认原则是：
 
 1. 先检查已有产物
 2. 只补跑缺失阶段
-3. 发布前先编排，再执行发布
+3. phase3 默认优先消费当天已有计划
 4. 不要因为用户说“发布”就默认重跑 phase1 或 phase2
 
 除非用户明确要求“重新抓商品”“重新下载图片”“重新生成文案”“从头重跑”，否则优先复用 `xiaohongshu-data/` 下已有结果。
@@ -98,12 +98,16 @@ AI 的判断原则：
 
 ## 发布规则
 
-发布阶段默认拆成两步：
+phase3 在概念上分成两步：
 
 1. 编排：先确定今天要发哪些内容、按什么顺序发
 2. 发布：再执行编排结果
 
-无论用户说“发 1 篇”还是“发 5 篇”，AI 默认都应先走编排，再走发布。`publish-note` 保留为底层调试命令，不作为 AI 的默认发布入口。
+但按当前代码实现：
+
+- `plan-publish` 会显式生成并保存 `publish-plan.json`
+- `run-publish-plan` 在当天没有计划时，会自动先生成当天计划，再执行前 `N` 条 `pending` 项
+- `publish-note` 保留为底层调试命令，不作为 AI 的默认发布入口
 
 ### 三个编排相关命令的职责
 
@@ -117,13 +121,14 @@ AI 的判断原则：
   - 只做选择，不执行发布
 - `run-publish-plan`
   - 执行已保存的发布计划
+  - 若当天没有计划，会自动先生成计划
   - 会真实发布，并写入当日 `publish-records.json`
 
 默认关系：
 
 - 想知道“有哪些可以发”：用 `list-publish-candidates`
-- 想知道“这次准备发哪些”：用 `plan-publish`
-- 想真正开始发：用 `run-publish-plan`
+- 想显式查看并保存一份计划：用 `plan-publish`
+- 想真正开始发：直接用 `run-publish-plan`
 
 ### 发布 1 篇
 
@@ -132,7 +137,8 @@ AI 的判断原则：
 1. 检查 `today-pool.json`
 2. 检查 `contents.json`
 3. 如需先确认候选，执行 `uv run xhs-poster list-publish-candidates`
-4. 默认先编排，再执行 `uv run xhs-poster run-publish-plan --mode sequential --count 1`
+4. 默认直接执行 `uv run xhs-poster run-publish-plan --mode sequential --count 1`
+5. 若当天没有计划，`run-publish-plan` 会自动生成当天计划
 5. 不要默认执行 `prepare-products`
 6. 不要默认执行 `generate-content`
 7. 不要默认直接调用 `publish-note`
@@ -145,8 +151,8 @@ AI 的判断原则：
 2. 检查 `contents.json`
 3. 检查 `publish-plan.json`
 4. 如需先确认候选，执行 `uv run xhs-poster list-publish-candidates`
-5. 默认先执行 `uv run xhs-poster plan-publish --mode sequential --count N`
-6. 再执行 `uv run xhs-poster run-publish-plan --mode sequential --count N`
+5. 默认直接执行 `uv run xhs-poster run-publish-plan --mode sequential --count N`
+6. 若当天没有计划，`run-publish-plan` 会自动生成当天计划
 7. 不要无必要地手工循环多次 `publish-note`
 
 ### 去重与上限
@@ -162,8 +168,8 @@ AI 的判断原则：
 
 | 用户表达             | 默认动作                                                                                                  |
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
-| “发布 1 篇笔记”      | 先编排，再执行 `run-publish-plan --count 1`                                                               |
-| “发布 5 篇笔记”      | 先 `plan-publish --count 5`，再 `run-publish-plan --count 5`                                              |
+| “发布 1 篇笔记”      | 直接执行 `run-publish-plan --count 1`；若当天没有计划，会自动先生成计划                                   |
+| “发布 5 篇笔记”      | 直接执行 `run-publish-plan --count 5`；若当天没有计划，会自动先生成计划                                   |
 | “继续发布几篇”       | 基于现有候选和发布账本继续增量发布                                                                        |
 | “看看有哪些可以发”   | 执行 `list-publish-candidates`                                                                            |
 | “先生成一个发布计划” | 执行 `plan-publish`                                                                                       |
@@ -174,7 +180,7 @@ AI 的判断原则：
 
 解释：
 
-- “发布”默认指 phase3 的“编排 + 执行”
+- “发布”默认指消费当天发布计划；若当天没有计划，则由 `run-publish-plan` 自动生成
 - “继续发布”默认表示基于现有产物做增量操作
 - “查看”“看看”“列一下”默认是只读，不直接发布
 - `publish-note` 不是 AI 默认入口，而是底层调试命令
