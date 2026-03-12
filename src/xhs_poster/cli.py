@@ -27,7 +27,7 @@ from .trend_signals import build_trend_signals_payload
 
 APP_HELP = """小红书商家端自动发帖工具。输出为 JSON，便于脚本或下游消费。
 
-流程：prepare-products（拉商品与主图，支持 phase1-state 断点续传）→ prepare-trends（可选，生成趋势信号）→ generate-content（生成文案）→ publish-note（发布笔记）。
+流程：prepare-products（拉商品与主图，支持 phase1-state 断点续传）→ prepare-trends（可选，生成趋势信号）→ generate-content（生成文案）→ plan-publish / run-publish-plan（编排并发布笔记）。
 首次使用需先执行 login merchant 完成本机登录；云服务器部署推荐使用 auth export / auth import 迁移登录态。"""
 auth_app = typer.Typer(add_completion=False, no_args_is_help=True, help="探测商家端/用户端是否已登录。")
 login_app = typer.Typer(add_completion=False, no_args_is_help=True, help="拉起浏览器，等待人工完成扫码登录。")
@@ -150,7 +150,7 @@ def prepare_trends_command(
     raise typer.Exit(code=exit_code)
 
 
-@app.command("publish-note", help="从 contents.json 取一条草稿发布到商家端笔记；不指定 angle 则发该商品第一条。需已登录商家端。")
+@app.command("publish-note", help="直接发布单条笔记的底层调试命令；默认不作为 AI 发布入口。需已登录商家端。")
 def publish_note_command(
     product_id: Annotated[str | None, typer.Option("--product-id", help="要发笔记的商品 ID，不传则取 today-pool 第一个")] = None,
     angle: Annotated[int | None, typer.Option("--angle", help="使用 contents.json 中该商品的第几条草稿（1～N）")] = None,
@@ -171,7 +171,7 @@ def publish_note_command(
     raise typer.Exit(code=exit_code)
 
 
-@app.command("list-publish-candidates", help="列出 contents.json 中全部可发布候选，并标记今日/历史是否已发布。")
+@app.command("list-publish-candidates", help="列出 contents.json 中全部可发布候选，并结合当日/历史发布记录标记是否可发布；用于编排前查看候选池。")
 def list_publish_candidates_command(
     date: Annotated[str | None, typer.Option("--date", help="按指定日期评估去重，默认今天")] = None,
     exclude_published: Annotated[
@@ -186,7 +186,7 @@ def list_publish_candidates_command(
     raise typer.Exit(code=exit_code)
 
 
-@app.command("plan-publish", help="按顺序或随机策略生成一组待发布候选，但不执行发布。")
+@app.command("plan-publish", help="按顺序或随机策略生成并保存待发布计划，但不执行发布；推荐作为 AI 发布前的编排步骤。")
 def plan_publish_command(
     mode: Annotated[Phase3PlanMode, typer.Option("--mode", help="计划模式：sequential 或 random")] = "sequential",
     count: Annotated[int, typer.Option("--count", help="计划选择的候选数量")] = 1,
@@ -207,7 +207,7 @@ def plan_publish_command(
     raise typer.Exit(code=exit_code)
 
 
-@app.command("run-publish-plan", help="按顺序或随机策略批量执行发布，并将成功记录写入 phase3-published.json。")
+@app.command("run-publish-plan", help="执行已保存的发布计划，并写入当日 publish-records.json；推荐作为 AI 的默认发布入口。")
 def run_publish_plan_command(
     mode: Annotated[Phase3PlanMode, typer.Option("--mode", help="执行模式：sequential 或 random")] = "sequential",
     count: Annotated[int, typer.Option("--count", help="本次尝试发布的数量")] = 1,

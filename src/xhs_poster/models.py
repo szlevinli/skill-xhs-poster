@@ -274,6 +274,8 @@ class Phase3Success(BaseModel):
 
 Phase3DedupScope = Literal["today", "ever"]
 Phase3PlanMode = Literal["sequential", "random"]
+Phase3PlanItemStatus = Literal["pending", "published", "failed", "skipped"]
+Phase3RecordStatus = Literal["success", "failed", "skipped"]
 
 
 class Phase3PublishedRecord(BaseModel):
@@ -316,6 +318,7 @@ class Phase3CandidatesResult(BaseModel):
 
 
 class Phase3PlanItem(BaseModel):
+    sequence: int = 0
     product_id: str
     product_name: str
     angle: int
@@ -323,6 +326,9 @@ class Phase3PlanItem(BaseModel):
     title: str
     topic_keywords: list[str] = Field(default_factory=list)
     selection_reason: str
+    status: Phase3PlanItemStatus = "pending"
+    published_at: str | None = None
+    error: str | None = None
 
 
 class Phase3PlanResult(BaseModel):
@@ -333,6 +339,27 @@ class Phase3PlanResult(BaseModel):
     count_selected: int
     seed: int | None = None
     items: list[Phase3PlanItem] = Field(default_factory=list)
+    plan_path: str | None = None
+
+
+class Phase3PublishRecord(BaseModel):
+    attempted_at: str
+    product_id: str
+    product_name: str
+    angle: int
+    angle_name: str | None = None
+    title: str
+    topic_keywords: list[str] = Field(default_factory=list)
+    status: Phase3RecordStatus
+    dedupe_key: str
+    error: str | None = None
+    publish_result: dict = Field(default_factory=dict)
+    artifacts: dict | None = None
+
+
+class Phase3DailyRecords(BaseModel):
+    date: str
+    records: list[Phase3PublishRecord] = Field(default_factory=list)
 
 
 class Phase3RunPlanItemResult(BaseModel):

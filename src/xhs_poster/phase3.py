@@ -16,14 +16,15 @@ from .models import (
     Phase3Candidate,
     Phase3CandidatesResult,
     Phase3CandidatesSuccess,
+    Phase3DailyRecords,
     Phase3DedupScope,
     Phase3ExecutionResult,
+    Phase3PlanItemStatus,
     Phase3PlanItem,
     Phase3PlanMode,
     Phase3PlanResult,
     Phase3PlanSuccess,
-    Phase3PublishedLedger,
-    Phase3PublishedRecord,
+    Phase3PublishRecord,
     Phase3RunPlanItemResult,
     Phase3RunPlanResult,
     Phase3RunPlanSuccess,
@@ -50,89 +51,45 @@ def load_contents_bundle(settings: Settings) -> ContentsBundle:
     return ContentsBundle.model_validate_json(settings.contents_path.read_text(encoding="utf-8"))
 
 
-def load_phase3_published_ledger(settings: Settings) -> Phase3PublishedLedger:
-    path = settings.phase3_published_path
-    if not path.exists():
-        return Phase3PublishedLedger()
-    try:
-        raw_text = path.read_text(encoding="utf-8")
-        payload = json.loads(raw_text)
-        if isinstance(payload, dict) and isinstance(payload.get("entries"), list):
-            records: list[Phase3PublishedRecord] = []
-            for entry in payload.get("entries", []):
-                if not isinstance(entry, dict):
-                    continue
-                product_id = str(entry.get("product_id", "")).strip()
-                angle = entry.get("angle")
-                published_at = str(entry.get("published_at", "")).strip()
-                if not product_id or not isinstance(angle, int):
-                    continue
-                try:
-                    record_date = datetime.fromisoformat(published_at).date().isoformat()
-                except ValueError:
-                    record_date = datetime.now().date().isoformat()
-                records.append(
-                    Phase3PublishedRecord(
-                        date=record_date,
-                        published_at=published_at or datetime.now().isoformat(),
-                        product_id=product_id,
-                        product_name=str(entry.get("product_name", "")),
-                        angle=angle,
-                        angle_name=entry.get("angle_name"),
-                        title=str(entry.get("title", "")),
-                        topic_keywords=list(entry.get("topic_keywords", [])),
-                        publish_log_path=entry.get("publish_log_path"),
-                        dedupe_key=f"{record_date}:{product_id}:{angle}",
-                    )
-                )
-            return Phase3PublishedLedger(records=records)
-        return Phase3PublishedLedger.model_validate(payload)
-    except Exception as exc:
-        raise RuntimeError(f"phase3-published.json 结构损坏：{path}，{exc}") from exc
-
-
-def _write_phase3_published_ledger(settings: Settings, ledger: Phase3PublishedLedger) -> str:
-    path = settings.phase3_published_path
+def _save_json_atomic(path: Path, payload: dict) -> str:
+    path.parent.mkdir(parents=True, exist_ok=True)
     temp_path = path.with_suffix(".json.tmp")
-    temp_path.write_text(
-        json.dumps(ledger.model_dump(mode="json"), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    temp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     temp_path.replace(path)
     return str(path)
 
 
-def append_phase3_published_record(
-    settings: Settings,
-    result: Phase3ExecutionResult,
-    *,
-    date: str | None = None,
-) -> str | None:
-    if result.angle is None:
+def load_publish_plan(settings: Settings) -> Phase3PlanResult | None:
+    path = settings.publish_plan_path
+    if not path.exists():
         return None
-    if not result.publish_result.get("success"):
-        return None
+    try:
+        plan = Phase3PlanResult.model_validate_json(path.read_text(encoding="utf-8"))
+        plan.plan_path = str(path)
+        return plan
+    except Exception as exc:
+        raise RuntimeError(f"publish-plan.json 结构损坏：{path}，{exc}") from exc
 
-    published_date = date or datetime.now().date().isoformat()
-    dedupe_key = f"{published_date}:{result.product_id}:{result.angle}"
-    ledger = load_phase3_published_ledger(settings)
-    if any(record.dedupe_key == dedupe_key for record in ledger.records):
-        return str(settings.phase3_published_path)
 
-    record = Phase3PublishedRecord(
-        date=published_date,
-        published_at=datetime.now().isoformat(),
-        product_id=result.product_id,
-        product_name=result.product_name,
-        angle=result.angle,
-        angle_name=result.angle_name,
-        title=result.title,
-        topic_keywords=result.topic_keywords,
-        publish_log_path=result.log_path,
-        dedupe_key=dedupe_key,
-    )
-    ledger.records.append(record)
-    return _write_phase3_published_ledger(settings, ledger)
+def save_publish_plan(settings: Settings, plan: Phase3PlanResult) -> str:
+    path = settings.publish_plan_path
+    plan.plan_path = str(path)
+    return _save_json_atomic(path, plan.model_dump(mode="json"))
+
+
+def load_phase3_daily_records(settings: Settings, record_date: str) -> Phase3DailyRecords:
+    path = settings.phase3_records_path(record_date)
+    if not path.exists():
+        return Phase3DailyRecords(date=record_date)
+    try:
+        return Phase3DailyRecords.model_validate_json(path.read_text(encoding="utf-8"))
+    except Exception as exc:
+        raise RuntimeError(f"publish-records.json 结构损坏：{path}，{exc}") from exc
+
+
+def save_phase3_daily_records(settings: Settings, records: Phase3DailyRecords) -> str:
+    path = settings.phase3_records_path(records.date)
+    return _save_json_atomic(path, records.model_dump(mode="json"))
 
 
 def resolve_product(today_pool: TodayPool, product_id: str | None) -> ProductSummary:
@@ -239,20 +196,35 @@ def resolve_publish_inputs(
     return draft.title, draft.content.strip(), resolved_topics, draft
 
 
-def _build_success_dedupe_sets(
-    ledger: Phase3PublishedLedger,
+def _load_success_dedupe_sets(
+    settings: Settings,
     *,
     date: str,
 ) -> tuple[set[str], set[str]]:
     today_keys: set[str] = set()
     ever_keys: set[str] = set()
-    for record in ledger.records:
+    today_records = load_phase3_daily_records(settings, date)
+    for record in today_records.records:
         if record.status != "success":
             continue
         key = f"{record.product_id}:{record.angle}"
+        today_keys.add(key)
         ever_keys.add(key)
-        if record.date == date:
-            today_keys.add(key)
+
+    for child in settings.phase3_records_dir.iterdir():
+        if not child.is_dir() or child.name == date:
+            continue
+        path = child / "publish-records.json"
+        if not path.exists():
+            continue
+        try:
+            records = Phase3DailyRecords.model_validate_json(path.read_text(encoding="utf-8"))
+        except Exception:
+            continue
+        for record in records.records:
+            if record.status != "success":
+                continue
+            ever_keys.add(f"{record.product_id}:{record.angle}")
     return today_keys, ever_keys
 
 
@@ -267,8 +239,7 @@ def list_phase3_candidates(
     current_date = date or datetime.now().date().isoformat()
     today_pool = load_today_pool(settings)
     contents_bundle = load_contents_bundle(settings)
-    ledger = load_phase3_published_ledger(settings)
-    published_today, published_ever = _build_success_dedupe_sets(ledger, date=current_date)
+    published_today, published_ever = _load_success_dedupe_sets(settings, date=current_date)
     product_names = {product.id: product.name for product in today_pool.products}
 
     candidates: list[Phase3Candidate] = []
@@ -337,6 +308,7 @@ def build_phase3_plan(
     selected = eligible[:count]
     items = [
         Phase3PlanItem(
+            sequence=index + 1,
             product_id=item.product_id,
             product_name=item.product_name,
             angle=item.angle,
@@ -345,9 +317,9 @@ def build_phase3_plan(
             topic_keywords=item.topic_keywords,
             selection_reason="random" if mode == "random" else "sequential",
         )
-        for item in selected
+        for index, item in enumerate(selected)
     ]
-    return Phase3PlanResult(
+    result = Phase3PlanResult(
         date=candidates_result.date,
         mode=mode,
         dedupe_scope=dedupe_scope,
@@ -356,6 +328,8 @@ def build_phase3_plan(
         seed=seed,
         items=items,
     )
+    result.plan_path = save_publish_plan(settings, result)
+    return result
 
 
 def save_phase3_artifacts(page, settings: Settings, product_id: str) -> dict:
@@ -370,22 +344,15 @@ def save_phase3_artifacts(page, settings: Settings, product_id: str) -> dict:
     }
 
 
-def append_publish_log(settings: Settings, record: dict) -> str:
-    log_path = settings.publish_log_path
-    payload = {"records": []}
-    if log_path.exists():
-        try:
-            existing = json.loads(log_path.read_text(encoding="utf-8"))
-            if isinstance(existing, dict) and isinstance(existing.get("records"), list):
-                payload = existing
-        except json.JSONDecodeError:
-            payload = {"records": []}
-
-    payload["records"].append(record)
-    temp_path = log_path.with_suffix(".json.tmp")
-    temp_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
-    temp_path.replace(log_path)
-    return str(log_path)
+def append_phase3_record(
+    settings: Settings,
+    *,
+    record_date: str,
+    record: Phase3PublishRecord,
+) -> str:
+    daily_records = load_phase3_daily_records(settings, record_date)
+    daily_records.records.append(record)
+    return save_phase3_daily_records(settings, daily_records)
 
 
 def run_phase3(
@@ -458,17 +425,24 @@ def run_phase3(
         publish_result=publish_result,
         artifacts=artifacts,
     )
-    result.log_path = str(settings.publish_log_path)
-
-    append_publish_log(
+    record_date = datetime.now().date().isoformat()
+    result.log_path = append_phase3_record(
         settings,
-        {
-            "timestamp": datetime.now().isoformat(),
-            "status": "ok" if publish_result.get("success") else "error",
-            **result.model_dump(mode="json"),
-        },
+        record_date=record_date,
+        record=Phase3PublishRecord(
+            attempted_at=datetime.now().isoformat(),
+            product_id=result.product_id,
+            product_name=result.product_name,
+            angle=result.angle or 0,
+            angle_name=result.angle_name,
+            title=result.title,
+            topic_keywords=result.topic_keywords,
+            status="success" if publish_result.get("success") else "failed",
+            dedupe_key=f"{record_date}:{result.product_id}:{result.angle or 0}",
+            publish_result=result.publish_result,
+            artifacts=result.artifacts,
+        ),
     )
-    append_phase3_published_record(settings, result)
     return result
 
 
@@ -484,17 +458,21 @@ def run_phase3_plan(
 ) -> Phase3RunPlanResult:
     settings = settings or Settings()
     settings.ensure_directories()
-    plan = build_phase3_plan(
-        mode=mode,
-        count=count,
-        settings=settings,
-        date=date,
-        dedupe_scope=dedupe_scope,
-        seed=seed,
-    )
+    plan = load_publish_plan(settings)
+    current_date = date or datetime.now().date().isoformat()
+    if plan is None or plan.date != current_date:
+        plan = build_phase3_plan(
+            mode=mode,
+            count=count,
+            settings=settings,
+            date=current_date,
+            dedupe_scope=dedupe_scope,
+            seed=seed,
+        )
 
     results: list[Phase3RunPlanItemResult] = []
-    for item in plan.items:
+    pending_items = [item for item in plan.items if item.status == "pending"][:count]
+    for item in pending_items:
         try:
             phase3_result = run_phase3(
                 product_id=item.product_id,
@@ -502,6 +480,9 @@ def run_phase3_plan(
                 settings=settings,
                 headless=headless,
             )
+            item.status = "published"
+            item.published_at = datetime.now().isoformat()
+            item.error = None
             results.append(
                 Phase3RunPlanItemResult(
                     product_id=item.product_id,
@@ -513,6 +494,8 @@ def run_phase3_plan(
                 )
             )
         except Exception as exc:
+            item.status = "failed"
+            item.error = str(exc)
             results.append(
                 Phase3RunPlanItemResult(
                     product_id=item.product_id,
@@ -524,6 +507,8 @@ def run_phase3_plan(
                 )
             )
 
+    save_publish_plan(settings, plan)
+
     success_count = sum(1 for result in results if result.status == "success")
     failed_count = len(results) - success_count
     return Phase3RunPlanResult(
@@ -531,7 +516,7 @@ def run_phase3_plan(
         mode=plan.mode,
         dedupe_scope=plan.dedupe_scope,
         count_requested=plan.count_requested,
-        count_selected=plan.count_selected,
+        count_selected=len(pending_items),
         count_attempted=len(results),
         count_succeeded=success_count,
         count_failed=failed_count,

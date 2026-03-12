@@ -108,20 +108,45 @@
 }
 ```
 
-### publish-log.json
+### publish-plan.json
 
-每次 `publish-note` 发布成功或失败后追加一条记录，结构由 `Phase3ExecutionResult` 决定。该文件用于追踪发布过程，不承担去重职责。
-
-### phase3-published.json
-
-`publish-note` 成功账本，供 `list-publish-candidates` / `plan-publish` / `run-publish-plan` 去重使用：
+phase3 当前发布计划：
 
 ```json
 {
+  "date": "2026-03-12",
+  "mode": "sequential",
+  "dedupe_scope": "today",
+  "count_requested": 5,
+  "count_selected": 5,
+  "items": [
+    {
+      "sequence": 1,
+      "product_id": "691e83b0b4ade0001551defc",
+      "product_name": "商品名",
+      "angle": 1,
+      "angle_name": "颜色颜值",
+      "title": "标题",
+      "topic_keywords": ["抓夹", "复古"],
+      "selection_reason": "sequential",
+      "status": "pending",
+      "published_at": null,
+      "error": null
+    }
+  ]
+}
+```
+
+### phase3/YYYY-MM-DD/publish-records.json
+
+phase3 当日发布记录，用于去重、统计当天已发数量和排查失败原因：
+
+```json
+{
+  "date": "2026-03-12",
   "records": [
     {
-      "date": "2026-03-11",
-      "published_at": "2026-03-11T18:20:31+08:00",
+      "attempted_at": "2026-03-12T18:20:31+08:00",
       "product_id": "691e83b0b4ade0001551defc",
       "product_name": "商品名",
       "angle": 1,
@@ -129,8 +154,10 @@
       "title": "标题",
       "topic_keywords": ["抓夹", "复古"],
       "status": "success",
-      "publish_log_path": "xiaohongshu-data/publish-log.json",
-      "dedupe_key": "2026-03-11:691e83b0b4ade0001551defc:1"
+      "dedupe_key": "2026-03-12:691e83b0b4ade0001551defc:1",
+      "error": null,
+      "publish_result": {},
+      "artifacts": null
     }
   ]
 }
@@ -197,11 +224,11 @@
   - 列出 `contents.json` 中全部 `(product_id, angle)` 候选
   - 标记 `published_today` / `published_ever` / `eligible`
 - `plan-publish`
-  - 按 `--mode sequential|random` 生成待发布清单
+  - 按 `--mode sequential|random` 生成待发布清单并写入 `publish-plan.json`
   - 支持 `--count`、`--date`、`--dedupe-scope today|ever`、`--seed`
 - `run-publish-plan`
-  - 先生成计划，再逐条调用 `publish-note`
-  - 成功后立即写入 `phase3-published.json`
+  - 优先消费已保存的 `publish-plan.json`
+  - 每次发布后立即写入当日 `publish-records.json`
   - 单条失败不会回滚已成功项
 
 ### 去重规则
@@ -212,8 +239,8 @@
 
 ### 兼容性
 
-- 旧版 `phase3-published.json` 若使用 `entries` 结构，当前代码会自动兼容读取
-- 新写入统一使用 `records` 结构
+- 旧版 `publish-log.json` / `phase3-published.json` 不再作为 phase3 主数据源
+- 新版 phase3 以 `publish-plan.json` 和按日 `publish-records.json` 为准
 
 ---
 

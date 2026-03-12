@@ -1,6 +1,6 @@
 # 小红书商品笔记自动发布
 
-小红书商家后台自动化工具：从商品管理拉取商品与主图、生成种草文案、发布笔记。CLI 三阶段独立执行（prepare-products → generate-content → publish-note），通过 JSON 文件传递数据。`prepare-products` 现支持断点续传、收敛执行，并实时写出 `phase1-state.json`。
+小红书商家后台自动化工具：从商品管理拉取商品与主图、生成种草文案、编排并发布笔记。CLI 三阶段独立执行（prepare-products → generate-content → phase3 plan/run），通过 JSON 文件传递数据。`prepare-products` 现支持断点续传、收敛执行，并实时写出 `phase1-state.json`。
 
 ## 前置条件
 
@@ -56,11 +56,21 @@ uv run xhs-poster prepare-trends --keyword 抓夹
 # 5. 生成笔记内容
 uv run xhs-poster generate-content --keyword 抓夹 --contents-per-product 5
 
-# 6. 发布一条笔记
-uv run xhs-poster publish-note --angle 1
+# 6. 生成发布计划并执行
+uv run xhs-poster plan-publish --mode sequential --count 5
+uv run xhs-poster run-publish-plan --count 1
 ```
 
 更多子命令与参数见 `uv run xhs-poster --help`。完整流程与 AI 调用说明见 [SKILL.md](SKILL.md)，开发与贡献见 [AGENTS.md](AGENTS.md)。
+
+## Phase3 行为说明
+
+phase3 现在默认使用“计划文件 + 当日记录文件”：
+
+- `plan-publish` 生成并保存 `xiaohongshu-data/publish-plan.json`
+- `run-publish-plan` 只执行计划中的 `pending` 项
+- 每次真实发布都会写入 `xiaohongshu-data/phase3/YYYY-MM-DD/publish-records.json`
+- 当日去重和“是否达到 50 条上限”都基于当天记录文件中的成功记录判断
 
 ## Phase1 行为说明
 

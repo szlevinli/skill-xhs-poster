@@ -159,6 +159,17 @@ class Settings(BaseSettings):
         return self.data_dir / "phase3-published.json"
 
     @property
+    def publish_plan_path(self) -> Path:
+        return self.data_dir / "publish-plan.json"
+
+    @property
+    def phase3_records_dir(self) -> Path:
+        return self.data_dir / "phase3"
+
+    def phase3_records_path(self, record_date: str) -> Path:
+        return self.phase3_records_dir / record_date / "publish-records.json"
+
+    @property
     def phase3_artifacts_dir(self) -> Path:
         return self.data_dir / "artifacts" / "phase3"
 
@@ -193,6 +204,7 @@ class Settings(BaseSettings):
         self.merchant_profile_dir.mkdir(parents=True, exist_ok=True)
         self.consumer_profile_dir.mkdir(parents=True, exist_ok=True)
         self.images_dir.mkdir(parents=True, exist_ok=True)
+        self.phase3_records_dir.mkdir(parents=True, exist_ok=True)
         self.phase3_artifacts_dir.mkdir(parents=True, exist_ok=True)
         self.phase2_artifacts_dir.mkdir(parents=True, exist_ok=True)
         self.auth_artifacts_dir.mkdir(parents=True, exist_ok=True)

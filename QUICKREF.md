@@ -3,10 +3,10 @@
 ## 工作模式
 
 ```
-阶段1（准备）      阶段2（内容）        阶段3（发布）
+阶段1（准备）      阶段2（内容）        阶段3（编排/发布）
     │                │                  │
     ▼                ▼                  ▼
-拉取商品      →  主图分析+LLM生成  →  单条发布 / 编排批量发布
+拉取商品      →  主图分析+LLM生成  →  生成计划 / 消费计划发布
 下载主图           contents.json      （phase3 + plan/candidates）
 phase1-state.json
 ```
@@ -32,11 +32,6 @@ uv run xhs-poster prepare-trends --keyword 抓夹
 # 生成内容
 uv run xhs-poster generate-content --keyword 抓夹 --contents-per-product 5
 
-# 发布单条（每次一条，支持多话题；不传则默认使用草稿 tags 中全部 #话题）
-uv run xhs-poster publish-note --angle 1
-uv run xhs-poster publish-note --angle 2 --topic-keyword 抓夹 --topic-keyword 发饰
-uv run xhs-poster publish-note --product-id XXX --angle 3 --topic-keyword 韩系 --topic-keyword 复古
-
 # 发布编排：查看候选 / 生成计划 / 批量执行
 uv run xhs-poster list-publish-candidates
 uv run xhs-poster plan-publish --mode sequential --count 3
@@ -50,10 +45,12 @@ xiaohongshu-data/
 ├── today-pool.json      # prepare-products 输出
 ├── phase1-state.json    # prepare-products 实时进度 / 断点续传检查点
 ├── contents.json        # generate-content 输出
+├── publish-plan.json    # phase3 当前发布计划
 ├── trend-signals.json   # prepare-trends 输出（可选）
-├── publish-log.json     # 发布日志（仅追加）
-├── phase3-published.json # phase3 成功账本（编排去重）
 └── images/{商品ID}/     # 商品主图
+
+xiaohongshu-data/phase3/YYYY-MM-DD/
+└── publish-records.json # 当日发布记录（成功/失败）
 ```
 
 ## Phase1 语义

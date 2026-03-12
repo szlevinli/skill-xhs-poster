@@ -29,7 +29,8 @@ AI 使用本 skill 时，默认原则是：
 
 1. 先检查已有产物
 2. 只补跑缺失阶段
-3. 不要因为用户说“发布”就默认重跑 phase1 或 phase2
+3. 发布前先编排，再执行发布
+4. 不要因为用户说“发布”就默认重跑 phase1 或 phase2
 
 除非用户明确要求“重新抓商品”“重新下载图片”“重新生成文案”“从头重跑”，否则优先复用 `xiaohongshu-data/` 下已有结果。
 
@@ -38,7 +39,8 @@ AI 使用本 skill 时，默认原则是：
 - phase1 已完成：`xiaohongshu-data/today-pool.json` 存在，且满足目标商品数量与图片完整性要求
 - phase2 已完成：`xiaohongshu-data/contents.json` 存在，且满足目标商品数量与草稿数量要求
 - phase1 进度与恢复检查点：`xiaohongshu-data/phase1-state.json`
-- phase3 发布账本：`xiaohongshu-data/phase3-published.json`
+- phase3 发布计划：`xiaohongshu-data/publish-plan.json`
+- phase3 当日发布记录：`xiaohongshu-data/phase3/YYYY-MM-DD/publish-records.json`
 
 ### 补跑规则
 
@@ -96,15 +98,44 @@ AI 的判断原则：
 
 ## 发布规则
 
+发布阶段默认拆成两步：
+
+1. 编排：先确定今天要发哪些内容、按什么顺序发
+2. 发布：再执行编排结果
+
+无论用户说“发 1 篇”还是“发 5 篇”，AI 默认都应先走编排，再走发布。`publish-note` 保留为底层调试命令，不作为 AI 的默认发布入口。
+
+### 三个编排相关命令的职责
+
+- `list-publish-candidates`
+  - 只查看候选
+  - 不生成计划
+  - 不执行发布
+- `plan-publish`
+  - 生成待发布计划
+  - 默认写入 `publish-plan.json`
+  - 只做选择，不执行发布
+- `run-publish-plan`
+  - 执行已保存的发布计划
+  - 会真实发布，并写入当日 `publish-records.json`
+
+默认关系：
+
+- 想知道“有哪些可以发”：用 `list-publish-candidates`
+- 想知道“这次准备发哪些”：用 `plan-publish`
+- 想真正开始发：用 `run-publish-plan`
+
 ### 发布 1 篇
 
 当用户说“发布 1 篇笔记”时：
 
 1. 检查 `today-pool.json`
 2. 检查 `contents.json`
-3. 若两者可用，直接执行 `uv run xhs-poster publish-note`
-4. 不要默认执行 `prepare-products`
-5. 不要默认执行 `generate-content`
+3. 如需先确认候选，执行 `uv run xhs-poster list-publish-candidates`
+4. 默认先编排，再执行 `uv run xhs-poster run-publish-plan --mode sequential --count 1`
+5. 不要默认执行 `prepare-products`
+6. 不要默认执行 `generate-content`
+7. 不要默认直接调用 `publish-note`
 
 ### 发布 N 篇
 
@@ -112,15 +143,17 @@ AI 的判断原则：
 
 1. 检查 `today-pool.json`
 2. 检查 `contents.json`
-3. 检查 `phase3-published.json`
-4. 若前两者可用，优先执行 `uv run xhs-poster run-publish-plan --mode sequential --count N`
-5. 不要无必要地手工循环多次 `publish-note`
+3. 检查 `publish-plan.json`
+4. 如需先确认候选，执行 `uv run xhs-poster list-publish-candidates`
+5. 默认先执行 `uv run xhs-poster plan-publish --mode sequential --count N`
+6. 再执行 `uv run xhs-poster run-publish-plan --mode sequential --count N`
+7. 不要无必要地手工循环多次 `publish-note`
 
 ### 去重与上限
 
 - 默认去重范围：`today`
 - 默认不重复发布同一天已成功发布过的 `(product_id, angle)`
-- 以 `phase3-published.json` 作为本地账本判断是否已发布
+- 以 `phase3/YYYY-MM-DD/publish-records.json` 中 `status == "success"` 的记录作为去重依据
 - 当天成功发布数达到 50 后，不再执行任何发布命令，只告知用户“今日发布已达 50 篇上限”
 - 若用户要求发布 `N` 篇，但当前 eligible 候选少于 `N`，默认发布可用数量，并明确告知实际发布数量
 - 若当前没有可发候选，直接告知用户，不要默认回头重跑 phase1 或 phase2
@@ -129,8 +162,8 @@ AI 的判断原则：
 
 | 用户表达             | 默认动作                                                                                                  |
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
-| “发布 1 篇笔记”      | 检查 `today-pool.json` 和 `contents.json`，可用则直接 `publish-note`                                      |
-| “发布 5 篇笔记”      | 检查 `today-pool.json`、`contents.json`、`phase3-published.json`，可用则直接 `run-publish-plan --count 5` |
+| “发布 1 篇笔记”      | 先编排，再执行 `run-publish-plan --count 1`                                                               |
+| “发布 5 篇笔记”      | 先 `plan-publish --count 5`，再 `run-publish-plan --count 5`                                              |
 | “继续发布几篇”       | 基于现有候选和发布账本继续增量发布                                                                        |
 | “看看有哪些可以发”   | 执行 `list-publish-candidates`                                                                            |
 | “先生成一个发布计划” | 执行 `plan-publish`                                                                                       |
@@ -141,9 +174,10 @@ AI 的判断原则：
 
 解释：
 
-- “发布”默认只指 phase3
+- “发布”默认指 phase3 的“编排 + 执行”
 - “继续发布”默认表示基于现有产物做增量操作
 - “查看”“看看”“列一下”默认是只读，不直接发布
+- `publish-note` 不是 AI 默认入口，而是底层调试命令
 
 ## 常用命令
 
