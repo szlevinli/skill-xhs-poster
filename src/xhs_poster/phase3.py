@@ -380,6 +380,37 @@ def append_phase3_record(
     return save_phase3_daily_records(settings, daily_records)
 
 
+def reconcile_publish_plan_with_records(
+    settings: Settings,
+    plan: Phase3PlanResult,
+) -> Phase3PlanResult:
+    daily_records = load_phase3_daily_records(settings, plan.date)
+    record_by_key: dict[str, Phase3PublishRecord] = {}
+    for record in daily_records.records:
+        record_by_key[f"{record.product_id}:{record.angle}"] = record
+
+    changed = False
+    for item in plan.items:
+        record = record_by_key.get(f"{item.product_id}:{item.angle}")
+        if record is None:
+            continue
+        if record.status == "success":
+            if item.status != "published" or item.published_at != record.attempted_at or item.error is not None:
+                item.status = "published"
+                item.published_at = record.attempted_at
+                item.error = None
+                changed = True
+            continue
+        if record.status == "failed" and item.status == "pending":
+            item.status = "failed"
+            item.error = record.error
+            changed = True
+
+    if changed:
+        save_publish_plan(settings, plan)
+    return plan
+
+
 def run_phase3(
     *,
     product_id: str | None = None,
@@ -494,6 +525,7 @@ def run_phase3_plan(
             dedupe_scope=dedupe_scope,
             seed=seed,
         )
+    plan = reconcile_publish_plan_with_records(settings, plan)
 
     results: list[Phase3RunPlanItemResult] = []
     pending_items = [item for item in plan.items if item.status == "pending"][:count]
@@ -505,22 +537,46 @@ def run_phase3_plan(
                 settings=settings,
                 headless=headless,
             )
-            item.status = "published"
-            item.published_at = datetime.now().isoformat()
-            item.error = None
+            publish_succeeded = bool(phase3_result.publish_result.get("success"))
+            if publish_succeeded:
+                item.status = "published"
+                item.published_at = datetime.now().isoformat()
+                item.error = None
+            else:
+                item.status = "failed"
+                item.error = json.dumps(phase3_result.publish_result, ensure_ascii=False)
+            save_publish_plan(settings, plan)
             results.append(
                 Phase3RunPlanItemResult(
                     product_id=item.product_id,
                     product_name=item.product_name,
                     angle=item.angle,
                     angle_name=item.angle_name,
-                    status="success",
+                    status="success" if publish_succeeded else "failed",
                     phase3_result=phase3_result,
+                    error=None if publish_succeeded else item.error,
                 )
             )
         except Exception as exc:
             item.status = "failed"
             item.error = str(exc)
+            append_phase3_record(
+                settings,
+                record_date=current_date,
+                record=Phase3PublishRecord(
+                    attempted_at=datetime.now().isoformat(),
+                    product_id=item.product_id,
+                    product_name=item.product_name,
+                    angle=item.angle,
+                    angle_name=item.angle_name,
+                    title=item.title,
+                    topic_keywords=item.topic_keywords,
+                    status="failed",
+                    dedupe_key=f"{current_date}:{item.product_id}:{item.angle}",
+                    error=str(exc),
+                ),
+            )
+            save_publish_plan(settings, plan)
             results.append(
                 Phase3RunPlanItemResult(
                     product_id=item.product_id,
@@ -531,8 +587,6 @@ def run_phase3_plan(
                     error=str(exc),
                 )
             )
-
-    save_publish_plan(settings, plan)
 
     success_count = sum(1 for result in results if result.status == "success")
     failed_count = len(results) - success_count
