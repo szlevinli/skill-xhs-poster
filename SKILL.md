@@ -34,6 +34,32 @@ AI 使用本 skill 时，默认原则是：
 
 除非用户明确要求“重新抓商品”“重新下载图片”“重新生成文案”“从头重跑”，否则优先复用 `xiaohongshu-data/` 下已有结果。
 
+### 执行方式
+
+- 在云服务器或其他容易断开交互会话的环境中，长时任务默认使用 `systemd-run --user` 启动，不要把长任务直接挂在当前 openclaw / SSH 前台会话里
+- 适合用 transient service 的命令：`prepare-products`、`generate-content`、`plan-publish`、`run-publish-plan`
+- 不适合用 transient service 的命令：`login merchant` 这类需要人工交互、扫码或浏览器前台操作的命令；这类命令默认前台执行
+- 若用户没有明确要求前台执行，AI 在执行长时任务时应优先选择 `systemd-run --user --same-dir --collect`
+- AI 执行 transient service 后，应告知用户如何用 `systemctl --user status <unit>` 和 `journalctl --user -u <unit>` 查看状态与日志
+- 若目标机器没有 `systemd --user`、没有 user bus、或 `systemd-run --user` 不可用，再退回 `tmux` / `screen` / `nohup`
+
+建议 unit 命名：
+
+- `xhs-prepare-products`
+- `xhs-generate-content`
+- `xhs-plan-publish`
+- `xhs-run-publish-plan`
+
+示例：
+
+```bash
+systemd-run --user --unit=xhs-prepare-products --same-dir --collect \
+  uv run xhs-poster prepare-products --limit 10 --images-per-product 3
+
+systemctl --user status xhs-prepare-products
+journalctl --user -u xhs-prepare-products -f
+```
+
 ### 阶段判断
 
 - phase1 已完成：`xiaohongshu-data/today-pool.json` 存在，且 `today-pool.json.date == 今天`，并满足目标商品数量与图片完整性要求
@@ -151,9 +177,9 @@ phase3 在概念上分成两步：
 2. 检查 `contents.json`
 3. 检查两者 `date` 是否为今天；若不是今天，先补跑缺失阶段
 4. 检查 `contents.json` 是否覆盖当前今日商品池；若不一致，先执行 `generate-content`
-5. 检查 `publish-plan.json` 是否存在且是今天的计划；若不是，先执行 `uv run xhs-poster plan-publish --mode sequential`
+5. 检查 `publish-plan.json` 是否存在且是今天的计划；若不是，先通过 `systemd-run --user` 执行 `uv run xhs-poster plan-publish --mode sequential`
 6. 如需先确认候选，执行 `uv run xhs-poster list-publish-candidates`
-7. 再执行 `uv run xhs-poster run-publish-plan --mode sequential --count 1`
+7. 再通过 `systemd-run --user` 执行 `uv run xhs-poster run-publish-plan --mode sequential --count 1`
 8. 不要默认执行 `prepare-products`
 9. 不要默认执行 `generate-content`
 10. 不要默认直接调用 `publish-note`
@@ -166,9 +192,9 @@ phase3 在概念上分成两步：
 2. 检查 `contents.json`
 3. 检查两者 `date` 是否为今天；若不是今天，先补跑缺失阶段
 4. 检查 `contents.json` 是否覆盖当前今日商品池；若不一致，先执行 `generate-content`
-5. 检查 `publish-plan.json` 是否存在且是今天的计划；若不是，先执行 `uv run xhs-poster plan-publish --mode sequential`
+5. 检查 `publish-plan.json` 是否存在且是今天的计划；若不是，先通过 `systemd-run --user` 执行 `uv run xhs-poster plan-publish --mode sequential`
 6. 如需先确认候选，执行 `uv run xhs-poster list-publish-candidates`
-7. 再执行 `uv run xhs-poster run-publish-plan --mode sequential --count N`
+7. 再通过 `systemd-run --user` 执行 `uv run xhs-poster run-publish-plan --mode sequential --count N`
 8. 不要无必要地手工循环多次 `publish-note`
 
 ### 仅生成计划
@@ -179,7 +205,7 @@ phase3 在概念上分成两步：
 2. 检查 `contents.json`
 3. 检查两者 `date` 是否为今天；若不是今天，先补跑缺失阶段
 4. 检查 `contents.json` 是否覆盖当前今日商品池；若不一致，先执行 `generate-content`
-5. 默认执行 `uv run xhs-poster plan-publish --mode sequential`
+5. 默认通过 `systemd-run --user` 执行 `uv run xhs-poster plan-publish --mode sequential`
 6. 不要默认自己先计算 `count`
 7. 只有用户明确说“生成 5 条计划”这类数量要求时，才传 `--count N`
 
@@ -196,14 +222,14 @@ phase3 在概念上分成两步：
 
 | 用户表达             | 默认动作                                                                                                  |
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
-| “发布 1 篇笔记”      | 先确保当天已有 `publish-plan.json`；若没有则先执行 `plan-publish`，再执行 `run-publish-plan --count 1`    |
-| “发布 5 篇笔记”      | 先确保当天已有 `publish-plan.json`；若没有则先执行 `plan-publish`，再执行 `run-publish-plan --count 5`    |
+| “发布 1 篇笔记”      | 先确保当天已有 `publish-plan.json`；若没有则先用 `systemd-run --user` 执行 `plan-publish`，再用 `systemd-run --user` 执行 `run-publish-plan --count 1`    |
+| “发布 5 篇笔记”      | 先确保当天已有 `publish-plan.json`；若没有则先用 `systemd-run --user` 执行 `plan-publish`，再用 `systemd-run --user` 执行 `run-publish-plan --count 5`    |
 | “继续发布几篇”       | 基于现有候选和发布账本继续增量发布                                                                        |
 | “看看有哪些可以发”   | 执行 `list-publish-candidates`                                                                            |
-| “先生成一个发布计划” | 执行 `plan-publish`；默认覆盖当天剩余全部可发布候选                                                      |
-| “重新抓商品”         | 执行 `prepare-products`，必要时用 `--force-download`                                                      |
-| “重新生成文案”       | 执行 `generate-content`                                                                                   |
-| “重新下载图片”       | 执行 `prepare-products --force-download`                                                                  |
+| “先生成一个发布计划” | 用 `systemd-run --user` 执行 `plan-publish`；默认覆盖当天剩余全部可发布候选                              |
+| “重新抓商品”         | 用 `systemd-run --user` 执行 `prepare-products`，必要时用 `--force-download`                              |
+| “重新生成文案”       | 用 `systemd-run --user` 执行 `generate-content`                                                           |
+| “重新下载图片”       | 用 `systemd-run --user` 执行 `prepare-products --force-download`                                          |
 | “从头跑一遍”         | 才允许按阶段全量重跑                                                                                      |
 
 解释：
@@ -212,18 +238,19 @@ phase3 在概念上分成两步：
 - “继续发布”默认表示基于现有产物做增量操作
 - “查看”“看看”“列一下”默认是只读，不直接发布
 - `publish-note` 不是 AI 默认入口，而是底层调试命令
+- 长时写操作默认通过 `systemd-run --user` 启动，不依赖当前交互会话持续存活
 
 ## 常用命令
 
 ```bash
 uv run xhs-poster auth probe merchant
-uv run xhs-poster prepare-products --limit 10 --images-per-product 3
-uv run xhs-poster generate-content --keyword 抓夹 --contents-per-product 5
+systemd-run --user --unit=xhs-prepare-products --same-dir --collect uv run xhs-poster prepare-products --limit 10 --images-per-product 3
+systemd-run --user --unit=xhs-generate-content --same-dir --collect uv run xhs-poster generate-content --keyword 抓夹 --contents-per-product 5
 uv run xhs-poster publish-note --angle 1
 uv run xhs-poster list-publish-candidates
-uv run xhs-poster plan-publish --mode sequential
-uv run xhs-poster plan-publish --mode sequential --count 5
-uv run xhs-poster run-publish-plan --mode sequential --count 5
+systemd-run --user --unit=xhs-plan-publish --same-dir --collect uv run xhs-poster plan-publish --mode sequential
+systemd-run --user --unit=xhs-plan-publish --same-dir --collect uv run xhs-poster plan-publish --mode sequential --count 5
+systemd-run --user --unit=xhs-run-publish-plan --same-dir --collect uv run xhs-poster run-publish-plan --mode sequential --count 5
 ```
 
 ## 只在需要时阅读
