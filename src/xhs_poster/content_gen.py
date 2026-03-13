@@ -14,6 +14,7 @@ from .models import (
     HistoryStyleReference,
     HotNotesAnalysis,
     ProductImageFacts,
+    ProductSemanticFacts,
     ProductSummary,
 )
 
@@ -152,6 +153,7 @@ def _build_prompt_payload(
     facts: ProductImageFacts,
     analysis: HotNotesAnalysis,
     *,
+    semantic_facts: ProductSemanticFacts | None,
     history_style_refs: list[HistoryStyleReference],
     keyword: str,
     color: str,
@@ -190,6 +192,9 @@ def _build_prompt_payload(
             "正文保持第一人称分享口吻，2 到 3 段短句，避免生硬广告腔",
             "tags 使用 3 到 5 个话题，保留 # 前缀",
             "不要杜撰商品没有出现过的功能参数",
+            "标题和正文优先依据图片语义事实，不要只根据商品名泛化描述",
+            "不要把 background_elements 里的背景道具写成商品属性或卖点",
+            "当图片语义与商品名冲突时，优先保守描述，只写能从图里确认的内容",
         ],
         "angles": [
             {"angle": angle, "angle_name": angle_name}
@@ -206,6 +211,16 @@ def _build_prompt_payload(
             "colors": facts.colors,
             "style_keywords": facts.style_keywords,
             "confirmed_elements": facts.confirmed_elements,
+            "semantic_summary": semantic_facts.summary if semantic_facts is not None else "",
+            "semantic_categories": semantic_facts.categories if semantic_facts is not None else [],
+            "semantic_colors": semantic_facts.colors if semantic_facts is not None else [],
+            "semantic_material_guesses": semantic_facts.material_guesses if semantic_facts is not None else [],
+            "semantic_visible_elements": semantic_facts.visible_elements if semantic_facts is not None else [],
+            "semantic_product_elements": semantic_facts.product_elements if semantic_facts is not None else [],
+            "semantic_background_elements": semantic_facts.background_elements if semantic_facts is not None else [],
+            "semantic_style_moods": semantic_facts.style_moods if semantic_facts is not None else [],
+            "semantic_scene_guesses": semantic_facts.scene_guesses if semantic_facts is not None else [],
+            "semantic_confidence_notes": semantic_facts.confidence_notes if semantic_facts is not None else [],
         },
         "hot_notes_analysis": {
             "source": analysis.source,
@@ -238,6 +253,7 @@ def _request_llm_drafts(
     facts: ProductImageFacts,
     analysis: HotNotesAnalysis,
     *,
+    semantic_facts: ProductSemanticFacts | None,
     history_style_refs: list[HistoryStyleReference],
     contents_per_product: int,
     keyword: str,
@@ -254,6 +270,7 @@ def _request_llm_drafts(
         product,
         facts,
         analysis,
+        semantic_facts=semantic_facts,
         history_style_refs=history_style_refs,
         keyword=keyword,
         color=color,
@@ -333,20 +350,23 @@ def _generate_template_contents(
     facts: ProductImageFacts,
     analysis: HotNotesAnalysis,
     *,
+    semantic_facts: ProductSemanticFacts | None = None,
     history_style_refs: list[HistoryStyleReference] | None = None,
     contents_per_product: int = 5,
 ) -> list[ContentDraft]:
     keyword = _pick_first(facts.keywords, analysis.keyword)
-    color = _pick_display_color(facts.colors)
-    style = _pick_first(facts.style_keywords, "温柔")
-    element = _pick_first(facts.confirmed_elements, "细节")
+    color = _pick_display_color(semantic_facts.colors if semantic_facts and semantic_facts.colors else facts.colors)
+    style = _pick_first(semantic_facts.style_moods if semantic_facts and semantic_facts.style_moods else facts.style_keywords, "温柔")
+    element = _pick_first(semantic_facts.product_elements if semantic_facts and semantic_facts.product_elements else facts.confirmed_elements, "细节")
     emoji = analysis.emoji_candidates[(len(product.id) + len(product.name)) % len(analysis.emoji_candidates)]
-    scene = analysis.scene_candidates[len(product.name) % len(analysis.scene_candidates)]
+    scene_source = semantic_facts.scene_guesses if semantic_facts and semantic_facts.scene_guesses else analysis.scene_candidates
+    scene = scene_source[len(product.name) % len(scene_source)]
     tags = _build_tag_string(keyword, product, analysis, history_style_refs)
     reference_notes = [
         ref.source_file.rsplit("/", maxsplit=1)[-1]
         for ref in (history_style_refs or [])[:2]
     ]
+    semantic_summary = semantic_facts.summary if semantic_facts is not None else ""
 
     drafts: list[ContentDraft] = []
     for angle, angle_name in ANGLE_SPECS[:contents_per_product]:
@@ -354,7 +374,7 @@ def _generate_template_contents(
             title = f"{emoji}这个{color}{keyword}也太{style}了叭！"
             content = (
                 f"最近看到这款{product.name}，第一眼就被它的{color}调调吸引住了{emoji}\n\n"
-                f"从图片里能看到整体细节很完整，{style}感拿捏得刚刚好，随手一夹都很提气质。"
+                f"{semantic_summary or f'从图片里能看到整体细节很完整，{style}感拿捏得刚刚好'}，随手一夹都很提气质。"
             )
         elif angle == 2:
             title = f"{emoji}这款{keyword}的细节质感真的很加分"
@@ -400,6 +420,7 @@ def generate_product_contents(
     facts: ProductImageFacts,
     analysis: HotNotesAnalysis,
     *,
+    semantic_facts: ProductSemanticFacts | None = None,
     history_style_refs: list[HistoryStyleReference] | None = None,
     contents_per_product: int = 5,
     settings: Settings | None = None,
@@ -422,6 +443,7 @@ def generate_product_contents(
                 product,
                 facts,
                 analysis,
+                semantic_facts=semantic_facts,
                 history_style_refs=history_style_refs,
                 contents_per_product=contents_per_product,
                 keyword=keyword,
@@ -437,6 +459,7 @@ def generate_product_contents(
                     product,
                     facts,
                     analysis,
+                    semantic_facts=semantic_facts,
                     history_style_refs=history_style_refs,
                     contents_per_product=contents_per_product,
                 ),
@@ -453,6 +476,7 @@ def generate_product_contents(
             product,
             facts,
             analysis,
+            semantic_facts=semantic_facts,
             history_style_refs=history_style_refs,
             contents_per_product=contents_per_product,
         ),

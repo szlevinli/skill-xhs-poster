@@ -16,13 +16,16 @@ from .history_notes import (
 )
 from .hot_notes import build_fallback_hot_notes_analysis, infer_search_keyword
 from .image_facts import extract_product_image_facts
+from .image_semantics import analyze_product_image_semantics, load_image_semantic_facts, save_image_semantic_facts
 from .models import (
     ContentsBundle,
     HotNotesAnalysis,
+    ImageSemanticFact,
     Phase2ExecutionResult,
     Phase2Success,
     ProductFailure,
     ProductImageFacts,
+    ProductSemanticFacts,
     SkillError,
     TodayPool,
 )
@@ -126,7 +129,9 @@ def build_phase2_outputs(
 
     image_facts: list[ProductImageFacts] = []
     facts_map: dict[str, ProductImageFacts] = {}
+    semantic_facts_map: dict[str, ProductSemanticFacts] = {}
     product_fact_snapshots = []
+    semantic_bundle = load_image_semantic_facts(settings)
     for product in today_pool.products:
         image_paths = resolve_image_paths(settings, today_pool, product.id)
         if not image_paths:
@@ -134,6 +139,14 @@ def build_phase2_outputs(
         facts = extract_product_image_facts(product, image_paths)
         image_facts.append(facts)
         facts_map[product.id] = facts
+        semantic_facts_map[product.id] = analyze_product_image_semantics(
+            settings,
+            product_id=product.id,
+            product_name=product.name,
+            image_paths=image_paths,
+            cache_bundle=semantic_bundle,
+        )
+    save_image_semantic_facts(settings, semantic_bundle)
 
     contents: dict[str, list] = {}
     generation: dict[str, dict] = {}
@@ -175,11 +188,15 @@ def build_phase2_outputs(
             continue
 
         selected_history_refs = select_history_style_refs(product, grouped_history_refs)
+        semantic_facts = semantic_facts_map.get(product.id)
+        if semantic_facts and not any(item.status == "success" for item in semantic_facts.images):
+            product_warnings.append("semantic_analysis_unavailable")
 
         snapshot = build_product_facts_snapshot(
             product,
             image_paths,
             facts,
+            semantic_facts=semantic_facts,
             history_style_refs=selected_history_refs,
             trend_analysis=analysis,
             warnings=product_warnings,
@@ -191,6 +208,7 @@ def build_phase2_outputs(
             product,
             facts,
             analysis,
+            semantic_facts=semantic_facts,
             history_style_refs=selected_history_refs,
             contents_per_product=contents_per_product,
             settings=settings,
@@ -213,7 +231,16 @@ def build_phase2_outputs(
         "source": "local_image_analysis",
         "items": [item.model_dump(mode="json") for item in image_facts],
     }
+    semantic_items: list[ImageSemanticFact] = []
+    for facts in semantic_facts_map.values():
+        semantic_items.extend(facts.images)
+    semantic_facts_payload = {
+        "date": str(date.today()),
+        "source": "vision_llm",
+        "items": [item.model_dump(mode="json") for item in semantic_items],
+    }
     save_json_atomic(settings.image_facts_path, image_facts_payload)
+    save_json_atomic(settings.image_semantic_facts_path, semantic_facts_payload)
 
     hot_notes_payload = {
         "date": str(date.today()),
@@ -265,6 +292,7 @@ def build_phase2_outputs(
         raw_hot_notes_path=None,
         hot_notes_analysis_path=str(settings.hot_notes_analysis_path),
         image_facts_path=str(settings.image_facts_path),
+        image_semantic_facts_path=str(settings.image_semantic_facts_path),
         product_facts_path=str(settings.product_facts_path),
         phase2_report_path=str(settings.phase2_report_path),
         contents_path=str(settings.contents_path),

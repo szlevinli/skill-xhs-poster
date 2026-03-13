@@ -69,6 +69,30 @@ class Settings(BaseSettings):
         validation_alias=AliasChoices("XHS_POSTER_LLM_MODEL", "LLM_MODEL", "MOONSHOT_MODEL"),
         description="LLM 模型名。",
     )
+    vision_llm_base_url: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "XHS_POSTER_VISION_LLM_BASE_URL",
+            "VISION_LLM_BASE_URL",
+        ),
+        description="视觉 LLM OpenAI 兼容接口 Base URL；未设置时复用 llm_base_url。",
+    )
+    vision_llm_api_key: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "XHS_POSTER_VISION_LLM_API_KEY",
+            "VISION_LLM_API_KEY",
+        ),
+        description="视觉 LLM API Key；未设置时复用 llm_api_key。",
+    )
+    vision_llm_model: str | None = Field(
+        default="moonshot-v1-8k-vision-preview",
+        validation_alias=AliasChoices(
+            "XHS_POSTER_VISION_LLM_MODEL",
+            "VISION_LLM_MODEL",
+        ),
+        description="视觉 LLM 模型名；未设置时默认使用 Moonshot 视觉模型。",
+    )
     playwright_browsers_path: Path = Field(
         default_factory=_default_playwright_browsers_path,
         description="Playwright 浏览器缓存路径，按平台自动选择默认值。",
@@ -139,6 +163,10 @@ class Settings(BaseSettings):
         return self.data_dir / "phase2-report.json"
 
     @property
+    def image_semantic_facts_path(self) -> Path:
+        return self.data_dir / "image-semantic-facts.json"
+
+    @property
     def history_style_refs_path(self) -> Path:
         return self.data_dir / "history-style-refs.json"
 
@@ -192,6 +220,18 @@ class Settings(BaseSettings):
     @property
     def auth_artifacts_dir(self) -> Path:
         return self.data_dir / "artifacts" / "auth"
+
+    @property
+    def resolved_vision_llm_base_url(self) -> str:
+        return self.vision_llm_base_url or self.llm_base_url
+
+    @property
+    def resolved_vision_llm_api_key(self) -> str | None:
+        return self.vision_llm_api_key or self.llm_api_key
+
+    @property
+    def resolved_vision_llm_model(self) -> str:
+        return self.vision_llm_model or "moonshot-v1-8k-vision-preview"
 
     def merchant_edit_url(self, product_id: str) -> str:
         return self.merchant_edit_url_template.format(product_id=product_id)

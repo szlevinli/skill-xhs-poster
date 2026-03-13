@@ -170,6 +170,54 @@ class ProductImageFacts(BaseModel):
     images: list[ImageFact] = Field(default_factory=list)
 
 
+ImageSemanticStatus = Literal["success", "failed"]
+
+
+class ImageSemanticFact(BaseModel):
+    image_sha256: str
+    path: str
+    width: int
+    height: int
+    model: str
+    analyzed_at: str
+    status: ImageSemanticStatus
+    summary: str = ""
+    category: str = ""
+    colors: list[str] = Field(default_factory=list)
+    material_guesses: list[str] = Field(default_factory=list)
+    visible_elements: list[str] = Field(default_factory=list)
+    product_elements: list[str] = Field(default_factory=list)
+    background_elements: list[str] = Field(default_factory=list)
+    style_moods: list[str] = Field(default_factory=list)
+    scene_guesses: list[str] = Field(default_factory=list)
+    confidence_notes: list[str] = Field(default_factory=list)
+    error: str | None = None
+    raw_text: str | None = None
+
+
+class ImageSemanticFactsBundle(BaseModel):
+    date: str
+    source: str = "vision_llm"
+    items: list[ImageSemanticFact] = Field(default_factory=list)
+
+
+class ProductSemanticFacts(BaseModel):
+    product_id: str
+    product_name: str
+    image_count: int = 0
+    summary: str = ""
+    categories: list[str] = Field(default_factory=list)
+    colors: list[str] = Field(default_factory=list)
+    material_guesses: list[str] = Field(default_factory=list)
+    visible_elements: list[str] = Field(default_factory=list)
+    product_elements: list[str] = Field(default_factory=list)
+    background_elements: list[str] = Field(default_factory=list)
+    style_moods: list[str] = Field(default_factory=list)
+    scene_guesses: list[str] = Field(default_factory=list)
+    confidence_notes: list[str] = Field(default_factory=list)
+    images: list[ImageSemanticFact] = Field(default_factory=list)
+
+
 class HotNote(BaseModel):
     note_id: str
     title: str
@@ -227,6 +275,16 @@ class ProductFactsSnapshot(BaseModel):
     history_style_refs: list[HistoryStyleReference] = Field(default_factory=list)
     trend_source: str | None = None
     trend_keywords: list[str] = Field(default_factory=list)
+    semantic_summary: str = ""
+    semantic_categories: list[str] = Field(default_factory=list)
+    semantic_colors: list[str] = Field(default_factory=list)
+    semantic_material_guesses: list[str] = Field(default_factory=list)
+    semantic_visible_elements: list[str] = Field(default_factory=list)
+    semantic_product_elements: list[str] = Field(default_factory=list)
+    semantic_background_elements: list[str] = Field(default_factory=list)
+    semantic_style_moods: list[str] = Field(default_factory=list)
+    semantic_scene_guesses: list[str] = Field(default_factory=list)
+    semantic_confidence_notes: list[str] = Field(default_factory=list)
     warnings: list[str] = Field(default_factory=list)
 
 
@@ -409,6 +467,7 @@ class Phase2ExecutionResult(BaseModel):
     raw_hot_notes_path: str | None = None
     hot_notes_analysis_path: str
     image_facts_path: str
+    image_semantic_facts_path: str | None = None
     product_facts_path: str | None = None
     phase2_report_path: str | None = None
     contents_path: str

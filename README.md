@@ -1,6 +1,6 @@
 # 小红书商品笔记自动发布
 
-小红书商家后台自动化工具：从商品管理拉取商品与主图、生成种草文案、编排并发布笔记。CLI 三阶段独立执行（prepare-products → generate-content → phase3 plan/run），通过 JSON 文件传递数据。`prepare-products` 现支持断点续传、收敛执行，并实时写出 `phase1-state.json`。
+小红书商家后台自动化工具：从商品管理拉取商品与主图、生成种草文案、编排并发布笔记。CLI 三阶段独立执行（prepare-products → generate-content → phase3 plan/run），通过 JSON 文件传递数据。`prepare-products` 现支持断点续传、收敛执行，并实时写出 `phase1-state.json`。`generate-content` 会优先对商品主图做语义分析，再结合趋势与风格参考生成文案。
 
 ## 前置条件
 

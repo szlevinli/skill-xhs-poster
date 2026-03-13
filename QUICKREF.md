@@ -6,7 +6,7 @@
 阶段1（准备）      阶段2（内容）        阶段3（编排/发布）
     │                │                  │
     ▼                ▼                  ▼
-拉取商品      →  主图分析+LLM生成  →  生成计划 / 消费计划发布
+拉取商品      →  图片语义分析+LLM生成  →  生成计划 / 消费计划发布
 下载主图           contents.json      （phase3 + plan/candidates）
 phase1-state.json
 ```
@@ -45,6 +45,7 @@ xiaohongshu-data/
 ├── today-pool.json      # prepare-products 输出
 ├── phase1-state.json    # prepare-products 实时进度 / 断点续传检查点
 ├── contents.json        # generate-content 输出
+├── image-semantic-facts.json # 商品主图语义分析缓存
 ├── publish-plan.json    # phase3 当前发布计划
 ├── trend-signals.json   # prepare-trends 输出（可选）
 └── images/{商品ID}/     # 商品主图
@@ -67,6 +68,7 @@ xiaohongshu-data/phase3/YYYY-MM-DD/
 ```
 MOONSHOT_API_KEY=sk-xxx
 MOONSHOT_MODEL=moonshot-v1-8k
+VISION_LLM_MODEL=moonshot-v1-8k-vision-preview
 LLM_BASE_URL=https://api.moonshot.cn/v1
 ```
 
