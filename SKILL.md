@@ -36,20 +36,27 @@ AI 使用本 skill 时，默认原则是：
 
 ### 阶段判断
 
-- phase1 已完成：`xiaohongshu-data/today-pool.json` 存在，且满足目标商品数量与图片完整性要求
-- phase2 已完成：`xiaohongshu-data/contents.json` 存在，且满足目标商品数量与草稿数量要求
+- phase1 已完成：`xiaohongshu-data/today-pool.json` 存在，且 `today-pool.json.date == 今天`，并满足目标商品数量与图片完整性要求
+- phase2 已完成：`xiaohongshu-data/contents.json` 存在，且 `contents.json.date == 今天`，并满足目标商品数量与草稿数量要求
 - phase1 进度与恢复检查点：`xiaohongshu-data/phase1-state.json`
 - phase3 发布计划：`xiaohongshu-data/publish-plan.json`
 - phase3 当日发布记录：`xiaohongshu-data/phase3/YYYY-MM-DD/publish-records.json`
 
 ### 补跑规则
 
-- 缺 `today-pool.json`：执行 `prepare-products`
-- 有 `today-pool.json` 但缺 `contents.json`：执行 `generate-content`
-- `today-pool.json` 与 `contents.json` 都可用：直接进入发布相关命令
+- 缺 `today-pool.json`，或 `today-pool.json.date != 今天`：执行 `prepare-products`
+- 有今日 `today-pool.json`，但缺 `contents.json`，或 `contents.json.date != 今天`：执行 `generate-content`
+- `today-pool.json` 与 `contents.json` 都可用，且两者日期均为今天：直接进入发布相关命令
 - 只有用户明确要求刷新商品池或重下图片时，才重跑 `prepare-products`
 - 只有用户明确要求重写文案时，才重跑 `generate-content`
 - `prepare-products --limit 10` 的语义是“尽量得到 10 个成功商品”，不是“只检查前 10 个商品后就停止”
+
+日期判断原则：
+
+- 这里的“今天”指执行命令当日，本地读取 JSON 中的 `date` 字段进行判断
+- 不要仅凭文件存在就认定 phase1 或 phase2 已完成
+- 若 `today-pool.json` 或 `contents.json` 缺少 `date` 字段、结构损坏、或日期不是今天，都应视为对应阶段未完成
+- phase2 除了要求 `contents.json.date == 今天`，还要求它覆盖当前今日商品池；若商品集合明显不一致，也应视为 phase2 未完成并重新生成
 
 ### 数量完整性规则
 
@@ -61,8 +68,8 @@ AI 使用本 skill 时，默认原则是：
 
 默认判断标准：
 
-- phase1 达标：`today-pool.json.status == "complete"`，且有 `10` 个成功商品；每个商品至少有 `1` 张可用图片，最多保留 `3` 张
-- phase2 达标：`contents.json` 覆盖这批商品，且每个商品至少有 `5` 篇草稿
+- phase1 达标：`today-pool.json.date == 今天`，`today-pool.json.status == "complete"`，且有 `10` 个成功商品；每个商品至少有 `1` 张可用图片，最多保留 `3` 张
+- phase2 达标：`contents.json.date == 今天`，`contents.json` 覆盖这批商品，且每个商品至少有 `5` 篇草稿
 - 理想总量：`10` 个商品，`50` 篇内容
 
 降级规则：
@@ -138,12 +145,14 @@ phase3 在概念上分成两步：
 
 1. 检查 `today-pool.json`
 2. 检查 `contents.json`
-3. 如需先确认候选，执行 `uv run xhs-poster list-publish-candidates`
-4. 默认直接执行 `uv run xhs-poster run-publish-plan --mode sequential --count 1`
-5. 若当天没有计划，`run-publish-plan` 会自动生成当天计划
-5. 不要默认执行 `prepare-products`
-6. 不要默认执行 `generate-content`
-7. 不要默认直接调用 `publish-note`
+3. 检查两者 `date` 是否为今天；若不是今天，先补跑缺失阶段
+4. 检查 `contents.json` 是否覆盖当前今日商品池；若不一致，先执行 `generate-content`
+5. 如需先确认候选，执行 `uv run xhs-poster list-publish-candidates`
+6. 默认直接执行 `uv run xhs-poster run-publish-plan --mode sequential --count 1`
+7. 若当天没有计划，`run-publish-plan` 会自动生成当天计划
+8. 不要默认执行 `prepare-products`
+9. 不要默认执行 `generate-content`
+10. 不要默认直接调用 `publish-note`
 
 ### 发布 N 篇
 
@@ -151,11 +160,13 @@ phase3 在概念上分成两步：
 
 1. 检查 `today-pool.json`
 2. 检查 `contents.json`
-3. 检查 `publish-plan.json`
-4. 如需先确认候选，执行 `uv run xhs-poster list-publish-candidates`
-5. 默认直接执行 `uv run xhs-poster run-publish-plan --mode sequential --count N`
-6. 若当天没有计划，`run-publish-plan` 会自动生成当天计划
-7. 不要无必要地手工循环多次 `publish-note`
+3. 检查两者 `date` 是否为今天；若不是今天，先补跑缺失阶段
+4. 检查 `contents.json` 是否覆盖当前今日商品池；若不一致，先执行 `generate-content`
+5. 检查 `publish-plan.json`
+6. 如需先确认候选，执行 `uv run xhs-poster list-publish-candidates`
+7. 默认直接执行 `uv run xhs-poster run-publish-plan --mode sequential --count N`
+8. 若当天没有计划，`run-publish-plan` 会自动生成当天计划
+9. 不要无必要地手工循环多次 `publish-note`
 
 ### 仅生成计划
 
@@ -163,9 +174,11 @@ phase3 在概念上分成两步：
 
 1. 检查 `today-pool.json`
 2. 检查 `contents.json`
-3. 默认执行 `uv run xhs-poster plan-publish --mode sequential`
-4. 不要默认自己先计算 `count`
-5. 只有用户明确说“生成 5 条计划”这类数量要求时，才传 `--count N`
+3. 检查两者 `date` 是否为今天；若不是今天，先补跑缺失阶段
+4. 检查 `contents.json` 是否覆盖当前今日商品池；若不一致，先执行 `generate-content`
+5. 默认执行 `uv run xhs-poster plan-publish --mode sequential`
+6. 不要默认自己先计算 `count`
+7. 只有用户明确说“生成 5 条计划”这类数量要求时，才传 `--count N`
 
 ### 去重与上限
 
