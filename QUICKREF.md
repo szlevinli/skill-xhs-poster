@@ -32,7 +32,7 @@ uv run xhs-poster prepare-trends --keyword 抓夹
 # 生成内容
 uv run xhs-poster generate-content --keyword 抓夹 --contents-per-product 5
 
-# 发布编排：查看候选 / 生成计划 / 批量执行
+# 发布编排：查看候选 / 先生成当天计划 / 再执行
 uv run xhs-poster list-publish-candidates
 uv run xhs-poster plan-publish --mode sequential --count 3
 uv run xhs-poster run-publish-plan --mode random --count 3 --seed 42

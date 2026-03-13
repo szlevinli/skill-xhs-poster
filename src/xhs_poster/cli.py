@@ -27,7 +27,7 @@ from .trend_signals import build_trend_signals_payload
 
 APP_HELP = """小红书商家端自动发帖工具。输出为 JSON，便于脚本或下游消费。
 
-流程：prepare-products（拉商品与主图，支持 phase1-state 断点续传）→ prepare-trends（可选，生成趋势信号）→ generate-content（生成文案）→ plan-publish / run-publish-plan（编排并发布笔记）。
+流程：prepare-products（拉商品与主图，支持 phase1-state 断点续传）→ prepare-trends（可选，生成趋势信号）→ generate-content（生成文案）→ plan-publish（生成当天发布计划）→ run-publish-plan（执行当天计划）。
 首次使用需先执行 login merchant 完成本机登录；云服务器部署推荐使用 auth export / auth import 迁移登录态。"""
 auth_app = typer.Typer(add_completion=False, no_args_is_help=True, help="探测商家端/用户端是否已登录。")
 login_app = typer.Typer(add_completion=False, no_args_is_help=True, help="拉起浏览器，等待人工完成扫码登录。")
@@ -207,7 +207,7 @@ def plan_publish_command(
     raise typer.Exit(code=exit_code)
 
 
-@app.command("run-publish-plan", help="执行已保存的发布计划，并写入当日 publish-records.json；推荐作为 AI 的默认发布入口。")
+@app.command("run-publish-plan", help="执行已保存的发布计划，并写入当日 publish-records.json；AI 使用前应先确保当天已执行 plan-publish。")
 def run_publish_plan_command(
     mode: Annotated[Phase3PlanMode, typer.Option("--mode", help="执行模式：sequential 或 random")] = "sequential",
     count: Annotated[int, typer.Option("--count", help="本次尝试发布的数量")] = 1,

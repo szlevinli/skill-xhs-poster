@@ -29,7 +29,7 @@ AI 使用本 skill 时，默认原则是：
 
 1. 先检查已有产物
 2. 只补跑缺失阶段
-3. phase3 默认优先消费当天已有计划
+3. phase3 必须先确保当天已有发布计划，再执行发布
 4. 不要因为用户说“发布”就默认重跑 phase1 或 phase2
 
 除非用户明确要求“重新抓商品”“重新下载图片”“重新生成文案”“从头重跑”，否则优先复用 `xiaohongshu-data/` 下已有结果。
@@ -110,11 +110,16 @@ phase3 在概念上分成两步：
 1. 编排：先确定今天要发哪些内容、按什么顺序发
 2. 发布：再执行编排结果
 
-但按当前代码实现：
+对 AI 来说，phase3 必须严格分成两步：
 
-- `plan-publish` 会显式生成并保存 `publish-plan.json`
-- `run-publish-plan` 在当天没有计划时，会自动先生成当天计划，再执行前 `N` 条 `pending` 项
+- `plan-publish` 生成并保存当天 `publish-plan.json`
+- `run-publish-plan` 只负责执行当天已存在的发布计划
 - `publish-note` 保留为底层调试命令，不作为 AI 的默认发布入口
+
+说明：
+
+- 即使底层实现对“无计划时自动补计划”保留兼容行为，AI 也不得依赖这个隐式行为
+- AI 必须像处理 phase1 / phase2 一样，把“当天是否已有 `publish-plan.json`”视为单独的阶段检查
 
 ### 三个编排相关命令的职责
 
@@ -129,14 +134,13 @@ phase3 在概念上分成两步：
   - 只做选择，不执行发布
 - `run-publish-plan`
   - 执行已保存的发布计划
-  - 若当天没有计划，会自动先生成计划
   - 会真实发布，并写入当日 `publish-records.json`
 
 默认关系：
 
 - 想知道“有哪些可以发”：用 `list-publish-candidates`
 - 想显式查看并保存一份计划：用 `plan-publish`
-- 想真正开始发：直接用 `run-publish-plan`
+- 想真正开始发：先确保当天已有计划，再用 `run-publish-plan`
 - AI 执行 `plan-publish` 时，除非用户明确指定数量，否则不需要自己计算 `count`
 
 ### 发布 1 篇
@@ -147,9 +151,9 @@ phase3 在概念上分成两步：
 2. 检查 `contents.json`
 3. 检查两者 `date` 是否为今天；若不是今天，先补跑缺失阶段
 4. 检查 `contents.json` 是否覆盖当前今日商品池；若不一致，先执行 `generate-content`
-5. 如需先确认候选，执行 `uv run xhs-poster list-publish-candidates`
-6. 默认直接执行 `uv run xhs-poster run-publish-plan --mode sequential --count 1`
-7. 若当天没有计划，`run-publish-plan` 会自动生成当天计划
+5. 检查 `publish-plan.json` 是否存在且是今天的计划；若不是，先执行 `uv run xhs-poster plan-publish --mode sequential`
+6. 如需先确认候选，执行 `uv run xhs-poster list-publish-candidates`
+7. 再执行 `uv run xhs-poster run-publish-plan --mode sequential --count 1`
 8. 不要默认执行 `prepare-products`
 9. 不要默认执行 `generate-content`
 10. 不要默认直接调用 `publish-note`
@@ -162,11 +166,10 @@ phase3 在概念上分成两步：
 2. 检查 `contents.json`
 3. 检查两者 `date` 是否为今天；若不是今天，先补跑缺失阶段
 4. 检查 `contents.json` 是否覆盖当前今日商品池；若不一致，先执行 `generate-content`
-5. 检查 `publish-plan.json`
+5. 检查 `publish-plan.json` 是否存在且是今天的计划；若不是，先执行 `uv run xhs-poster plan-publish --mode sequential`
 6. 如需先确认候选，执行 `uv run xhs-poster list-publish-candidates`
-7. 默认直接执行 `uv run xhs-poster run-publish-plan --mode sequential --count N`
-8. 若当天没有计划，`run-publish-plan` 会自动生成当天计划
-9. 不要无必要地手工循环多次 `publish-note`
+7. 再执行 `uv run xhs-poster run-publish-plan --mode sequential --count N`
+8. 不要无必要地手工循环多次 `publish-note`
 
 ### 仅生成计划
 
@@ -193,8 +196,8 @@ phase3 在概念上分成两步：
 
 | 用户表达             | 默认动作                                                                                                  |
 | -------------------- | --------------------------------------------------------------------------------------------------------- |
-| “发布 1 篇笔记”      | 直接执行 `run-publish-plan --count 1`；若当天没有计划，会自动先生成计划                                   |
-| “发布 5 篇笔记”      | 直接执行 `run-publish-plan --count 5`；若当天没有计划，会自动先生成计划                                   |
+| “发布 1 篇笔记”      | 先确保当天已有 `publish-plan.json`；若没有则先执行 `plan-publish`，再执行 `run-publish-plan --count 1`    |
+| “发布 5 篇笔记”      | 先确保当天已有 `publish-plan.json`；若没有则先执行 `plan-publish`，再执行 `run-publish-plan --count 5`    |
 | “继续发布几篇”       | 基于现有候选和发布账本继续增量发布                                                                        |
 | “看看有哪些可以发”   | 执行 `list-publish-candidates`                                                                            |
 | “先生成一个发布计划” | 执行 `plan-publish`；默认覆盖当天剩余全部可发布候选                                                      |
@@ -205,7 +208,7 @@ phase3 在概念上分成两步：
 
 解释：
 
-- “发布”默认指消费当天发布计划；若当天没有计划，则由 `run-publish-plan` 自动生成
+- “发布”默认指先检查当天发布计划；若当天没有计划，先执行 `plan-publish` 再发布
 - “继续发布”默认表示基于现有产物做增量操作
 - “查看”“看看”“列一下”默认是只读，不直接发布
 - `publish-note` 不是 AI 默认入口，而是底层调试命令

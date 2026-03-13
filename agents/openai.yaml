@@ -1,7 +1,7 @@
 interface:
   display_name: "小红书商品笔记自动发布"
   short_description: "抓商品、生成文案并按规则发布小红书商品笔记。"
-  default_prompt: "Use $xiaohongshu-product-poster to prepare products, generate note content, or publish one or more Xiaohongshu product notes without re-running finished stages."
+  default_prompt: "Use $xiaohongshu-product-poster to prepare products, generate note content, or publish Xiaohongshu product notes by reusing finished stages; for phase3, always generate today's publish plan before running it."
 
 policy:
   allow_implicit_invocation: true

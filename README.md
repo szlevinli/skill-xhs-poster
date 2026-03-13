@@ -56,8 +56,10 @@ uv run xhs-poster prepare-trends --keyword 抓夹
 # 5. 生成笔记内容
 uv run xhs-poster generate-content --keyword 抓夹 --contents-per-product 5
 
-# 6. 生成发布计划并执行
+# 6. 发布前先生成当天计划
 uv run xhs-poster plan-publish --mode sequential --count 5
+
+# 7. 真正执行发布
 uv run xhs-poster run-publish-plan --count 1
 ```
 
@@ -68,9 +70,10 @@ uv run xhs-poster run-publish-plan --count 1
 phase3 现在默认使用“计划文件 + 当日记录文件”：
 
 - `plan-publish` 生成并保存 `xiaohongshu-data/publish-plan.json`
-- `run-publish-plan` 只执行计划中的 `pending` 项
+- `run-publish-plan` 只执行当天计划中的 `pending` 项
 - 每次真实发布都会写入 `xiaohongshu-data/phase3/YYYY-MM-DD/publish-records.json`
 - 当日去重和“是否达到 50 条上限”都基于当天记录文件中的成功记录判断
+- AI 使用时，先检查当天是否已有 `publish-plan.json`；若没有，应先执行 `plan-publish`
 
 ## Phase1 行为说明
 
