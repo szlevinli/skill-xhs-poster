@@ -40,6 +40,9 @@ AI 使用本 skill 时，默认原则是：
 - 适合用 transient service 的命令：`prepare-products`、`generate-content`、`plan-publish`、`run-publish-plan`
 - 不适合用 transient service 的命令：`login merchant` 这类需要人工交互、扫码或浏览器前台操作的命令；这类命令默认前台执行
 - 若用户没有明确要求前台执行，AI 在执行长时任务时应优先选择 `systemd-run --user --same-dir --collect`
+- LLM 相关环境变量统一使用仓库根目录 `.env`；默认只要求配置 `MOONSHOT_API_KEY`
+- `MOONSHOT_MODEL`、`VISION_LLM_MODEL`、`LLM_BASE_URL` 仅在需要覆盖默认值时才配置；默认值分别是 `moonshot-v1-8k`、`moonshot-v1-8k-vision-preview`、`https://api.moonshot.cn/v1`
+- `SettingsConfigDict(env_file=\".env\")` 会按进程当前工作目录查找 `.env`；因此运行长期任务时必须保留 `systemd-run --user --same-dir --collect`，确保它在仓库根目录读取 `.env`
 - AI 执行 transient service 后，应告知用户如何用 `systemctl --user status <unit>` 和 `journalctl --user -u <unit>` 查看状态与日志
 - 若目标机器没有 `systemd --user`、没有 user bus、或 `systemd-run --user` 不可用，再退回 `tmux` / `screen` / `nohup`
 
