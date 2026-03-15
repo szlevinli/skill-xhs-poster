@@ -43,12 +43,23 @@ def load_today_pool(settings: Settings) -> TodayPool:
     return TodayPool.model_validate_json(settings.today_pool_path.read_text(encoding="utf-8"))
 
 
-def load_contents_bundle(settings: Settings) -> ContentsBundle:
+def load_contents_bundle(
+    settings: Settings,
+    *,
+    expected_date: str | None = None,
+) -> ContentsBundle:
     if not settings.contents_path.exists():
         raise RuntimeError(
             f"未找到 contents.json，且本次也未显式传入标题/正文：{settings.contents_path}"
         )
-    return ContentsBundle.model_validate_json(settings.contents_path.read_text(encoding="utf-8"))
+    bundle = ContentsBundle.model_validate_json(settings.contents_path.read_text(encoding="utf-8"))
+    if expected_date is not None and bundle.date != expected_date:
+        raise RuntimeError(
+            "contents.json 日期不是目标发布日，"
+            f"当前为 {bundle.date}，目标日期为 {expected_date}；"
+            "请先重新执行 generate-content。"
+        )
+    return bundle
 
 
 def _save_json_atomic(path: Path, payload: dict) -> str:
@@ -181,6 +192,7 @@ def resolve_publish_inputs(
     settings: Settings,
     product_id: str,
     *,
+    publish_date: str | None,
     title: str | None,
     content: str | None,
     topic_keywords: list[str] | None,
@@ -191,7 +203,11 @@ def resolve_publish_inputs(
             raise RuntimeError("显式传参发布时，`title` 和 `content` 必须同时提供。")
         return title, content, topic_keywords or [], None
 
-    draft = pick_content_draft(load_contents_bundle(settings), product_id, angle=angle)
+    draft = pick_content_draft(
+        load_contents_bundle(settings, expected_date=publish_date),
+        product_id,
+        angle=angle,
+    )
     resolved_topics = topic_keywords or extract_topic_keywords(draft.tags)
     return draft.title, draft.content.strip(), resolved_topics, draft
 
@@ -238,7 +254,7 @@ def list_phase3_candidates(
     settings.ensure_directories()
     current_date = date or datetime.now().date().isoformat()
     today_pool = load_today_pool(settings)
-    contents_bundle = load_contents_bundle(settings)
+    contents_bundle = load_contents_bundle(settings, expected_date=current_date)
     published_today, published_ever = _load_success_dedupe_sets(settings, date=current_date)
     product_names = {product.id: product.name for product in today_pool.products}
 
@@ -428,10 +444,12 @@ def run_phase3(
     run_headless = session.browser_mode == "headless" if headless is None else headless
 
     today_pool = load_today_pool(settings)
+    publish_date = datetime.now().date().isoformat()
     product = resolve_product(today_pool, product_id)
     final_title, final_content, final_topics, draft = resolve_publish_inputs(
         settings,
         product.id,
+        publish_date=publish_date,
         title=title,
         content=content,
         topic_keywords=topic_keywords,
@@ -481,7 +499,7 @@ def run_phase3(
         publish_result=publish_result,
         artifacts=artifacts,
     )
-    record_date = datetime.now().date().isoformat()
+    record_date = publish_date
     result.log_path = append_phase3_record(
         settings,
         record_date=record_date,
