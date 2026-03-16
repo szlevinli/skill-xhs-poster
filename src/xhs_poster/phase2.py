@@ -20,7 +20,6 @@ from .image_semantics import analyze_product_image_semantics, load_image_semanti
 from .models import (
     ContentsBundle,
     HotNotesAnalysis,
-    ImageSemanticFact,
     Phase2ExecutionResult,
     Phase2Success,
     ProductFailure,
@@ -231,16 +230,7 @@ def build_phase2_outputs(
         "source": "local_image_analysis",
         "items": [item.model_dump(mode="json") for item in image_facts],
     }
-    semantic_items: list[ImageSemanticFact] = []
-    for facts in semantic_facts_map.values():
-        semantic_items.extend(facts.images)
-    semantic_facts_payload = {
-        "date": str(date.today()),
-        "source": "vision_llm",
-        "items": [item.model_dump(mode="json") for item in semantic_items],
-    }
     save_json_atomic(settings.image_facts_path, image_facts_payload)
-    save_json_atomic(settings.image_semantic_facts_path, semantic_facts_payload)
 
     hot_notes_payload = {
         "date": str(date.today()),
