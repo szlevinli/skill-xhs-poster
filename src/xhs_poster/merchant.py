@@ -646,6 +646,34 @@ class PublishPage:
         self.page.keyboard.press("Escape")
         self.page.wait_for_timeout(500)
 
+    def _click_add_product_dialog_save(self) -> bool:
+        clicked = self.page.evaluate(
+            """
+            () => {
+                const normalize = (value) => (value || '').replace(/\\s+/g, ' ').trim();
+                const isVisible = (node) => {
+                    if (!node) return false;
+                    const rect = node.getBoundingClientRect();
+                    const style = window.getComputedStyle(node);
+                    return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+                };
+                const dialogs = Array.from(document.querySelectorAll('[role="dialog"], .d-modal, .ant-modal, .semi-modal, .modal'))
+                    .filter((node) => isVisible(node));
+                const dialog = dialogs.find((node) => normalize(node.textContent).includes('选择商品')) || dialogs[dialogs.length - 1];
+                if (!dialog) return false;
+                const buttons = Array.from(dialog.querySelectorAll('button, span, div, a'))
+                    .filter((node) => isVisible(node) && normalize(node.textContent) === '保存');
+                const button = buttons[buttons.length - 1];
+                if (!button) return false;
+                button.click();
+                return true;
+            }
+            """
+        )
+        if clicked:
+            self.page.wait_for_timeout(800)
+        return bool(clicked)
+
     def _click_product_candidate(self, product_id: str, timeout_ms: int = 12_000) -> dict:
         deadline = time.monotonic() + timeout_ms / 1000
         last_state: dict = {"found": False, "reason": "waiting_for_candidate"}
@@ -663,22 +691,55 @@ class PublishPage:
                     const dialogs = Array.from(document.querySelectorAll('[role="dialog"], .d-modal, .ant-modal, .semi-modal, .modal'))
                         .filter((node) => isVisible(node));
                     const scope = dialogs[dialogs.length - 1] || document.body;
-                    const rowSelectors = ['tr', '.d-table-row', '.ant-table-row', '.semi-table-row', '.table-row', 'li', '.list-item'];
+                    const checkboxSelector = 'input[type="checkbox"], .d-checkbox-indicator, .ant-checkbox-input, .ant-checkbox, .semi-checkbox, [role="checkbox"]';
+                    const rowSelectors = [
+                        'tr',
+                        '.d-table-row',
+                        '.ant-table-row',
+                        '.semi-table-row',
+                        '.table-row',
+                        'li',
+                        '.list-item',
+                        '.d-list-item',
+                        '.ant-list-item',
+                        '.semi-list-item',
+                        '.d-grid-item',
+                        '.ant-card',
+                        '.semi-card',
+                        '[data-row-key]',
+                    ];
                     const rows = Array.from(scope.querySelectorAll(rowSelectors.join(','))).filter((node) => {
                         const text = normalize(node.textContent);
                         return text.includes(productId);
                     });
-                    if (!rows.length) {
+                    const resolveCandidateRow = () => {
+                        if (rows.length) return rows[0];
+                        const textNodes = Array.from(scope.querySelectorAll('*')).filter((node) => {
+                            if (!isVisible(node)) return false;
+                            const text = normalize(node.textContent);
+                            if (!text.includes(productId)) return false;
+                            return text.length <= 300;
+                        });
+                        for (const node of textNodes) {
+                            let current = node;
+                            while (current && current !== scope) {
+                                if (typeof current.querySelector === 'function' && current.querySelector(checkboxSelector)) {
+                                    return current;
+                                }
+                                current = current.parentElement;
+                            }
+                        }
+                        return null;
+                    };
+                    const row = resolveCandidateRow();
+                    if (!row) {
                         return {
                             found: false,
                             reason: normalize(scope.textContent).includes(productId) ? 'text_found_without_row' : 'row_not_found',
-                            row_count: 0,
+                            row_count: rows.length,
                         };
                     }
-                    const row = rows[0];
-                    const checkbox = row.querySelector(
-                        'input[type="checkbox"], .d-checkbox-indicator, .ant-checkbox-input, .ant-checkbox, .semi-checkbox, [role="checkbox"]'
-                    );
+                    const checkbox = row.querySelector(checkboxSelector);
                     if (!checkbox) {
                         return {
                             found: false,
@@ -728,20 +789,28 @@ class PublishPage:
                     };
                     const visibleDialogs = Array.from(document.querySelectorAll('[role="dialog"], .d-modal, .ant-modal, .semi-modal, .modal'))
                         .filter((node) => isVisible(node));
-                    const modalStillVisible = visibleDialogs.some((node) => normalize(node.textContent).includes('搜索商品ID'));
+                    const modalStillVisible = visibleDialogs.some((node) => {
+                        const text = normalize(node.textContent);
+                        return text.includes('选择商品') || text.includes('搜索商品ID') || text.includes('普通商品');
+                    });
                     const bodyCandidates = Array.from(document.querySelectorAll('body *')).filter((node) => {
                         if (!isVisible(node)) return false;
                         if (visibleDialogs.some((dialog) => dialog.contains(node))) return false;
                         const text = normalize(node.textContent);
-                        return text.includes(productId);
+                        if (!text.includes(productId)) return false;
+                        if (text.length > 300) return false;
+                        return (
+                            text.includes('商品ID') ||
+                            text.includes('删除') ||
+                            text.includes('改规格') ||
+                            text.includes('商业推广') ||
+                            text.includes('¥')
+                        );
                     });
-                    const matched = bodyCandidates.find((node) => {
-                        const text = normalize(node.textContent);
-                        return text.includes('商品') || text.includes(productId);
-                    });
+                    const matched = bodyCandidates.sort((a, b) => normalize(a.textContent).length - normalize(b.textContent).length)[0];
                     return {
-                        bound: Boolean(matched) && !modalStillVisible,
-                        reason: matched ? (modalStillVisible ? 'modal_still_visible' : 'binding_marker_found') : 'binding_marker_missing',
+                        bound: Boolean(matched),
+                        reason: matched ? (modalStillVisible ? 'binding_marker_found_modal_still_visible' : 'binding_marker_found') : 'binding_marker_missing',
                         modal_still_visible: modalStillVisible,
                         matched_text: matched ? normalize(matched.textContent).slice(0, 200) : '',
                     };
@@ -789,13 +858,15 @@ class PublishPage:
                 result["candidate"] = candidate
                 result["checkbox_clicked"] = True
 
-                save_button = self.page.get_by_text("保存", exact=True).first
-                if not locator_is_visible(save_button):
+                if not self._click_add_product_dialog_save():
                     raise RuntimeError("添加商品弹层未找到保存按钮。")
-                save_button.click()
                 result["save_clicked"] = True
 
                 verification = self._verify_product_bound(product_id)
+                if verification.get("modal_still_visible"):
+                    self._dismiss_add_product_dialog()
+                    self.page.wait_for_timeout(500)
+                    verification = self._verify_product_bound(product_id)
                 result["verification"] = verification
                 return result
             except RuntimeError as exc:
