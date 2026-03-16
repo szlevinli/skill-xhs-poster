@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from io import BytesIO
 from pathlib import Path
 
@@ -621,46 +622,189 @@ class PublishPage:
             "topic_applied": verification["applied"],
         }
 
+    def _open_add_product_dialog(self) -> None:
+        add_button = self.page.get_by_text("添加商品").first
+        if not locator_is_visible(add_button):
+            raise RuntimeError("发布页未找到“添加商品”按钮。")
+        add_button.click()
+        search_input = self.page.get_by_placeholder("搜索商品ID 或 商品名称").first
+        search_input.wait_for(state="visible", timeout=10_000)
+        self.page.wait_for_timeout(500)
+
+    def _dismiss_add_product_dialog(self) -> None:
+        for locator in (
+            self.page.get_by_text("取消", exact=True).first,
+            self.page.get_by_text("关闭", exact=True).first,
+            self.page.locator(".d-modal-close").first,
+            self.page.locator(".ant-modal-close").first,
+            self.page.locator("[aria-label='Close']").first,
+        ):
+            if locator_is_visible(locator):
+                locator.click()
+                self.page.wait_for_timeout(500)
+                return
+        self.page.keyboard.press("Escape")
+        self.page.wait_for_timeout(500)
+
+    def _click_product_candidate(self, product_id: str, timeout_ms: int = 12_000) -> dict:
+        deadline = time.monotonic() + timeout_ms / 1000
+        last_state: dict = {"found": False, "reason": "waiting_for_candidate"}
+        while time.monotonic() < deadline:
+            candidate = self.page.evaluate(
+                """
+                (productId) => {
+                    const normalize = (value) => (value || '').replace(/\\s+/g, ' ').trim();
+                    const isVisible = (node) => {
+                        if (!node) return false;
+                        const rect = node.getBoundingClientRect();
+                        const style = window.getComputedStyle(node);
+                        return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+                    };
+                    const dialogs = Array.from(document.querySelectorAll('[role="dialog"], .d-modal, .ant-modal, .semi-modal, .modal'))
+                        .filter((node) => isVisible(node));
+                    const scope = dialogs[dialogs.length - 1] || document.body;
+                    const rowSelectors = ['tr', '.d-table-row', '.ant-table-row', '.semi-table-row', '.table-row', 'li', '.list-item'];
+                    const rows = Array.from(scope.querySelectorAll(rowSelectors.join(','))).filter((node) => {
+                        const text = normalize(node.textContent);
+                        return text.includes(productId);
+                    });
+                    if (!rows.length) {
+                        return {
+                            found: false,
+                            reason: normalize(scope.textContent).includes(productId) ? 'text_found_without_row' : 'row_not_found',
+                            row_count: 0,
+                        };
+                    }
+                    const row = rows[0];
+                    const checkbox = row.querySelector(
+                        'input[type="checkbox"], .d-checkbox-indicator, .ant-checkbox-input, .ant-checkbox, .semi-checkbox, [role="checkbox"]'
+                    );
+                    if (!checkbox) {
+                        return {
+                            found: false,
+                            reason: 'checkbox_not_found',
+                            row_count: rows.length,
+                            row_text: normalize(row.textContent).slice(0, 200),
+                        };
+                    }
+                    row.scrollIntoView({ block: 'center' });
+                    const target = checkbox.closest('label') || checkbox;
+                    target.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, cancelable: true }));
+                    target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+                    target.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+                    target.click();
+                    return {
+                        found: true,
+                        reason: 'clicked',
+                        row_count: rows.length,
+                        row_text: normalize(row.textContent).slice(0, 200),
+                    };
+                }
+                """,
+                product_id,
+            )
+            last_state = candidate
+            if candidate.get("found"):
+                self.page.wait_for_timeout(500)
+                return candidate
+            self.page.wait_for_timeout(400)
+        raise RuntimeError(
+            f"添加商品弹层未找到商品 {product_id} 的可勾选结果：{last_state.get('reason')}"
+        )
+
+    def _verify_product_bound(self, product_id: str, timeout_ms: int = 10_000) -> dict:
+        deadline = time.monotonic() + timeout_ms / 1000
+        last_state: dict = {"bound": False, "reason": "waiting_for_binding"}
+        while time.monotonic() < deadline:
+            verification = self.page.evaluate(
+                """
+                (productId) => {
+                    const normalize = (value) => (value || '').replace(/\\s+/g, ' ').trim();
+                    const isVisible = (node) => {
+                        if (!node) return false;
+                        const rect = node.getBoundingClientRect();
+                        const style = window.getComputedStyle(node);
+                        return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+                    };
+                    const visibleDialogs = Array.from(document.querySelectorAll('[role="dialog"], .d-modal, .ant-modal, .semi-modal, .modal'))
+                        .filter((node) => isVisible(node));
+                    const modalStillVisible = visibleDialogs.some((node) => normalize(node.textContent).includes('搜索商品ID'));
+                    const bodyCandidates = Array.from(document.querySelectorAll('body *')).filter((node) => {
+                        if (!isVisible(node)) return false;
+                        if (visibleDialogs.some((dialog) => dialog.contains(node))) return false;
+                        const text = normalize(node.textContent);
+                        return text.includes(productId);
+                    });
+                    const matched = bodyCandidates.find((node) => {
+                        const text = normalize(node.textContent);
+                        return text.includes('商品') || text.includes(productId);
+                    });
+                    return {
+                        bound: Boolean(matched) && !modalStillVisible,
+                        reason: matched ? (modalStillVisible ? 'modal_still_visible' : 'binding_marker_found') : 'binding_marker_missing',
+                        modal_still_visible: modalStillVisible,
+                        matched_text: matched ? normalize(matched.textContent).slice(0, 200) : '',
+                    };
+                }
+                """,
+                product_id,
+            )
+            last_state = verification
+            if verification.get("bound"):
+                return verification
+            self.page.wait_for_timeout(400)
+        raise RuntimeError(f"商品 {product_id} 保存后未确认绑定成功：{last_state.get('reason')}")
+
     def add_product(self, product_id: str) -> dict:
         result = {
+            "attempts": 0,
             "add_product_button_clicked": False,
             "search_box_found": False,
             "checkbox_clicked": False,
             "save_clicked": False,
+            "candidate": {},
+            "verification": {},
+            "errors": [],
         }
 
-        add_button = self.page.get_by_text("添加商品").first
-        if not locator_is_visible(add_button):
-            raise RuntimeError("发布页未找到“添加商品”按钮。")
+        last_error: RuntimeError | None = None
+        for attempt in range(1, 3):
+            result["attempts"] = attempt
+            try:
+                self._open_add_product_dialog()
+                result["add_product_button_clicked"] = True
 
-        add_button.click()
-        result["add_product_button_clicked"] = True
-        self.page.wait_for_timeout(2_000)
+                search_input = self.page.get_by_placeholder("搜索商品ID 或 商品名称").first
+                if not locator_is_visible(search_input):
+                    raise RuntimeError("添加商品弹层未找到搜索框。")
+                result["search_box_found"] = True
 
-        search_input = self.page.get_by_placeholder("搜索商品ID 或 商品名称").first
-        if not locator_is_visible(search_input):
-            raise RuntimeError("添加商品弹层未找到搜索框。")
+                search_input.click()
+                search_input.fill("")
+                self.page.wait_for_timeout(200)
+                search_input.fill(product_id)
+                self.page.wait_for_timeout(1_000)
 
-        result["search_box_found"] = True
-        search_input.fill(product_id)
-        self.page.wait_for_timeout(2_000)
+                candidate = self._click_product_candidate(product_id)
+                result["candidate"] = candidate
+                result["checkbox_clicked"] = True
 
-        checkbox = self.page.locator(".d-checkbox-indicator").first
-        if not locator_is_visible(checkbox):
-            raise RuntimeError("添加商品弹层未找到商品勾选框。")
+                save_button = self.page.get_by_text("保存", exact=True).first
+                if not locator_is_visible(save_button):
+                    raise RuntimeError("添加商品弹层未找到保存按钮。")
+                save_button.click()
+                result["save_clicked"] = True
 
-        checkbox.click()
-        result["checkbox_clicked"] = True
-        self.page.wait_for_timeout(800)
+                verification = self._verify_product_bound(product_id)
+                result["verification"] = verification
+                return result
+            except RuntimeError as exc:
+                last_error = exc
+                result["errors"].append(f"attempt_{attempt}: {exc}")
+                self._dismiss_add_product_dialog()
+                self.page.wait_for_timeout(800)
 
-        save_button = self.page.get_by_text("保存", exact=True).first
-        if not locator_is_visible(save_button):
-            raise RuntimeError("添加商品弹层未找到保存按钮。")
-
-        save_button.click()
-        result["save_clicked"] = True
-        self.page.wait_for_timeout(2_000)
-        return result
+        raise RuntimeError(str(last_error) if last_error else f"商品 {product_id} 绑定失败")
 
     def click_publish(self) -> None:
         publish_button = self.page.get_by_text("发布", exact=True).first
