@@ -54,7 +54,7 @@ uv run xhs-poster prepare-products --limit 10 --images-per-product 3
 uv run xhs-poster prepare-trends --keyword 抓夹
 
 # 5. 生成笔记内容
-uv run xhs-poster generate-content --keyword 抓夹 --contents-per-product 5
+uv run xhs-poster generate-content --contents-per-product 5
 
 # 6. 发布前先生成当天计划
 uv run xhs-poster plan-publish --mode sequential --count 5

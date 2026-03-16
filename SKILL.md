@@ -78,6 +78,7 @@ journalctl --user -u xhs-prepare-products -f
 - `today-pool.json` 与 `contents.json` 都可用，且两者日期均为今天：直接进入发布相关命令
 - 只有用户明确要求刷新商品池或重下图片时，才重跑 `prepare-products`
 - 只有用户明确要求重写文案时，才重跑 `generate-content`
+- 执行 `generate-content` 时，除非用户明确指定类目/趋势词，否则不要默认传 `--keyword`；让程序从今日商品名自动推断
 - `prepare-products --limit 10` 的语义是“尽量得到 10 个成功商品”，不是“只检查前 10 个商品后就停止”
 
 日期判断原则：
@@ -248,7 +249,7 @@ phase3 在概念上分成两步：
 ```bash
 uv run xhs-poster auth probe merchant
 systemd-run --user --unit=xhs-prepare-products --same-dir --collect uv run xhs-poster prepare-products --limit 10 --images-per-product 3
-systemd-run --user --unit=xhs-generate-content --same-dir --collect uv run xhs-poster generate-content --keyword 抓夹 --contents-per-product 5
+systemd-run --user --unit=xhs-generate-content --same-dir --collect uv run xhs-poster generate-content --contents-per-product 5
 uv run xhs-poster publish-note --angle 1
 uv run xhs-poster list-publish-candidates
 systemd-run --user --unit=xhs-plan-publish --same-dir --collect uv run xhs-poster plan-publish --mode sequential
