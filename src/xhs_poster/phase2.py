@@ -215,6 +215,12 @@ def build_phase2_outputs(
         contents[product.id] = generated.drafts
         generation[product.id] = generated.meta
         generation_sources[product.id] = generated.meta.source
+        if generated.meta.source != "llm":
+            error_text = (generated.meta.error or "").strip()
+            if error_text:
+                product_warnings.append(f"正文生成回退为模板：{error_text}")
+            else:
+                product_warnings.append("正文生成回退为模板。")
         warnings_map[product.id] = product_warnings
 
         if generated.meta.source == "llm":

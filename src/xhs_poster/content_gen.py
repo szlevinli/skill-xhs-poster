@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import re
+import time
 from dataclasses import dataclass
 from typing import Any
 
@@ -27,6 +28,7 @@ ANGLE_SPECS = [
     (5, "使用体验"),
 ]
 JSON_BLOCK_RE = re.compile(r"```(?:json)?\s*(\{.*\}|\[.*\])\s*```", re.DOTALL)
+ASCII_LETTER_RE = re.compile(r"[A-Za-z]")
 
 
 @dataclass(slots=True)
@@ -86,6 +88,46 @@ def _normalize_multiline_text(value: Any) -> str:
             continue
         cleaned.append(line)
     return "\n".join(cleaned).strip()
+
+
+def _looks_like_human_readable_cn_phrase(value: str) -> bool:
+    text = _normalize_text(value)
+    if not text:
+        return False
+    if len(text) > 24:
+        return False
+    if any(mark in text for mark in ("。", "；", ";", "!", "?", ":", "：")):
+        return False
+    if ASCII_LETTER_RE.search(text):
+        return False
+    return True
+
+
+def _pick_clean_semantic_value(items: list[str], fallback: str) -> str:
+    for item in items:
+        if _looks_like_human_readable_cn_phrase(item):
+            return _normalize_text(item)
+    return fallback
+
+
+def _build_template_semantic_line(style: str, semantic_facts: ProductSemanticFacts | None) -> str:
+    if semantic_facts is None:
+        return f"从图片里能看到整体细节很完整，{style}感拿捏得刚刚好"
+
+    visible = _pick_clean_semantic_value(semantic_facts.product_elements, "")
+    mood = _pick_clean_semantic_value(semantic_facts.style_moods, style)
+    color = _pick_clean_semantic_value(semantic_facts.colors, "")
+
+    phrases: list[str] = []
+    if color:
+        phrases.append(f"{color}调很显眼")
+    if visible:
+        phrases.append(f"{visible}细节比较抓眼")
+    if mood:
+        phrases.append(f"整体是偏{mood}的感觉")
+    if not phrases:
+        return f"从图片里能看到整体细节很完整，{style}感拿捏得刚刚好"
+    return "，".join(phrases[:2])
 
 
 def _extract_message_text(payload: dict) -> str:
@@ -304,10 +346,33 @@ def _request_llm_drafts(
         "Content-Type": "application/json",
     }
 
+    payload: dict[str, Any] | None = None
+    last_error: Exception | None = None
     with httpx.Client(timeout=httpx.Timeout(60.0, connect=10.0)) as client:
-        response = client.post(url, headers=headers, json=request_payload)
-        response.raise_for_status()
-        payload = response.json()
+        for attempt in range(3):
+            try:
+                response = client.post(url, headers=headers, json=request_payload)
+                response.raise_for_status()
+                payload = response.json()
+                break
+            except httpx.HTTPStatusError as exc:
+                last_error = exc
+                if exc.response.status_code != 429 or attempt == 2:
+                    raise
+                retry_after = exc.response.headers.get("Retry-After")
+                if retry_after and retry_after.isdigit():
+                    delay = max(1.0, min(float(retry_after), 10.0))
+                else:
+                    delay = float(2 ** attempt)
+                time.sleep(delay)
+            except Exception as exc:
+                last_error = exc
+                raise
+
+    if payload is None:
+        if last_error is not None:
+            raise last_error
+        raise RuntimeError("LLM 返回为空。")
 
     raw_text = _extract_message_text(payload)
     parsed = _extract_json_payload(raw_text)
@@ -355,26 +420,37 @@ def _generate_template_contents(
     contents_per_product: int = 5,
 ) -> list[ContentDraft]:
     keyword = _pick_first(facts.keywords, analysis.keyword)
-    color = _pick_display_color(semantic_facts.colors if semantic_facts and semantic_facts.colors else facts.colors)
-    style = _pick_first(semantic_facts.style_moods if semantic_facts and semantic_facts.style_moods else facts.style_keywords, "温柔")
-    element = _pick_first(semantic_facts.product_elements if semantic_facts and semantic_facts.product_elements else facts.confirmed_elements, "细节")
+    color = _pick_clean_semantic_value(
+        semantic_facts.colors if semantic_facts and semantic_facts.colors else [],
+        _pick_display_color(facts.colors),
+    )
+    style = _pick_clean_semantic_value(
+        semantic_facts.style_moods if semantic_facts and semantic_facts.style_moods else [],
+        _pick_first(facts.style_keywords, "温柔"),
+    )
+    element = _pick_clean_semantic_value(
+        semantic_facts.product_elements if semantic_facts and semantic_facts.product_elements else [],
+        _pick_first(facts.confirmed_elements, "细节"),
+    )
     emoji = analysis.emoji_candidates[(len(product.id) + len(product.name)) % len(analysis.emoji_candidates)]
-    scene_source = semantic_facts.scene_guesses if semantic_facts and semantic_facts.scene_guesses else analysis.scene_candidates
+    scene_source = [
+        item
+        for item in (semantic_facts.scene_guesses if semantic_facts and semantic_facts.scene_guesses else [])
+        if _looks_like_human_readable_cn_phrase(item)
+    ] or analysis.scene_candidates
     scene = scene_source[len(product.name) % len(scene_source)]
     tags = _build_tag_string(keyword, product, analysis, history_style_refs)
     reference_notes = [
         ref.source_file.rsplit("/", maxsplit=1)[-1]
         for ref in (history_style_refs or [])[:2]
     ]
-    semantic_summary = semantic_facts.summary if semantic_facts is not None else ""
-
     drafts: list[ContentDraft] = []
     for angle, angle_name in ANGLE_SPECS[:contents_per_product]:
         if angle == 1:
             title = f"{emoji}这个{color}{keyword}也太{style}了叭！"
             content = (
                 f"最近看到这款{product.name}，第一眼就被它的{color}调调吸引住了{emoji}\n\n"
-                f"{semantic_summary or f'从图片里能看到整体细节很完整，{style}感拿捏得刚刚好'}，随手一夹都很提气质。"
+                f"{_build_template_semantic_line(style, semantic_facts)}，随手一夹都很提气质。"
             )
         elif angle == 2:
             title = f"{emoji}这款{keyword}的细节质感真的很加分"
