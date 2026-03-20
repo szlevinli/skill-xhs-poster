@@ -598,6 +598,13 @@ class PublishPage:
             )
         return verification
 
+    @staticmethod
+    def _is_skippable_topic_error(message: str) -> bool:
+        return (
+            "未找到话题" in message
+            or "未成功转为可点击节点" in message
+        )
+
     def add_topic(self, topic_keyword: str) -> dict:
         editor, selector = self._get_editor_locator()
         editor.click()
@@ -605,14 +612,29 @@ class PublishPage:
         self.page.keyboard.type("#")
         self.page.wait_for_timeout(800)
         self.page.keyboard.type(topic_keyword)
-        candidate = self._click_first_topic_candidate(topic_keyword)
         try:
-            verification = self._verify_topic_applied(topic_keyword)
-        except RuntimeError:
-            # 部分页面中首次点击不会提交 mention，再回退为 Enter 提交当前高亮项。
-            self.page.keyboard.press("Enter")
-            self.page.wait_for_timeout(800)
-            verification = self._verify_topic_applied(topic_keyword)
+            candidate = self._click_first_topic_candidate(topic_keyword)
+            try:
+                verification = self._verify_topic_applied(topic_keyword)
+            except RuntimeError:
+                # 部分页面中首次点击不会提交 mention，再回退为 Enter 提交当前高亮项。
+                self.page.keyboard.press("Enter")
+                self.page.wait_for_timeout(800)
+                verification = self._verify_topic_applied(topic_keyword)
+        except RuntimeError as exc:
+            message = str(exc)
+            if not self._is_skippable_topic_error(message):
+                raise
+            return {
+                "editor_selector": selector,
+                "topic_keyword": topic_keyword,
+                "topic_candidate_selected": "",
+                "topic_candidate_name": "",
+                "topic_candidate_count": 0,
+                "topic_applied": False,
+                "topic_skipped": True,
+                "skip_reason": message,
+            }
         return {
             "editor_selector": selector,
             "topic_keyword": topic_keyword,
@@ -620,6 +642,8 @@ class PublishPage:
             "topic_candidate_name": candidate.get("data_name") or candidate.get("data_value") or "",
             "topic_candidate_count": candidate["candidate_count"],
             "topic_applied": verification["applied"],
+            "topic_skipped": False,
+            "skip_reason": None,
         }
 
     def _open_add_product_dialog(self) -> None:

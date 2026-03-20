@@ -212,6 +212,20 @@ def resolve_publish_inputs(
     return draft.title, draft.content.strip(), resolved_topics, draft
 
 
+def extract_skipped_topics(topic_results: list[dict]) -> list[dict]:
+    skipped_topics: list[dict] = []
+    for result in topic_results:
+        if not result.get("topic_skipped"):
+            continue
+        skipped_topics.append(
+            {
+                "topic_keyword": result.get("topic_keyword", ""),
+                "skip_reason": result.get("skip_reason", ""),
+            }
+        )
+    return skipped_topics
+
+
 def _load_success_dedupe_sets(
     settings: Settings,
     *,
@@ -482,6 +496,7 @@ def run_phase3(
         except Exception as exc:
             artifacts = save_phase3_artifacts(publish_page, settings, product.id)
             raise RuntimeError(f"{exc} artifacts={json.dumps(artifacts, ensure_ascii=False)}") from exc
+    skipped_topics = extract_skipped_topics(topic_results)
 
     result = Phase3ExecutionResult(
         product_id=product.id,
@@ -495,6 +510,7 @@ def run_phase3(
         title_selector=title_selector,
         content_selector=content_selector,
         topic_results=topic_results,
+        skipped_topics=skipped_topics,
         product_binding=product_binding,
         publish_result=publish_result,
         artifacts=artifacts,
@@ -511,6 +527,7 @@ def run_phase3(
             angle_name=result.angle_name,
             title=result.title,
             topic_keywords=result.topic_keywords,
+            skipped_topics=result.skipped_topics,
             status="success" if publish_result.get("success") else "failed",
             dedupe_key=f"{record_date}:{result.product_id}:{result.angle or 0}",
             publish_result=result.publish_result,

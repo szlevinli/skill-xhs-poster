@@ -319,6 +319,7 @@ class Phase3ExecutionResult(BaseModel):
     title_selector: str
     content_selector: str
     topic_results: list[dict] = Field(default_factory=list)
+    skipped_topics: list[dict] = Field(default_factory=list)
     product_binding: dict = Field(default_factory=dict)
     publish_result: dict = Field(default_factory=dict)
     log_path: str | None = None
@@ -408,6 +409,7 @@ class Phase3PublishRecord(BaseModel):
     angle_name: str | None = None
     title: str
     topic_keywords: list[str] = Field(default_factory=list)
+    skipped_topics: list[dict] = Field(default_factory=list)
     status: Phase3RecordStatus
     dedupe_key: str
     error: str | None = None
