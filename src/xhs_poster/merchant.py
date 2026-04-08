@@ -258,6 +258,86 @@ class ProductListPage:
             force_download=force_download,
         )
 
+    def _dismiss_blocking_modal(self) -> bool:
+        for locator in (
+            self.page.locator(".d-modal-close").first,
+            self.page.locator(".ant-modal-close").first,
+            self.page.locator("[aria-label='Close']").first,
+            self.page.get_by_text("关闭", exact=True).first,
+            self.page.get_by_text("我知道了", exact=True).first,
+            self.page.get_by_text("知道了", exact=True).first,
+            self.page.get_by_text("取消", exact=True).first,
+        ):
+            if locator_is_visible(locator):
+                try:
+                    locator.click(timeout=2_000)
+                    self.page.wait_for_timeout(500)
+                    return True
+                except Error:
+                    continue
+
+        dismissed = self.page.evaluate(
+            """
+            () => {
+                const normalize = (value) => (value || '').replace(/\\s+/g, ' ').trim();
+                const isVisible = (node) => {
+                    if (!node) return false;
+                    const rect = node.getBoundingClientRect();
+                    const style = window.getComputedStyle(node);
+                    return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+                };
+                const buttons = Array.from(document.querySelectorAll('button, span, div, a'))
+                    .filter((node) => isVisible(node))
+                    .filter((node) => ['关闭', '我知道了', '知道了', '取消'].includes(normalize(node.textContent)));
+                const target = buttons[0];
+                if (!target) return false;
+                target.click();
+                return true;
+            }
+            """
+        )
+        if dismissed:
+            self.page.wait_for_timeout(500)
+        return bool(dismissed)
+
+    def _wait_for_modal_mask_to_clear(self, timeout_ms: int = 5_000) -> bool:
+        try:
+            self.page.wait_for_function(
+                """
+                () => {
+                    const isVisible = (node) => {
+                        if (!node) return false;
+                        const rect = node.getBoundingClientRect();
+                        const style = window.getComputedStyle(node);
+                        return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+                    };
+                    return !Array.from(document.querySelectorAll('.d-modal-mask, .ant-modal-mask, .semi-modal-mask'))
+                        .some((node) => isVisible(node));
+                }
+                """,
+                timeout=timeout_ms,
+            )
+            return True
+        except Error:
+            return False
+
+    def _prepare_publish_click(self) -> None:
+        if self._wait_for_modal_mask_to_clear(timeout_ms=1_500):
+            return
+
+        deadline = time.monotonic() + 8
+        while time.monotonic() < deadline:
+            dismissed = self._dismiss_blocking_modal()
+            if self._wait_for_modal_mask_to_clear(timeout_ms=1_500):
+                return
+            if not dismissed:
+                self.page.keyboard.press("Escape")
+                self.page.wait_for_timeout(500)
+                if self._wait_for_modal_mask_to_clear(timeout_ms=1_500):
+                    return
+
+        raise RuntimeError("商品列表页存在未关闭的弹窗遮罩，无法点击“去发布”。")
+
     def open_publish_page(self, product_id: str) -> "PublishPage":
         self.wait_until_ready()
         row = self.page.locator("table tbody tr").filter(has_text=product_id).first
@@ -265,12 +345,24 @@ class ProductListPage:
             raise RuntimeError(f"未在商品列表中找到商品 {product_id}。")
 
         publish_trigger = row.get_by_text("去发布", exact=True).first
-        with self.page.expect_popup() as popup_info:
-            publish_trigger.click()
-        publish_page = popup_info.value
-        publish_page.wait_for_load_state("domcontentloaded")
-        publish_page.wait_for_timeout(4_000)
-        return PublishPage(publish_page, self.settings)
+        last_error: Error | None = None
+        for _ in range(2):
+            self._prepare_publish_click()
+            try:
+                with self.page.expect_popup() as popup_info:
+                    publish_trigger.click(timeout=5_000)
+                publish_page = popup_info.value
+                publish_page.wait_for_load_state("domcontentloaded")
+                publish_page.wait_for_timeout(4_000)
+                return PublishPage(publish_page, self.settings)
+            except Error as exc:
+                last_error = exc
+                if "intercepts pointer events" not in str(exc):
+                    raise
+                self._dismiss_blocking_modal()
+                self.page.wait_for_timeout(800)
+
+        raise RuntimeError(f"点击商品 {product_id} 的“去发布”失败：{last_error}")
 
 
 class PublishPage:
