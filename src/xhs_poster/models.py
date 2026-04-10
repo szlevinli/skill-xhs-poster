@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class ProductSummary(BaseModel):
@@ -10,14 +10,24 @@ class ProductSummary(BaseModel):
     name: str
 
 
-class DownloadedImage(BaseModel):
-    index: int
-    source_url: str
+class ProductImageAsset(BaseModel):
+    image_id: str = ""
     path: str
-    bytes: int
-    format: str
-    width: int
-    height: int
+    source_url: str = ""
+    normalized_url: str = ""
+    source_type: Literal["main", "detail", "unknown"] = "unknown"
+    source_priority: int = 99
+    position: int = 0
+    bytes: int = 0
+    format: str = ""
+    width: int = 0
+    height: int = 0
+    sha256: str = ""
+    is_original: bool = True
+
+
+class DownloadedImage(ProductImageAsset):
+    index: int
 
 
 class ProductImages(BaseModel):
@@ -34,8 +44,18 @@ class TodayPool(BaseModel):
     status: Literal["partial", "complete"] = "complete"
     generated_at: str = ""
     products: list[ProductSummary]
-    images: dict[str, list[str]]
+    images: dict[str, list[str]] = Field(default_factory=dict)
+    image_assets: dict[str, list[ProductImageAsset]] = Field(default_factory=dict)
     failed_products: list["ProductFailure"] = Field(default_factory=list)
+
+    @model_validator(mode="after")
+    def _sync_compatibility_views(self) -> "TodayPool":
+        if not self.images and self.image_assets:
+            self.images = {
+                product_id: [asset.path for asset in assets]
+                for product_id, assets in self.image_assets.items()
+            }
+        return self
 
 
 Phase1RunStatus = Literal["running", "partial", "complete", "failed"]
@@ -46,8 +66,17 @@ Phase1ArtifactStatus = Literal["missing", "partial", "complete"]
 class Phase1ImagesArtifact(BaseModel):
     status: Phase1ArtifactStatus = "missing"
     paths: list[str] = Field(default_factory=list)
+    assets: list[ProductImageAsset] = Field(default_factory=list)
     count: int = 0
     source: str = ""
+
+    @model_validator(mode="after")
+    def _sync_assets(self) -> "Phase1ImagesArtifact":
+        if not self.paths and self.assets:
+            self.paths = [asset.path for asset in self.assets]
+        if not self.count:
+            self.count = len(self.assets or self.paths)
+        return self
 
 
 class Phase1Artifacts(BaseModel):
@@ -90,6 +119,7 @@ class Phase1ExecutionResult(BaseModel):
     skipped_count: int
     failed_products: list["ProductFailure"] = Field(default_factory=list)
     today_pool: TodayPool
+    warnings: list[str] = Field(default_factory=list)
 
 
 SiteName = Literal["merchant", "consumer"]
@@ -128,6 +158,8 @@ class ContentDraft(BaseModel):
     content: str
     tags: str = ""
     reference_notes: list[str] = Field(default_factory=list)
+    selected_image_paths: list[str] = Field(default_factory=list)
+    selected_image_count: int = 0
 
 
 class ContentGenerationMeta(BaseModel):

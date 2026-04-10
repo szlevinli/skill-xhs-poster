@@ -16,8 +16,11 @@ from .history_notes import (
 )
 from .hot_notes import build_fallback_hot_notes_analysis, infer_search_keyword
 from .image_facts import extract_product_image_facts
+from .image_allocation import allocate_image_paths
 from .image_semantics import analyze_product_image_semantics, load_image_semantic_facts, save_image_semantic_facts
 from .models import (
+    ContentDraft,
+    ContentGenerationMeta,
     ContentsBundle,
     HotNotesAnalysis,
     Phase2ExecutionResult,
@@ -78,10 +81,20 @@ def resolve_image_paths(
     today_pool: TodayPool,
     product_id: str,
     *,
-    limit: int = 3,
+    limit: int | None = None,
 ) -> list[str]:
-    existing = [path for path in today_pool.images.get(product_id, []) if Path(path).exists()]
-    if len(existing) >= limit:
+    existing = [
+        asset.path
+        for asset in today_pool.image_assets.get(product_id, [])
+        if Path(asset.path).exists()
+    ]
+    seen = set(existing)
+    for path in today_pool.images.get(product_id, []):
+        if not Path(path).exists() or path in seen:
+            continue
+        existing.append(path)
+        seen.add(path)
+    if limit is not None and len(existing) >= limit:
         return existing[:limit]
 
     product_dir = settings.images_dir / product_id
@@ -91,15 +104,14 @@ def resolve_image_paths(
             for path in product_dir.iterdir()
             if path.is_file() and path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}
         )
-        seen = set(existing)
         for path in candidates:
             if path in seen:
                 continue
             existing.append(path)
             seen.add(path)
-            if len(existing) >= limit:
+            if limit is not None and len(existing) >= limit:
                 break
-    return existing[:limit]
+    return existing[:limit] if limit is not None else existing
 
 
 def build_phase2_outputs(
@@ -132,7 +144,7 @@ def build_phase2_outputs(
     product_fact_snapshots = []
     semantic_bundle = load_image_semantic_facts(settings)
     for product in today_pool.products:
-        image_paths = resolve_image_paths(settings, today_pool, product.id)
+        image_paths = resolve_image_paths(settings, today_pool, product.id, limit=None)
         if not image_paths:
             continue
         facts = extract_product_image_facts(product, image_paths)
@@ -147,8 +159,8 @@ def build_phase2_outputs(
         )
     save_image_semantic_facts(settings, semantic_bundle)
 
-    contents: dict[str, list] = {}
-    generation: dict[str, dict] = {}
+    contents: dict[str, list[ContentDraft]] = {}
+    generation: dict[str, ContentGenerationMeta] = {}
     statuses: dict[str, str] = {}
     warnings_map: dict[str, list[str]] = {}
     input_refs: dict[str, dict] = {}
@@ -158,7 +170,7 @@ def build_phase2_outputs(
     started_at = time.perf_counter()
     for product in today_pool.products:
         product_warnings: list[str] = []
-        image_paths = resolve_image_paths(settings, today_pool, product.id)
+        image_paths = resolve_image_paths(settings, today_pool, product.id, limit=None)
         if not image_paths:
             statuses[product.id] = "failed"
             product_warnings.append("缺少可用商品图片，无法生成文案。")
@@ -212,6 +224,13 @@ def build_phase2_outputs(
             contents_per_product=contents_per_product,
             settings=settings,
         )
+        allocations = allocate_image_paths(
+            image_paths,
+            draft_count=len(generated.drafts),
+        )
+        for draft, selected_image_paths in zip(generated.drafts, allocations, strict=False):
+            draft.selected_image_paths = selected_image_paths
+            draft.selected_image_count = len(selected_image_paths)
         contents[product.id] = generated.drafts
         generation[product.id] = generated.meta
         generation_sources[product.id] = generated.meta.source

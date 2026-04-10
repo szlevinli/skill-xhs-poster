@@ -90,8 +90,16 @@ def _extract_palette(image: Image.Image, limit: int = 3) -> list[str]:
 
 def _brightness_label(image: Image.Image) -> str:
     rgb = image.convert("RGB").resize((64, 64))
-    pixels = list(rgb.getdata())
-    avg = sum((r + g + b) / 3 for r, g, b in pixels) / max(1, len(pixels))
+    width, height = rgb.size
+    total = 0.0
+    for y in range(height):
+        for x in range(width):
+            pixel = rgb.getpixel((x, y))
+            if not isinstance(pixel, tuple) or len(pixel) < 3:
+                continue
+            r, g, b = pixel[:3]
+            total += (r + g + b) / 3
+    avg = total / max(1, width * height)
     if avg >= 190:
         return "明亮"
     if avg >= 120:
@@ -148,7 +156,9 @@ def extract_product_image_facts(
 def build_image_facts(today_pool: TodayPool) -> list[ProductImageFacts]:
     facts: list[ProductImageFacts] = []
     for product in today_pool.products:
-        image_paths = today_pool.images.get(product.id, [])
+        image_paths = [
+            asset.path for asset in today_pool.image_assets.get(product.id, [])
+        ] or today_pool.images.get(product.id, [])
         if not image_paths:
             continue
         facts.append(extract_product_image_facts(product, image_paths))

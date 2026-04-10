@@ -19,7 +19,6 @@ from .models import (
     Phase3DailyRecords,
     Phase3DedupScope,
     Phase3ExecutionResult,
-    Phase3PlanItemStatus,
     Phase3PlanItem,
     Phase3PlanMode,
     Phase3PlanResult,
@@ -121,19 +120,24 @@ def resolve_image_paths(
     product_id: str,
     *,
     image_paths: list[str] | None = None,
-    limit: int = 3,
+    limit: int = 9,
     min_count: int = 1,
 ) -> list[str]:
+    using_explicit_paths = bool(image_paths)
     if image_paths:
         resolved = [str(Path(path)) for path in image_paths if Path(path).exists()]
     else:
         resolved = [
+            asset.path
+            for asset in today_pool.image_assets.get(product_id, [])
+            if Path(asset.path).exists()
+        ] or [
             path
             for path in today_pool.images.get(product_id, [])
             if Path(path).exists()
         ]
 
-    if len(resolved) < limit:
+    if not using_explicit_paths and not resolved:
         product_dir = settings.images_dir / product_id
         if product_dir.exists():
             local_files = sorted(
@@ -292,7 +296,13 @@ def list_phase3_candidates(
             )
             try:
                 candidate.image_count = len(
-                    resolve_image_paths(settings, today_pool, product_id, limit=3)
+                    resolve_image_paths(
+                        settings,
+                        today_pool,
+                        product_id,
+                        image_paths=draft.selected_image_paths,
+                        limit=9,
+                    )
                 )
             except RuntimeError as exc:
                 candidate.image_count = 0
@@ -473,7 +483,7 @@ def run_phase3(
         settings,
         today_pool,
         product.id,
-        image_paths=image_paths,
+        image_paths=image_paths or (draft.selected_image_paths if draft else None),
     )
 
     with merchant_context(settings, headless=run_headless, auth_source=session.auth_source) as context:

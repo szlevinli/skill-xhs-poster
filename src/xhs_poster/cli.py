@@ -109,10 +109,10 @@ def _run_login(site: SiteName, timeout_ms: int, *, debug_auth: bool = False) -> 
         raise typer.Exit(code=2)
 
 
-@app.command("prepare-products", help="从商家后台同步商品与主图，实时写出 phase1-state.json，并收敛更新 today-pool.json；支持断点续传，需已登录商家端。")
+@app.command("prepare-products", help="从商家后台同步商品图片，下载商品主图全部图片与详情页图片全部图片，实时写出 phase1-state.json，并收敛更新 today-pool.json；支持断点续传，需已登录商家端。")
 def prepare_products_command(
     limit: Annotated[int, typer.Option("--limit", help="目标成功商品数量；会在当前列表中继续补位，直到凑够或候选耗尽")] = 10,
-    images_per_product: Annotated[int, typer.Option("--images-per-product", help="每个商品下载的主图数量")] = 3,
+    images_per_product: Annotated[int, typer.Option("--images-per-product", help="兼容废弃参数：保留旧脚本调用，但不再限制每个商品下载图片数量")] = 3,
     force_download: Annotated[bool, typer.Option("--force-download", help="强制重新下载图片，覆盖已有")] = False,
 ) -> None:
     payload, exit_code = build_phase1_payload(
@@ -124,7 +124,7 @@ def prepare_products_command(
     raise typer.Exit(code=exit_code)
 
 
-@app.command("generate-content", help="基于 today-pool 与主图生成待发布笔记内容，写出 contents.json；依赖 LLM 配置与可选 trend-signals。")
+@app.command("generate-content", help="基于 today-pool 与商品图片生成待发布笔记内容，写出 contents.json，并为每条草稿绑定 selected_image_paths；依赖 LLM 配置与可选 trend-signals。")
 def generate_content_command(
     keyword: Annotated[str | None, typer.Option("--keyword", help="类目/趋势关键词，未指定则从商品名推断")] = None,
     contents_per_product: Annotated[int, typer.Option("--contents-per-product", help="每个商品生成的文案条数")] = 5,
@@ -157,7 +157,7 @@ def publish_note_command(
     title: Annotated[str | None, typer.Option("--title", help="直接指定标题（与 --content 一起用时忽略 contents.json）")] = None,
     content: Annotated[str | None, typer.Option("--content", help="直接指定正文（与 --title 一起用时忽略 contents.json）")] = None,
     topic_keywords: Annotated[list[str] | None, typer.Option("--topic-keyword", help="指定话题关键词，可多次传入；不传则从草稿 tags 提取全部 #")] = None,
-    image_paths: Annotated[list[str] | None, typer.Option("--image-path", help="指定图片路径，可多次传入，不传则用 today-pool 主图")] = None,
+    image_paths: Annotated[list[str] | None, typer.Option("--image-path", help="指定图片路径，可多次传入；不传则优先用草稿绑定的 selected_image_paths，再回退到 today-pool")] = None,
 ) -> None:
     payload, exit_code = build_phase3_payload(
         product_id=product_id,

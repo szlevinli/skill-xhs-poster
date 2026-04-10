@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 import json
+import warnings
 from datetime import date, datetime
 from pathlib import Path
+from typing import Sequence
 
 from .auth import LoginRequiredError, require_authenticated_session
 from .browser import get_alive_page, merchant_context, open_product_list_page
 from .config import Settings
+from .image_assets import build_local_assets
 from .merchant import ProductListPage
 from .models import (
     Phase1ExecutionResult,
+    ProductImageAsset,
     Phase1ProductState,
     Phase1State,
     Phase1Success,
@@ -74,45 +78,10 @@ def ensure_clean_image_dir(
         child.rmdir()
 
 
-def discover_local_image_paths(settings: Settings, product_id: str, *, limit: int) -> list[str]:
-    product_dir = settings.images_dir / product_id
-    if not product_dir.exists():
-        return []
-
-    candidates: list[str] = []
-    for index in range(1, limit + 1):
-        matched_path = None
-        for suffix in (".jpg", ".png", ".jpeg", ".webp"):
-            candidate = product_dir / f"{index}{suffix}"
-            if candidate.exists():
-                matched_path = candidate
-                break
-        if matched_path is None:
-            break
-        candidates.append(str(matched_path))
-
-    if len(candidates) >= limit:
-        return candidates[:limit]
-
-    fallback = sorted(
-        str(path)
-        for path in product_dir.iterdir()
-        if path.is_file() and path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}
-    )
-    seen = set(candidates)
-    for path in fallback:
-        if path in seen:
-            continue
-        candidates.append(path)
-        seen.add(path)
-        if len(candidates) >= limit:
-            break
-    return candidates[:limit]
-
-
 def mark_images_complete(
     state: Phase1ProductState,
     *,
+    assets: Sequence[ProductImageAsset],
     image_paths: list[str],
     source: str,
     timestamp: str,
@@ -122,6 +91,7 @@ def mark_images_complete(
     state.updated_at = timestamp
     state.artifacts.images.status = "complete"
     state.artifacts.images.paths = image_paths
+    state.artifacts.images.assets = list(assets)
     state.artifacts.images.count = len(image_paths)
     state.artifacts.images.source = source
 
@@ -161,11 +131,12 @@ def build_today_pool_from_state(
     products: list[ProductSummary],
     state: Phase1State,
     *,
-    limit: int,
+    limit: int | None,
     target_count: int,
 ) -> TodayPool:
     success_products: list[ProductSummary] = []
     images: dict[str, list[str]] = {}
+    image_assets: dict[str, list[ProductImageAsset]] = {}
     failed_products: list[ProductFailure] = []
 
     for product in products:
@@ -176,7 +147,13 @@ def build_today_pool_from_state(
         image_paths = [path for path in product_state.artifacts.images.paths if Path(path).exists()]
         if product_state.fetch_status == "complete" and image_paths:
             success_products.append(product)
-            images[product.id] = image_paths[:limit]
+            images[product.id] = image_paths[:limit] if limit is not None else image_paths
+            valid_assets = [
+                asset for asset in product_state.artifacts.images.assets if Path(asset.path).exists()
+            ]
+            if not valid_assets:
+                valid_assets = build_local_assets(images[product.id])
+            image_assets[product.id] = valid_assets[:limit] if limit is not None else valid_assets
             if len(success_products) >= target_count:
                 break
             continue
@@ -197,6 +174,7 @@ def build_today_pool_from_state(
         generated_at=now_iso(),
         products=success_products,
         images=images,
+        image_assets=image_assets,
         failed_products=failed_products,
     )
 
@@ -235,6 +213,7 @@ def run_phase1(
     force_download: bool = False,
     settings: Settings | None = None,
 ) -> Phase1ExecutionResult:
+    del images_per_product
     settings = settings or Settings()
     settings.ensure_directories()
     state = load_phase1_state(settings)
@@ -264,26 +243,20 @@ def run_phase1(
 
         for product in candidate_products:
             product_state = state.products[product.id]
-            local_paths = [] if force_download else discover_local_image_paths(
-                settings,
-                product.id,
-                limit=images_per_product,
-            )
-
-            if local_paths and product_state.fetch_status != "complete":
-                mark_images_complete(
-                    product_state,
-                    image_paths=local_paths,
-                    source="existing_files",
-                    timestamp=now_iso(),
-                )
-
             if not force_download and product_state.fetch_status == "complete":
                 complete_paths = [path for path in product_state.artifacts.images.paths if Path(path).exists()]
-                if complete_paths:
+                complete_assets = [
+                    asset for asset in product_state.artifacts.images.assets if Path(asset.path).exists()
+                ]
+                has_canonical_assets = bool(complete_assets) and all(
+                    asset.source_type != "unknown" and bool(asset.normalized_url or asset.source_url)
+                    for asset in complete_assets
+                )
+                if complete_paths and has_canonical_assets:
                     mark_images_complete(
                         product_state,
-                        image_paths=complete_paths[:images_per_product],
+                        assets=complete_assets,
+                        image_paths=complete_paths,
                         source=product_state.artifacts.images.source or "existing_files",
                         timestamp=now_iso(),
                     )
@@ -298,7 +271,7 @@ def run_phase1(
                     current_today_pool = build_today_pool_from_state(
                         candidate_products,
                         state,
-                        limit=images_per_product,
+                        limit=None,
                         target_count=limit,
                     )
                     save_today_pool(
@@ -317,11 +290,12 @@ def run_phase1(
             try:
                 bundle = list_page.get_product_images(
                     product,
-                    limit=images_per_product,
+                    limit=0,
                     force_download=force_download,
                 )
                 mark_images_complete(
                     product_state,
+                    assets=bundle.downloaded_images,
                     image_paths=[image.path for image in bundle.downloaded_images],
                     source=bundle.download_strategy or "downloaded",
                     timestamp=now_iso(),
@@ -339,7 +313,7 @@ def run_phase1(
             current_today_pool = build_today_pool_from_state(
                 candidate_products,
                 state,
-                limit=images_per_product,
+                limit=None,
                 target_count=limit,
             )
             save_today_pool(
@@ -352,7 +326,7 @@ def run_phase1(
     today_pool = build_today_pool_from_state(
         candidate_products,
         state,
-        limit=images_per_product,
+        limit=None,
         target_count=limit,
     )
     refresh_state_summary(
@@ -377,6 +351,9 @@ def run_phase1(
         skipped_count=state.skipped_count,
         failed_products=today_pool.failed_products,
         today_pool=today_pool,
+        warnings=[
+            "参数 --images-per-product 已废弃；phase1 现总是下载每个商品的全部去重图片。"
+        ],
     )
 
 
@@ -387,6 +364,11 @@ def build_phase1_payload(
     force_download: bool = False,
 ) -> tuple[dict, int]:
     try:
+        warnings.warn(
+            "--images-per-product 已废弃；phase1 现在总是下载商品主图和详情页图片的全部去重原图。",
+            UserWarning,
+            stacklevel=2,
+        )
         result = run_phase1(
             limit=limit,
             images_per_product=images_per_product,

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import json
+import hashlib
 import re
 import time
 from io import BytesIO
 from pathlib import Path
+from typing import Literal
 
 import httpx
 from PIL import Image
@@ -12,6 +14,13 @@ from playwright.sync_api import Error, Page
 
 from .config import Settings
 from .models import DownloadedImage, ProductImages, ProductSummary
+from .image_pipeline import (
+    ImageCandidate,
+    build_image_id,
+    dedupe_candidates,
+    dedupe_downloaded_images,
+    normalize_image_url,
+)
 
 
 def locator_is_visible(locator) -> bool:
@@ -55,47 +64,136 @@ class ProductDetailPage:
         )
         self.page.wait_for_timeout(2_000)
 
-    def extract_qimg_urls(self, limit: int = 5) -> tuple[list[str], str, int]:
+    def _extract_section_candidates(
+        self,
+        labels: tuple[str, ...],
+        *,
+        source_type: Literal["main", "detail", "unknown"],
+        source_priority: int,
+    ) -> list[ImageCandidate]:
         self.open_graphic_info_tab()
         self.page.evaluate("window.scrollTo(0, 600)")
         self.page.wait_for_timeout(1_500)
 
-        img_urls = self.page.evaluate(
+        section_urls = self.page.evaluate(
             """
-            () => {
+            (labels) => {
+                const normalizeText = (value) => (value || '').replace(/\\s+/g, ' ').trim();
+                const extractUrl = (node) => {
+                    const candidates = [
+                        node.getAttribute?.('data-origin'),
+                        node.getAttribute?.('data-origin-src'),
+                        node.getAttribute?.('data-original'),
+                        node.getAttribute?.('data-url'),
+                        node.getAttribute?.('data-src'),
+                        node.getAttribute?.('src'),
+                        node.getAttribute?.('href'),
+                    ];
+                    for (const value of candidates) {
+                        const url = normalizeText(value);
+                        if (url.startsWith('http')) return url;
+                    }
+                    const style = node.getAttribute?.('style') || '';
+                    const match = style.match(/url\\(["']?([^"')]+)["']?\\)/);
+                    return match ? match[1] : '';
+                };
+                const collectUrls = (root) => {
+                    const urls = [];
+                    const seen = new Set();
+                    for (const node of root.querySelectorAll('img, a, div, span, li, picture source')) {
+                        const url = extractUrl(node);
+                        if (!url || !url.startsWith('http')) {
+                            continue;
+                        }
+                        if (!/xiaohongshu\\.com/.test(url)) {
+                            continue;
+                        }
+                        if (seen.has(url)) {
+                            continue;
+                        }
+                        seen.add(url);
+                        urls.push(url);
+                    }
+                    return urls;
+                };
+                const roots = [];
+                for (const node of document.querySelectorAll('div, section, span, p, label, h2, h3, h4, li')) {
+                    if (!labels.includes(normalizeText(node.textContent))) {
+                        continue;
+                    }
+                    roots.push(
+                        node.closest('[class*="form"], [class*="item"], [class*="section"], [class*="block"], [class*="card"], .ant-form-item, .form-item, .d-form-item')
+                        || node.parentElement
+                        || node
+                    );
+                }
                 const urls = [];
                 const seen = new Set();
-                for (const img of document.querySelectorAll('img[src]')) {
-                    const src = img.src || '';
-                    if (!src.includes('qimg.xiaohongshu.com') || !src.includes('material_space')) {
-                        continue;
+                for (const root of roots) {
+                    for (const url of collectUrls(root)) {
+                        if (seen.has(url)) {
+                            continue;
+                        }
+                        seen.add(url);
+                        urls.push(url);
                     }
-                    const normalized = src.split('?')[0];
-                    if (seen.has(normalized)) {
-                        continue;
-                    }
-                    seen.add(normalized);
-                    urls.push(normalized);
                 }
                 return urls;
             }
-            """
+            """,
+            labels,
         )
 
+        candidates: list[ImageCandidate] = []
+        for position, url in enumerate(section_urls, start=1):
+            candidates.append(
+                ImageCandidate(
+                    source_url=url,
+                    normalized_url=normalize_image_url(url),
+                    source_type=source_type,
+                    source_priority=source_priority,
+                    position=position,
+                )
+            )
+        return candidates
+
+    def extract_image_candidates(self) -> tuple[list[ImageCandidate], str, int]:
+        main_candidates = self._extract_section_candidates(
+            ("商品主图",),
+            source_type="main",
+            source_priority=0,
+        )
+        detail_candidates = self._extract_section_candidates(
+            ("详情页图片", "详情图片"),
+            source_type="detail",
+            source_priority=1,
+        )
+
+        strategy = "sectioned"
+        candidates = dedupe_candidates([*main_candidates, *detail_candidates])
         html = self.page.content()
         ci_domain_count = html.count("ci.xiaohongshu.com")
 
-        html_urls = []
+        if candidates:
+            return candidates, strategy, ci_domain_count
+
+        fallback_urls = []
         seen = set()
         for uuid in re.findall(r"material_space/([a-f0-9-]{36})", html):
-            if uuid in seen:
+            url = f"https://qimg.xiaohongshu.com/material_space/{uuid}"
+            if url in seen:
                 continue
-            seen.add(uuid)
-            html_urls.append(f"https://qimg.xiaohongshu.com/material_space/{uuid}")
-
-        if img_urls:
-            return img_urls[:limit], "qimg_from_img", ci_domain_count
-        return html_urls[:limit], "qimg_from_html", ci_domain_count
+            seen.add(url)
+            fallback_urls.append(
+                ImageCandidate(
+                    source_url=url,
+                    normalized_url=normalize_image_url(url),
+                    source_type="unknown",
+                    source_priority=9,
+                    position=len(fallback_urls) + 1,
+                )
+            )
+        return fallback_urls, "html_fallback", ci_domain_count
 
     def download_images(
         self,
@@ -104,29 +202,35 @@ class ProductDetailPage:
         limit: int = 3,
         force_download: bool = False,
     ) -> ProductImages:
-        qimg_urls, strategy, ci_domain_count = self.extract_qimg_urls(limit=max(limit, 5))
-        required_count = min(limit, len(qimg_urls))
+        del limit
+        candidates, strategy, ci_domain_count = self.extract_image_candidates()
+        required_count = len(candidates)
         if required_count == 0:
-            raise RuntimeError(f"商品 {product.id} 未提取到可用主图。")
+            raise RuntimeError(f"商品 {product.id} 未提取到可用图片。")
         product_dir = self.settings.images_dir / product.id
         product_dir.mkdir(parents=True, exist_ok=True)
 
         if not force_download:
-            existing_images = self._load_existing_images(product_dir, qimg_urls, limit=limit)
+            existing_images = self._load_existing_images(product_dir, candidates)
             if len(existing_images) >= required_count:
                 return ProductImages(
                     product_id=product.id,
                     product_name=product.name,
-                    qimg_urls=qimg_urls,
+                    qimg_urls=[candidate.normalized_url for candidate in candidates],
                     download_strategy="existing_files",
                     ci_domain_count=ci_domain_count,
                     downloaded_images=existing_images[:required_count],
                 )
 
+        for child in product_dir.iterdir():
+            if child.is_file() and child.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}:
+                child.unlink()
+
         downloaded_images: list[DownloadedImage] = []
         with httpx.Client(follow_redirects=True, timeout=30.0) as client:
-            for index, url in enumerate(qimg_urls[:limit], 1):
-                response = client.get(url)
+            for index, candidate in enumerate(candidates, 1):
+                download_url = candidate.normalized_url or candidate.source_url
+                response = client.get(download_url)
                 response.raise_for_status()
                 image_bytes = response.content
 
@@ -134,29 +238,40 @@ class ProductDetailPage:
                     image_format = (image.format or "JPEG").lower()
                     width, height = image.size
 
+                sha256 = hashlib.sha256(image_bytes).hexdigest()
                 suffix = ".png" if image_format == "png" else ".jpg"
-                path = product_dir / f"{index}{suffix}"
+                path = product_dir / f"{index:03d}{suffix}"
                 path.write_bytes(image_bytes)
 
                 downloaded_images.append(
                     DownloadedImage(
                         index=index,
-                        source_url=url,
+                        image_id=build_image_id(product.id, candidate.normalized_url, candidate.source_type, candidate.position),
                         path=str(path),
+                        source_url=candidate.source_url,
+                        normalized_url=candidate.normalized_url,
+                        source_type=candidate.source_type,
+                        source_priority=candidate.source_priority,
+                        position=candidate.position,
                         bytes=len(image_bytes),
                         format=image_format,
                         width=width,
                         height=height,
+                        sha256=sha256,
                     )
                 )
 
+        downloaded_images = self._finalize_downloaded_images(
+            product_dir,
+            dedupe_downloaded_images(downloaded_images),
+        )
         if not downloaded_images:
-            raise RuntimeError(f"商品 {product.id} 未下载到任何主图。")
+            raise RuntimeError(f"商品 {product.id} 未下载到任何图片。")
 
         bundle = ProductImages(
             product_id=product.id,
             product_name=product.name,
-            qimg_urls=qimg_urls,
+            qimg_urls=[candidate.normalized_url for candidate in candidates],
             download_strategy=strategy,
             ci_domain_count=ci_domain_count,
             downloaded_images=downloaded_images,
@@ -166,18 +281,16 @@ class ProductDetailPage:
     def _load_existing_images(
         self,
         product_dir: Path,
-        qimg_urls: list[str],
-        *,
-        limit: int,
+        candidates: list[ImageCandidate],
     ) -> list[DownloadedImage]:
         existing: list[DownloadedImage] = []
 
-        for index, url in enumerate(qimg_urls[:limit], 1):
+        for index, candidate in enumerate(candidates, 1):
             matched_path = None
-            for suffix in (".jpg", ".png"):
-                candidate = product_dir / f"{index}{suffix}"
-                if candidate.exists():
-                    matched_path = candidate
+            for suffix in (".jpg", ".png", ".jpeg", ".webp"):
+                existing_candidate = product_dir / f"{index:03d}{suffix}"
+                if existing_candidate.exists():
+                    matched_path = existing_candidate
                     break
 
             if matched_path is None:
@@ -186,20 +299,59 @@ class ProductDetailPage:
             with Image.open(matched_path) as image:
                 image_format = (image.format or "JPEG").lower()
                 width, height = image.size
+            sha256 = hashlib.sha256(matched_path.read_bytes()).hexdigest()
 
             existing.append(
                 DownloadedImage(
                     index=index,
-                    source_url=url,
+                    image_id=build_image_id(
+                        product_dir.name,
+                        candidate.normalized_url,
+                        candidate.source_type,
+                        candidate.position,
+                    ),
                     path=str(matched_path),
+                    source_url=candidate.source_url,
+                    normalized_url=candidate.normalized_url,
+                    source_type=candidate.source_type,
+                    source_priority=candidate.source_priority,
+                    position=candidate.position,
                     bytes=matched_path.stat().st_size,
                     format=image_format,
                     width=width,
                     height=height,
+                    sha256=sha256,
                 )
             )
 
-        return existing
+        return self._finalize_downloaded_images(product_dir, dedupe_downloaded_images(existing))
+
+    def _finalize_downloaded_images(
+        self,
+        product_dir: Path,
+        downloaded_images: list[DownloadedImage],
+    ) -> list[DownloadedImage]:
+        finalized: list[DownloadedImage] = []
+        keep_paths = {image.path for image in downloaded_images}
+        for child in product_dir.iterdir():
+            if child.is_file() and child.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"} and str(child) not in keep_paths:
+                child.unlink()
+
+        for index, image in enumerate(downloaded_images, start=1):
+            current_path = Path(image.path)
+            suffix = current_path.suffix or (".png" if image.format == "png" else ".jpg")
+            target_path = product_dir / f"{index:03d}{suffix}"
+            if current_path != target_path:
+                current_path.replace(target_path)
+            finalized.append(
+                image.model_copy(
+                    update={
+                        "index": index,
+                        "path": str(target_path),
+                    }
+                )
+            )
+        return finalized
 
 
 class ProductListPage:

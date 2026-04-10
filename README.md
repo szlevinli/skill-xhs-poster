@@ -1,6 +1,6 @@
 # 小红书商品笔记自动发布
 
-小红书商家后台自动化工具：从商品管理拉取商品与主图、生成种草文案、编排并发布笔记。CLI 三阶段独立执行（prepare-products → generate-content → phase3 plan/run），通过 JSON 文件传递数据。`prepare-products` 现支持断点续传、收敛执行，并实时写出 `phase1-state.json`。`generate-content` 会优先对商品主图做语义分析，再结合趋势与风格参考生成文案。
+小红书商家后台自动化工具：从商品管理拉取商品图片、生成种草文案、编排并发布笔记。CLI 三阶段独立执行（prepare-products → generate-content → phase3 plan/run），通过 JSON 文件传递数据。`prepare-products` 现支持断点续传、收敛执行，并实时写出 `phase1-state.json`。`generate-content` 会基于商品去重图片集生成文案，并为每条草稿绑定 `selected_image_paths`。
 
 ## 前置条件
 
@@ -47,8 +47,8 @@ uv run xhs-poster login merchant
 # 2. 可选：导出 auth-state，供云服务器导入复用
 uv run xhs-poster auth export merchant --output ./merchant-state.json
 
-# 3. 拉取商品与主图（支持断点续传；可轮询 phase1-state.json 查看进度）
-uv run xhs-poster prepare-products --limit 10 --images-per-product 3
+# 3. 拉取商品图片（支持断点续传；可轮询 phase1-state.json 查看进度）
+uv run xhs-poster prepare-products --limit 10
 
 # 4. 生成趋势信号（可选）
 uv run xhs-poster prepare-trends --keyword 抓夹
@@ -82,11 +82,12 @@ phase3 现在默认使用“计划文件 + 当日记录文件”：
 - 每处理完一个商品就更新 `xiaohongshu-data/phase1-state.json`
 - 只要已有成功商品，就会同步刷新 `xiaohongshu-data/today-pool.json`
 - `--limit 10` 的语义是“尽量得到 10 个成功商品”，不是“只检查前 10 个商品”
-- 若列表前面的商品没有可用主图，会继续尝试后续商品补位，直到成功商品达到目标数量或当前候选耗尽
-- 已完成且图片齐全的商品，默认跳过，不会重复进入详情页或重新下载
+- 若列表前面的商品没有可用图片，会继续尝试后续商品补位，直到成功商品达到目标数量或当前候选耗尽
+- 已完成且已落盘结构化图片资产的商品，默认跳过，不会重复进入详情页或重新下载
 - 只有缺失、失败或显式传 `--force-download` 时，才会重新抓取
-- 每个商品最多保留前 3 张主图；若只有 1 或 2 张主图，也仍视为成功商品
-- 只有 0 张主图的商品才会被排除在 phase2 和 phase3 之外
+- 每个商品会下载 **商品主图全部图片 + 详情页图片全部图片**，优先原图，并按 URL 归一化 + 内容 hash 去重
+- 只有 0 张图片的商品才会被排除在 phase2 和 phase3 之外
+- `--images-per-product` 已废弃，仅保留旧脚本兼容，不再限制下载数量
 - 若本次只成功了一部分商品，`today-pool.json` 会带 `status: "partial"`，但仍可供后续阶段消费已成功商品
 
 `phase1-state.json` 适合云服务器或 AI 编排层轮询，不建议依赖 stdout 流式事件。
@@ -107,7 +108,7 @@ Linux 云服务器:
 ```bash
 uv run xhs-poster auth import merchant --input ./merchant-state.json
 uv run xhs-poster auth probe merchant
-uv run xhs-poster prepare-products --limit 10 --images-per-product 3
+uv run xhs-poster prepare-products --limit 10
 ```
 
 说明：
@@ -127,7 +128,7 @@ mv xiaohongshu-data/profiles/merchant xiaohongshu-data/profiles/merchant.bak
 mkdir -p xiaohongshu-data/profiles/merchant
 uv run xhs-poster auth import merchant --input ./merchant-state.json
 uv run xhs-poster auth probe merchant
-uv run xhs-poster prepare-products --limit 1 --images-per-product 1
+uv run xhs-poster prepare-products --limit 1
 ```
 
 验证完成后，如需恢复本地 profile：
