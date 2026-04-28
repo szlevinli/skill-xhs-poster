@@ -65,7 +65,7 @@ class Settings(BaseSettings):
         description="LLM API Key，支持通用和 Moonshot 命名。",
     )
     llm_model: str = Field(
-        default="moonshot-v1-8k",
+        default="kimi-k2.6",
         validation_alias=AliasChoices("XHS_POSTER_LLM_MODEL", "LLM_MODEL", "MOONSHOT_MODEL"),
         description="LLM 模型名。",
     )

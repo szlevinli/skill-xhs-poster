@@ -88,6 +88,15 @@ class Phase3ImageFallbackTests(unittest.TestCase):
                                 "content": "正文",
                                 "tags": "#测试",
                                 "reference_notes": [],
+                                "originality_check": {
+                                    "passed": True,
+                                    "core_input_type": "新案例",
+                                    "core_input_evidence": "当前商品测试案例",
+                                    "product_fact_anchors": ["测试商品", "001.jpg"],
+                                    "supporting_differences": ["不同决策问题：测试", "不同素材组合方式：测试"],
+                                    "nearest_history_notes": [],
+                                    "rejection_reasons": []
+                                },
                             }
                         ]
                     },

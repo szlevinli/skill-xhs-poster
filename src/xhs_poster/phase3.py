@@ -32,6 +32,7 @@ from .models import (
     SkillError,
     TodayPool,
 )
+from .originality import assert_publishable_originality
 
 
 def load_today_pool(settings: Settings) -> TodayPool:
@@ -212,6 +213,7 @@ def resolve_publish_inputs(
         product_id,
         angle=angle,
     )
+    assert_publishable_originality(draft)
     resolved_topics = topic_keywords or extract_topic_keywords(draft.tags)
     return draft.title, draft.content.strip(), resolved_topics, draft
 
@@ -309,10 +311,15 @@ def list_phase3_candidates(
                 candidate.eligible = False
                 candidate.ineligible_reason = str(exc)
             else:
-                if exclude_published == "today" and candidate.published_today:
+                try:
+                    assert_publishable_originality(draft)
+                except RuntimeError as exc:
+                    candidate.eligible = False
+                    candidate.ineligible_reason = str(exc)
+                if candidate.eligible and exclude_published == "today" and candidate.published_today:
                     candidate.eligible = False
                     candidate.ineligible_reason = "该商品 angle 今日已发布"
-                elif exclude_published == "ever" and candidate.published_ever:
+                elif candidate.eligible and exclude_published == "ever" and candidate.published_ever:
                     candidate.eligible = False
                     candidate.ineligible_reason = "该商品 angle 历史已发布"
             candidates.append(candidate)

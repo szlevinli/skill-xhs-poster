@@ -151,6 +151,16 @@ class SkillError(BaseModel):
     details: dict | None = None
 
 
+class OriginalityCheck(BaseModel):
+    passed: bool = False
+    core_input_type: str = ""
+    core_input_evidence: str = ""
+    product_fact_anchors: list[str] = Field(default_factory=list)
+    supporting_differences: list[str] = Field(default_factory=list)
+    nearest_history_notes: list[str] = Field(default_factory=list)
+    rejection_reasons: list[str] = Field(default_factory=list)
+
+
 class ContentDraft(BaseModel):
     angle: int
     angle_name: str
@@ -160,6 +170,7 @@ class ContentDraft(BaseModel):
     reference_notes: list[str] = Field(default_factory=list)
     selected_image_paths: list[str] = Field(default_factory=list)
     selected_image_count: int = 0
+    originality_check: OriginalityCheck | None = None
 
 
 class ContentGenerationMeta(BaseModel):
