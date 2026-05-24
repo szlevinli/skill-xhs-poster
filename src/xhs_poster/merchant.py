@@ -30,6 +30,71 @@ def locator_is_visible(locator) -> bool:
         return False
 
 
+def _dismiss_blocking_modal(page: Page) -> bool:
+    for locator in (
+        page.locator(".d-modal-close").first,
+        page.locator(".ant-modal-close").first,
+        page.locator("[aria-label='Close']").first,
+        page.get_by_text("关闭", exact=True).first,
+        page.get_by_text("我知道了", exact=True).first,
+        page.get_by_text("知道了", exact=True).first,
+        page.get_by_text("取消", exact=True).first,
+    ):
+        if locator_is_visible(locator):
+            try:
+                locator.click(timeout=2_000)
+                page.wait_for_timeout(500)
+                return True
+            except Error:
+                continue
+
+    dismissed = page.evaluate(
+        """
+        () => {
+            const normalize = (value) => (value || '').replace(/\\s+/g, ' ').trim();
+            const isVisible = (node) => {
+                if (!node) return false;
+                const rect = node.getBoundingClientRect();
+                const style = window.getComputedStyle(node);
+                return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+            };
+            const buttons = Array.from(document.querySelectorAll('button, span, div, a'))
+                .filter((node) => isVisible(node))
+                .filter((node) => ['关闭', '我知道了', '知道了', '取消'].includes(normalize(node.textContent)));
+            const target = buttons[0];
+            if (!target) return false;
+            target.click();
+            return true;
+        }
+        """
+    )
+    if dismissed:
+        page.wait_for_timeout(500)
+    return bool(dismissed)
+
+
+def _wait_for_modal_mask_to_clear(page: Page, timeout_ms: int = 5_000) -> bool:
+    try:
+        page.wait_for_function(
+            """
+            () => {
+                const isVisible = (node) => {
+                    if (!node) return false;
+                    const rect = node.getBoundingClientRect();
+                    const style = window.getComputedStyle(node);
+                    return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
+                };
+                return !Array.from(document.querySelectorAll('.d-modal-mask, .ant-modal-mask, .semi-modal-mask'))
+                    .some((node) => isVisible(node));
+            }
+            """,
+            timeout=timeout_ms,
+        )
+        return True
+    except Error:
+        return False
+
+
 class ProductDetailPage:
     def __init__(self, page: Page, settings: Settings):
         self.page = page
@@ -411,67 +476,10 @@ class ProductListPage:
         )
 
     def _dismiss_blocking_modal(self) -> bool:
-        for locator in (
-            self.page.locator(".d-modal-close").first,
-            self.page.locator(".ant-modal-close").first,
-            self.page.locator("[aria-label='Close']").first,
-            self.page.get_by_text("关闭", exact=True).first,
-            self.page.get_by_text("我知道了", exact=True).first,
-            self.page.get_by_text("知道了", exact=True).first,
-            self.page.get_by_text("取消", exact=True).first,
-        ):
-            if locator_is_visible(locator):
-                try:
-                    locator.click(timeout=2_000)
-                    self.page.wait_for_timeout(500)
-                    return True
-                except Error:
-                    continue
-
-        dismissed = self.page.evaluate(
-            """
-            () => {
-                const normalize = (value) => (value || '').replace(/\\s+/g, ' ').trim();
-                const isVisible = (node) => {
-                    if (!node) return false;
-                    const rect = node.getBoundingClientRect();
-                    const style = window.getComputedStyle(node);
-                    return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
-                };
-                const buttons = Array.from(document.querySelectorAll('button, span, div, a'))
-                    .filter((node) => isVisible(node))
-                    .filter((node) => ['关闭', '我知道了', '知道了', '取消'].includes(normalize(node.textContent)));
-                const target = buttons[0];
-                if (!target) return false;
-                target.click();
-                return true;
-            }
-            """
-        )
-        if dismissed:
-            self.page.wait_for_timeout(500)
-        return bool(dismissed)
+        return _dismiss_blocking_modal(self.page)
 
     def _wait_for_modal_mask_to_clear(self, timeout_ms: int = 5_000) -> bool:
-        try:
-            self.page.wait_for_function(
-                """
-                () => {
-                    const isVisible = (node) => {
-                        if (!node) return false;
-                        const rect = node.getBoundingClientRect();
-                        const style = window.getComputedStyle(node);
-                        return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
-                    };
-                    return !Array.from(document.querySelectorAll('.d-modal-mask, .ant-modal-mask, .semi-modal-mask'))
-                        .some((node) => isVisible(node));
-                }
-                """,
-                timeout=timeout_ms,
-            )
-            return True
-        except Error:
-            return False
+        return _wait_for_modal_mask_to_clear(self.page, timeout_ms)
 
     def _prepare_publish_click(self) -> None:
         if self._wait_for_modal_mask_to_clear(timeout_ms=1_500):
@@ -550,8 +558,23 @@ class PublishPage:
             return True
         return False
 
+    def _clear_blocking_modal(self) -> None:
+        if _wait_for_modal_mask_to_clear(self.page, timeout_ms=1_500):
+            return
+        deadline = time.monotonic() + 8
+        while time.monotonic() < deadline:
+            dismissed = _dismiss_blocking_modal(self.page)
+            if _wait_for_modal_mask_to_clear(self.page, timeout_ms=1_500):
+                return
+            if not dismissed:
+                self.page.keyboard.press("Escape")
+                self.page.wait_for_timeout(500)
+                if _wait_for_modal_mask_to_clear(self.page, timeout_ms=1_500):
+                    return
+
     def open_upload_material_step(self) -> None:
         self.wait_until_ready()
+        self._clear_blocking_modal()
         # 某些发布页会先停在入口态，需先切到手动创作，再进入图文上传。
         self._click_text_action("手动创作")
         for text in ("上传图文", "上传笔记素材"):
