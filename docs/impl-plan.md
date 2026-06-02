@@ -32,7 +32,7 @@
 | M5 | 发布会话复用 + publish 命名落位 | ✅ | 4d7afbd |
 | M6 | 条件等待改造 | ✅ | 483cb9b |
 | M7 | 反检测间隔 | ✅ | ad7df13 |
-| M8 | 可观测性（--verbose + 失败证据） | ⬜ | |
+| M8 | 可观测性（--verbose + 失败证据） | ✅ | 3a47694 |
 | M9 | 健壮性 | ⬜ | |
 | M10 | systemd 运行化 | ⬜ | |
 
@@ -479,18 +479,65 @@ xiaohongshu-data/publish/<date>/evidence/<product_id>-<angle>-<HHMMSS>/
 **回滚**：`git revert` 本里程碑提交。
 
 **收尾清单**：
-- [ ] `--verbose` 选项贯通 cli→run_publish_plan→session；logging 加 verbose seam
-- [ ] 失败证据扩为按篇子目录 + steps.jsonl；trace 默认仅失败 / verbose 全留
-- [ ] smoke + ruff + pyright + pytest 绿；新增观测单测通过
-- [ ] git 提交：`M8：发布链路加 --verbose 全程日志 + 失败证据扩 trace/steps.jsonl`
-- [ ] 进度表 M8 → ✅；**展开 M9 的详细小节**
-- [ ] 若发现新隐藏耦合，更新 `memory/refactor-v2.md`
+- [x] `--verbose` 选项贯通 cli→run_publish_plan→session；logging 加 verbose seam
+- [x] 失败证据扩为按篇子目录 + steps.jsonl；trace 默认仅失败 / verbose 全留
+- [x] smoke + ruff + pyright + pytest 绿；新增观测单测通过（20 passed）
+- [x] git 提交：`M8：发布链路加 --verbose 全程日志 + 失败证据扩 trace/steps.jsonl`（3a47694）
+- [x] 进度表 M8 → ✅；**展开 M9 的详细小节**（见下）
+- [x] 未发现新隐藏耦合（save_publish_evidence 仅 session 单调用方；trace 用 context 级 start/stop 每篇一份，与 recycle/间隔正交）
 - [ ] 提示用户 `/clear` 继续 M9
 
 ---
 
-## M9–M10
+## M9 — 健壮性（续传强化 + 登录失效整批退出 + 页面自愈）
 
-概览见 `docs/refactor-plan.md` §9（M9 健壮性：断点续传强化、登录失效整批退出、页面自愈；M10 systemd 运行化：service/timer 模板 + 部署文档 + VPS 实跑发 1–2 篇验收）。各在**前一个里程碑收尾时**展开为上面的详细格式。
+**目标**（refactor-plan §4.6）：让整批发布在异常下不空转、可续传、能自愈。三件正交的事：①**登录态失效整批退出**——批中途检测到掉登录就立刻 `exit 2` 并停，不再逐篇空转撞失败；②**页面自愈**——单篇发布页异常后，回到常驻列表页（必要时重开 context）再继续下一篇，不让一篇坏页拖垮整批；③**断点续传强化**——`reconcile_publish_plan_with_records` 的 plan/records 漂移对账补齐，进程被打断后 `publish` 能干净续发。**本里程碑只加健壮性，不改观测（M8）、不改间隔（M7）、不改等待（M6）、不改会话结构骨架（M5）**——但会在 M5 的 `publish/session.py` 编排循环里加分支。行为对外等价：正常路径发布结果与退出码不变，只有异常路径更稳。
 
-> M9（健壮性/自愈）长在 M5 重写出的 `publish/session.py` 与 M8 的证据/steps 结构上；M10（systemd）结构相对稳定，可按需先做"设计意图"级预写。
+> ⚠️ **别把"单篇发布失败"和"登录态失效"混为一谈**。单篇失败（verify_success=False 或 add_product 抛错）= 业务失败，记 failed + 证据 + 继续下一篇（M5 已实现，保留）。登录态失效 = 全局前提崩了，继续发只会篇篇失败 + 在小红书侧刷异常行为，必须**整批中止**。M9 的核心是把后者从前者里**识别**出来。
+
+**前置状态**：M8 已完成（3a47694）。当前 `publish/session.py` 健壮性现状（务必先懂）：
+- **批前登录校验已有**：`PublishSession.__init__` 调 `require_authenticated_session(settings)`，失败抛 `LoginRequiredError`；`run_publish_plan` 在 `with PublishSession(...)` 处触发，异常冒泡到 `cli.publish_command` 被 catch → `exit 2`。**但这只在批次开始校验一次**——批跑到第 5 篇掉登录不会触发，会被 `publish_one` 的 `except Exception` 当普通失败逐篇记 failed。
+- **单篇失败隔离已有**：`run_publish_plan` 循环里 `try/except Exception` 把单篇异常记 failed + 即时 `save_publish_plan`/`append_record` + 继续（M5 落地，正确，保留）。
+- **续传雏形已有**：每篇即时 `save_publish_plan(settings, plan)`；批前 `reconcile_publish_plan_with_records(settings, plan)`（`publish/plan.py`）。`reconcile` 当前做什么、漏什么，编码前先读源码确认。
+- **页面自愈缺失**：`publish_one` 每篇 `open_publish_popup`→独立 tab→发布→`finally` 关 tab；列表页 `self._list_page` 常驻。若某篇异常导致**列表页本身**坏了（context 崩/页面跳走），下一篇 `open_publish_popup` 会连环失败，目前无自愈。
+- `LoginRequiredError`（`..auth`）带 `.session.message`，是登录失效的既有信号载体。
+
+**勘察清单（编码前先做）**：
+- 读 `auth.py` 看除 `require_authenticated_session` 外，是否有「给定一个已打开 page/context 判断是否仍登录」的轻量探针（用于批中途检测）；没有就要加一个小的（如检查列表页 URL 是否被重定向到登录页 / 关键元素是否还在）。
+- 读 `publish/plan.py` 的 `reconcile_publish_plan_with_records`：确认它如何用 records 把 plan 里已发的标 published、漂移如何处理；列出它**没覆盖**的情形（如 records 有但 plan 无、状态不一致、同 dedupe_key 重复）。
+- 确认「登录失效」在发布热路径上的**可观测信号**：掉登录时 `open_publish_popup` / `upload_images` 具体抛什么、页面跳到哪——决定在哪一层、用什么条件判定「这是掉登录不是普通失败」。优先用 URL/元素探针显式判定，不要靠异常文本字符串匹配。
+
+**涉及文件**：
+- `src/xhs_poster/auth.py`（可能）：加批中途用的轻量登录探针（输入已有 page/context，返回 bool 或抛 `LoginRequiredError`）。能复用现有 `_is_authenticated_page`/`_probe_context` 就复用，别新造重的。
+- `src/xhs_poster/publish/session.py`：
+  - **登录失效整批退出**：在 `run_publish_plan` 循环里，对单篇异常先判定是否登录失效（探针或异常类型）；是 → 记当前篇 failed + 落证据 → `break`/`raise LoginRequiredError` 让其冒泡到 cli → `exit 2`，**不再继续后续 pending**。注意：已发成功的篇不回滚，plan/records 保持续传可恢复态。
+  - **页面自愈**：`publish_one` 异常 `finally` 关 tab 后，编排层（或 `PublishSession` 加 `ensure_list_page_healthy()`）在进下一篇前校验列表页是否健康，不健康就 `_close_context()`+`_open_context()` 重建（复用 M5 的 recycle 机制）。注意别和 `maybe_recycle()` 打架——自愈是「坏了才重建」，recycle 是「到点重建」，两者可共存但要幂等。
+  - **续传强化**：按勘察补 `reconcile` 漏的情形（大概率改 `publish/plan.py` 而非 session）。
+- `src/xhs_poster/publish/plan.py`（可能）：`reconcile_publish_plan_with_records` 补齐对账规则。
+- `cli.py`：基本不动（`LoginRequiredError`→`exit 2` 已在 `publish_command` catch；确认中途冒泡的也是同一异常类型即可）。
+
+**验收**（新 session 可独立执行，全部不真发线上）：
+- `bash scripts/smoke.sh` 绿；`uv run ruff check src tests` 过；`uv run pyright src/xhs_poster/publish src/xhs_poster/auth.py` 零新增；`uv run pytest -q` 绿；
+- 新增单测（monkeypatch 风格，仿 `test_publish_interval.py`/`test_run_publish_plan_exit_code.py`）：
+  - **登录失效整批退出**：mock 让第 2 篇触发「登录失效」信号，断言 ① 第 3 篇起不再尝试（`publish_one` 调用次数 = 2）② `run_publish_plan` 冒泡/返回使 cli `exit 2` ③ 已成功篇的 plan 状态保持 published；
+  - **单篇失败仍隔离**：mock 第 2 篇普通失败（非登录），断言第 3 篇照常尝试、退出码按「≥1 成功→0」（回归 M5/M8 行为不被 M9 破坏）；
+  - **页面自愈**：mock 一篇后列表页「不健康」，断言进下一篇前触发了一次 context 重建（监视 `_open_context` 调用次数）；
+  - **续传**：构造 plan 有 N 篇、records 已记 K 篇成功，`reconcile` 后 pending = N-K，断言不重发已成功篇。
+- 回归：M7 间隔单测、M8 观测单测、退出码单测全绿。
+
+**回滚**：`git revert` 本里程碑提交。
+
+**收尾清单**：
+- [ ] 登录失效整批退出（exit 2，不空转）+ 页面自愈 + 续传强化 三件落地
+- [ ] 单篇失败隔离/退出码语义回归不破（M5/M8 行为不变）
+- [ ] smoke + ruff + pyright + pytest 绿；新增健壮性单测通过
+- [ ] git 提交：`M9：登录失效整批退出 + 发布页自愈 + 断点续传强化`
+- [ ] 进度表 M9 → ✅；**展开 M10 的详细小节**（systemd：service/timer 模板 + 部署文档 + VPS 实跑发 1–2 篇验收）
+- [ ] 若发现新隐藏耦合，更新 `memory/refactor-v2.md`
+- [ ] 提示用户 `/clear` 继续 M10
+
+---
+
+## M10 — systemd 运行化
+
+概览见 `docs/refactor-plan.md` §4.8 / §9：`deploy/` 提供 `xhs-prepare.service`+`.timer`（每天 1 次 `fetch-products && generate-content && plan-publish`）与 `xhs-publish.service`+`.timer`（每天 2 次黄金时段 `publish --count 20`，headless、`WorkingDirectory=仓库根`、`EnvironmentFile=.env`、失败等下次 timer 不自动重启）+ 部署文档 + VPS 实跑发 1–2 篇验收（发现 D：少量验证避免污染）。**在 M9 收尾时**展开为上面的详细格式。结构相对稳定，可按需先做「设计意图」级预写。
