@@ -31,7 +31,7 @@
 | M4 | 输出契约改造 | ✅ | 8934e3b |
 | M5 | 发布会话复用 + publish 命名落位 | ✅ | 4d7afbd |
 | M6 | 条件等待改造 | ✅ | 483cb9b |
-| M7 | 反检测间隔 | ⬜ | |
+| M7 | 反检测间隔 | ✅ | ad7df13 |
 | M8 | 可观测性（--verbose + 失败证据） | ⬜ | |
 | M9 | 健壮性 | ⬜ | |
 | M10 | systemd 运行化 | ⬜ | |
@@ -426,17 +426,71 @@
 **回滚**：`git revert` 本里程碑提交。
 
 **收尾清单**：
-- [ ] config 两字段 + session 间隔接入 + 日志
-- [ ] smoke + ruff + pyright + pytest 绿；新增间隔单测通过
-- [ ] git 提交：`M7：每篇之间插入可配置随机 30–90s 反检测间隔`
-- [ ] 进度表 M7 → ✅；**展开 M8 的详细小节**
-- [ ] 若发现新隐藏耦合，更新 `memory/refactor-v2.md`
+- [x] config 两字段 + session 间隔接入 + 日志
+- [x] smoke + ruff + pyright + pytest 绿；新增间隔单测通过
+- [x] git 提交：`M7：每篇之间插入可配置随机 30–90s 反检测间隔`（ad7df13）
+- [x] 进度表 M7 → ✅；**展开 M8 的详细小节**
+- [x] 未发现新隐藏耦合（间隔与 maybe_recycle/条件等待正交，无新耦合）
 - [ ] 提示用户 `/clear` 继续 M8
 
 ---
 
-## M8–M10
+## M8 — 可观测性（`--verbose` + 失败证据扩展）
 
-概览见 `docs/refactor-plan.md` §9。每个里程碑在其**前一个里程碑收尾时**展开为上面的详细格式。
+**目标**：把发布链路的"失败可事后复盘 + 上线初期可全程观察"补齐。两档可观测（refactor-plan §4.3）：①**默认**只在失败时打包证据，stderr 出简洁汇总（现状已部分具备）；②`**--verbose**` 时每步实时打 stderr，且**所有篇（含成功）**落步骤明细 + Playwright trace。**本里程碑只加观测能力，不改发布逻辑（M5）、不改等待方式（M6）、不改间隔（M7）。** 行为对外等价：不开 verbose 时除证据目录多出 trace/steps 外，发布结果与退出码不变。
 
-> **为何仍不一次展开 M5–M10**：M5 是发布链路的重写支点，其细节依赖对 `phase3.py`/`merchant.py`(`PublishPage`/`ProductListPage`)/选择器的实地勘察（勘察本身是 M5 工作的一部分）；M6（条件等待）、M8（证据/trace）、M9（断点续传/自愈）又全部长在 M5 重写出的 `publish/session.py` 结构上。在 M5 代码尚不存在时细化它们，等于写一批很快返工的规格。M10（systemd）结构相对稳定，可在 M5 后按需先做"设计意图"级预写。
+> ⚠️ **trace 有开销与体积**：Playwright tracing 会拖慢并产出较大 zip。默认**仅失败保留 trace**；`--verbose` 才全保留。别让默认路径背上 trace 成本。决策 10：**不做主动告警**，只落证据。
+
+**前置状态**：M7 已完成（ad7df13）。现状观测能力：
+- `publish/records.py` 的 `save_publish_evidence(page, settings, *, record_date, product_id)` **失败时**落 `screenshot` + `html` 两件，目录 `xiaohongshu-data/publish/<date>/evidence/`（无子目录、无 trace、无 steps.jsonl）。docstring 自注"M8 再扩 trace/steps"。
+- `logging.py` 只有 `log_summary`/`log_error`（都打 stderr）。**无 `--verbose` 开关、无 verbose 级日志函数**（logging.py 顶注"M8 再扩 --verbose"）。
+- `cli.py` 的 `publish_command` 无 `--verbose` 选项；`run_publish_plan(...)` 签名无 verbose 参数。
+- `publish/session.py` 的 `publish_one` 顺序执行 upload→fill→topic→product→publish→verify，**无逐步计时/步骤记录**；异常时已调用 `save_publish_evidence` 并把 artifacts 塞进 RuntimeError 文本。
+- `publish/page.py`（PublishPage）各步骤方法可作为"step"边界；trace 需在 **context 级**开（`context.tracing.start/stop`），而 context 在 `PublishSession._open_context` 创建。
+
+**目标证据目录结构**（refactor-plan §4.3，逐 product+angle+时间分子目录）：
+```
+xiaohongshu-data/publish/<date>/evidence/<product_id>-<angle>-<HHMMSS>/
+  ├─ trace.zip      # Playwright tracing（仅失败 / verbose 全留）
+  ├─ screenshot.png
+  ├─ page.html
+  └─ steps.jsonl    # 每步 {step, status, elapsed_ms, detail}
+```
+> 注意：现状证据是平铺文件名 `<product_id>-<stamp>.png/.html`，M8 改为**按篇分子目录**。这会让 records.json 里 artifacts 的路径形态变化——`reconcile`/续传不读 artifacts 内容，仅影响人读，安全；但要一并改 `save_publish_evidence` 的返回 dict 与调用方对 artifacts 的拼装。
+
+**改动点**：
+- `cli.py`：`publish_command` 加 `--verbose` 选项（`bool=False`），透传给 `run_publish_plan`。
+- `run_publish_plan` / `PublishSession`：把 `verbose` 一路传到 `publish_one` 与证据/trace 落盘；`PublishSession` 持有 `verbose`，在 `_open_context` 后按需 `context.tracing.start(screenshots=True, snapshots=True, sources=True)`，并在 `publish_one` 末/异常处 `tracing.stop(path=<evidence>/trace.zip)`。**默认（非 verbose）只在失败篇 stop+保存 trace**；verbose 时每篇都保存。
+  - tracing 的 start/stop 粒度：trace 是 context 级，整 context 一份会混多篇。两种实现选其一（编码时定）：(a) 每篇前 `start`、每篇后按需 `stop`→该篇 trace.zip；(b) 用 `tracing.start_chunk/stop_chunk` 分篇。优先 (a)，更简单。
+- `logging.py`：加 verbose 级 helper（如 `log_step(message, *, verbose)` 或一个轻量 logger seam），verbose 时实时打 stderr，非 verbose 静默。**保持 stderr-only、无 JSON**。
+- `publish/session.py` `publish_one`：把六个步骤包成可记录的序列，每步记 `{step, status, elapsed_ms, detail}` 到内存列表；失败或 verbose 时 `save_publish_evidence` 连带写 `steps.jsonl`。**最小侵入**：用一个小的步骤计时上下文管理器（`with _step("upload_images", steps): ...`）包住现有调用，不重排发布逻辑。
+- `publish/records.py` `save_publish_evidence`：签名扩成接收 `steps`（list）与 `verbose`/`include_trace`，落到按篇子目录；写 `screenshot.png`/`page.html`/`steps.jsonl`，trace.zip 由 session 侧 tracing.stop 直接写入同目录（或把路径回传）。保持"懒建目录"。
+
+**勘察清单（编码前先做）**：
+- `grep -n "tracing" src/xhs_poster/` 确认当前没开 tracing；查 `browser.py` 的 `launch_merchant_context` 返回的 context 是否可直接 `.tracing`（persistent context 也支持）。
+- 确认 `publish_one` 里 `verify_success` 失败（返回 success=False，非抛异常）与抛异常两条路径都要落 steps + 证据；现状两条路径都已调 `save_publish_evidence`，M8 在这两处同时补 steps/trace。
+- 确认 verbose 透传不破坏 `tests/test_run_publish_plan_exit_code.py`（它 monkeypatch `cli.run_publish_plan`，加默认参数 `verbose=False` 即兼容）。
+
+**验收**（新 session 可独立执行）：
+- `bash scripts/smoke.sh` 绿；`uv run ruff check src tests` 过；`uv run pyright src/xhs_poster/publish src/xhs_poster/cli.py src/xhs_poster/logging.py` 零新增；`uv run pytest -q` 绿；
+- 新增/扩展单测（**不真发**，monkeypatch 风格）：步骤计时上下文管理器记录 `{step,status,elapsed_ms}`；`save_publish_evidence` 在给定 steps 时写出 `steps.jsonl` 且结构正确；`--verbose` 选项透传到 `run_publish_plan`（CliRunner + monkeypatch 断言被传 `verbose=True`）；
+- 手验（可桩，不污染线上）：构造一次"失败篇"（如 mock verify_success 返回 success=False）确认证据子目录含 screenshot/html/steps.jsonl；`--verbose` 下成功篇也产出 trace.zip + steps.jsonl，非 verbose 成功篇不产 trace。
+
+**回滚**：`git revert` 本里程碑提交。
+
+**收尾清单**：
+- [ ] `--verbose` 选项贯通 cli→run_publish_plan→session；logging 加 verbose seam
+- [ ] 失败证据扩为按篇子目录 + steps.jsonl；trace 默认仅失败 / verbose 全留
+- [ ] smoke + ruff + pyright + pytest 绿；新增观测单测通过
+- [ ] git 提交：`M8：发布链路加 --verbose 全程日志 + 失败证据扩 trace/steps.jsonl`
+- [ ] 进度表 M8 → ✅；**展开 M9 的详细小节**
+- [ ] 若发现新隐藏耦合，更新 `memory/refactor-v2.md`
+- [ ] 提示用户 `/clear` 继续 M9
+
+---
+
+## M9–M10
+
+概览见 `docs/refactor-plan.md` §9（M9 健壮性：断点续传强化、登录失效整批退出、页面自愈；M10 systemd 运行化：service/timer 模板 + 部署文档 + VPS 实跑发 1–2 篇验收）。各在**前一个里程碑收尾时**展开为上面的详细格式。
+
+> M9（健壮性/自愈）长在 M5 重写出的 `publish/session.py` 与 M8 的证据/steps 结构上；M10（systemd）结构相对稳定，可按需先做"设计意图"级预写。
