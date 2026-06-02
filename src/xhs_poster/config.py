@@ -109,6 +109,22 @@ class Settings(BaseSettings):
         ),
         description="发布每 N 篇后重建一次浏览器会话以平衡提速与风控；很大=整批共用一会话，1=每篇一会话。",
     )
+    publish_interval_min_seconds: float = Field(
+        default=30.0,
+        validation_alias=AliasChoices(
+            "XHS_POSTER_PUBLISH_INTERVAL_MIN_SECONDS",
+            "PUBLISH_INTERVAL_MIN_SECONDS",
+        ),
+        description="整批发布时每篇之间随机间隔的下限（秒），反检测用；min 与 max 同时 <=0 则关闭间隔。",
+    )
+    publish_interval_max_seconds: float = Field(
+        default=90.0,
+        validation_alias=AliasChoices(
+            "XHS_POSTER_PUBLISH_INTERVAL_MAX_SECONDS",
+            "PUBLISH_INTERVAL_MAX_SECONDS",
+        ),
+        description="整批发布时每篇之间随机间隔的上限（秒），反检测用；若 min>max 则 clamp 到 min。",
+    )
     @property
     def data_dir(self) -> Path:
         return self.project_root / self.data_subdir

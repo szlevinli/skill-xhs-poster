@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import random
+import time
 from datetime import datetime
 
 from playwright.sync_api import sync_playwright
@@ -13,6 +15,7 @@ from ..browser import (
     open_product_list_page,
 )
 from ..config import Settings
+from ..logging import log_summary
 from ..merchant import ProductListPage
 from ..models import (
     AuthSource,
@@ -195,6 +198,30 @@ class PublishSession:
         return result
 
 
+def _publish_interval_seconds(settings: Settings) -> float:
+    """每篇之间的随机反检测间隔（秒）。
+
+    min 与 max 同时 <=0 → 关闭间隔，返回 0。否则在 [min, max] 内取随机值；
+    若 min>max（含 min>0 而 max<=0 的写法）则 clamp 到 min，避免 random.uniform 行为反直觉。
+    """
+    low = settings.publish_interval_min_seconds
+    high = settings.publish_interval_max_seconds
+    if low <= 0 and high <= 0:
+        return 0.0
+    low = max(low, 0.0)
+    high = max(high, low)
+    return random.uniform(low, high)
+
+
+def _sleep_interval(settings: Settings) -> None:
+    """在两篇发布之间插入随机间隔（反检测），并打一行日志便于 journal 观察。"""
+    seconds = _publish_interval_seconds(settings)
+    if seconds <= 0:
+        return
+    log_summary(f"下一篇前等待 {seconds:.1f}s（反检测间隔）")
+    time.sleep(seconds)
+
+
 def run_publish_plan(
     *,
     mode: PublishPlanMode,
@@ -229,6 +256,7 @@ def run_publish_plan(
             for index, item in enumerate(pending_items):
                 if index > 0:
                     session.maybe_recycle()
+                    _sleep_interval(settings)
                 try:
                     execution_result = session.publish_one(
                         product_id=item.product_id,
