@@ -151,16 +151,6 @@ class SkillError(BaseModel):
     details: dict | None = None
 
 
-class OriginalityCheck(BaseModel):
-    passed: bool = False
-    core_input_type: str = ""
-    core_input_evidence: str = ""
-    product_fact_anchors: list[str] = Field(default_factory=list)
-    supporting_differences: list[str] = Field(default_factory=list)
-    nearest_history_notes: list[str] = Field(default_factory=list)
-    rejection_reasons: list[str] = Field(default_factory=list)
-
-
 class ContentDraft(BaseModel):
     angle: int
     angle_name: str
@@ -170,7 +160,6 @@ class ContentDraft(BaseModel):
     reference_notes: list[str] = Field(default_factory=list)
     selected_image_paths: list[str] = Field(default_factory=list)
     selected_image_count: int = 0
-    originality_check: OriginalityCheck | None = None
 
 
 class ContentGenerationMeta(BaseModel):
@@ -184,33 +173,11 @@ class ContentsBundle(BaseModel):
     date: str
     total_products: int
     contents_per_product: int
-    analysis_ref: str | None = None
-    product_facts_ref: str | None = None
-    phase2_report_ref: str | None = None
     contents: dict[str, list[ContentDraft]] = Field(default_factory=dict)
     generation: dict[str, ContentGenerationMeta] = Field(default_factory=dict)
     statuses: dict[str, str] = Field(default_factory=dict)
     warnings: dict[str, list[str]] = Field(default_factory=dict)
-    input_refs: dict[str, dict] = Field(default_factory=dict)
 
-
-class ImageFact(BaseModel):
-    path: str
-    width: int
-    height: int
-    dominant_colors: list[str] = Field(default_factory=list)
-    brightness: str = ""
-    visual_elements: list[str] = Field(default_factory=list)
-
-
-class ProductImageFacts(BaseModel):
-    product_id: str
-    product_name: str
-    keywords: list[str] = Field(default_factory=list)
-    colors: list[str] = Field(default_factory=list)
-    style_keywords: list[str] = Field(default_factory=list)
-    confirmed_elements: list[str] = Field(default_factory=list)
-    images: list[ImageFact] = Field(default_factory=list)
 
 
 ImageSemanticStatus = Literal["success", "failed"]
@@ -261,93 +228,10 @@ class ProductSemanticFacts(BaseModel):
     images: list[ImageSemanticFact] = Field(default_factory=list)
 
 
-class HotNote(BaseModel):
-    note_id: str
-    title: str
-    url: str
-    author: str = ""
-    cover_url: str = ""
-    like_count: int | None = None
-    collect_count: int | None = None
-    comment_count: int | None = None
-    tags: list[str] = Field(default_factory=list)
-    content: str = ""
-
-
-class HotNotesAnalysis(BaseModel):
-    keyword: str
-    source: str
-    total_collected: int = 0
-    title_patterns: list[str] = Field(default_factory=list)
-    content_patterns: list[str] = Field(default_factory=list)
-    tag_candidates: list[str] = Field(default_factory=list)
-    emoji_candidates: list[str] = Field(default_factory=list)
-    scene_candidates: list[str] = Field(default_factory=list)
-    tone_keywords: list[str] = Field(default_factory=list)
-    notes: list[HotNote] = Field(default_factory=list)
-
-
-class HistoryStyleReference(BaseModel):
-    product_search_key: str
-    title: str
-    content: str
-    hashtags: list[str] = Field(default_factory=list)
-    cleaned_title: str = ""
-    cleaned_content: str = ""
-    cleaned_hashtags: list[str] = Field(default_factory=list)
-    quality_flags: list[str] = Field(default_factory=list)
-    quality_score: int = 0
-    use_for_style: bool = False
-    use_for_trend: bool = False
-    filename_label: str = ""
-    reference_terms: list[str] = Field(default_factory=list)
-    cleaned_reference_terms: list[str] = Field(default_factory=list)
-    normalization_notes: list[str] = Field(default_factory=list)
-    source_file: str
-
-
-class ProductFactsSnapshot(BaseModel):
-    product_id: str
-    product_name: str
-    image_paths: list[str] = Field(default_factory=list)
-    visual_colors: list[str] = Field(default_factory=list)
-    brightness_labels: list[str] = Field(default_factory=list)
-    keyword_candidates: list[str] = Field(default_factory=list)
-    style_candidates: list[str] = Field(default_factory=list)
-    element_candidates: list[str] = Field(default_factory=list)
-    history_style_refs: list[HistoryStyleReference] = Field(default_factory=list)
-    trend_source: str | None = None
-    trend_keywords: list[str] = Field(default_factory=list)
-    semantic_summary: str = ""
-    semantic_categories: list[str] = Field(default_factory=list)
-    semantic_colors: list[str] = Field(default_factory=list)
-    semantic_material_guesses: list[str] = Field(default_factory=list)
-    semantic_visible_elements: list[str] = Field(default_factory=list)
-    semantic_product_elements: list[str] = Field(default_factory=list)
-    semantic_background_elements: list[str] = Field(default_factory=list)
-    semantic_style_moods: list[str] = Field(default_factory=list)
-    semantic_scene_guesses: list[str] = Field(default_factory=list)
-    semantic_confidence_notes: list[str] = Field(default_factory=list)
-    warnings: list[str] = Field(default_factory=list)
-
-
 class ProductFailure(BaseModel):
     product_id: str
     product_name: str
     reason: str
-
-
-class Phase2Report(BaseModel):
-    date: str
-    total_products: int
-    success_count: int
-    partial_count: int
-    failed_count: int
-    failed_products: list[ProductFailure] = Field(default_factory=list)
-    template_products: list[str] = Field(default_factory=list)
-    missing_history_products: list[str] = Field(default_factory=list)
-    missing_trend_products: list[str] = Field(default_factory=list)
-    warnings: dict[str, list[str]] = Field(default_factory=dict)
 
 
 class Phase3ExecutionResult(BaseModel):
@@ -505,16 +389,9 @@ class Phase3RunPlanSuccess(BaseModel):
 
 class Phase2ExecutionResult(BaseModel):
     date: str
-    keyword: str
-    source: str
     total_products: int
     contents_per_product: int
-    raw_hot_notes_path: str | None = None
-    hot_notes_analysis_path: str
-    image_facts_path: str
     image_semantic_facts_path: str | None = None
-    product_facts_path: str | None = None
-    phase2_report_path: str | None = None
     contents_path: str
     contents: dict[str, list[ContentDraft]] = Field(default_factory=dict)
     generation: dict[str, ContentGenerationMeta] = Field(default_factory=dict)

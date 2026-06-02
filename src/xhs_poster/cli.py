@@ -22,12 +22,10 @@ from .phase3 import (
     build_phase3_plan_payload,
     build_phase3_run_plan_payload,
 )
-from .trend_signals import build_trend_signals_payload
-
 
 APP_HELP = """小红书商家端自动发帖工具。输出为 JSON，便于脚本或下游消费。
 
-流程：prepare-products（拉商品与主图，支持 phase1-state 断点续传）→ prepare-trends（可选，生成趋势信号）→ generate-content（生成文案）→ plan-publish（生成当天发布计划）→ run-publish-plan（执行当天计划）。
+流程：prepare-products（拉商品与主图，支持断点续传）→ generate-content（生成文案）→ plan-publish（生成当天发布计划）→ run-publish-plan（执行当天计划）。
 首次使用需先执行 login merchant 完成本机登录；云服务器部署推荐使用 auth export / auth import 迁移登录态。"""
 auth_app = typer.Typer(add_completion=False, no_args_is_help=True, help="探测商家端/用户端是否已登录。")
 login_app = typer.Typer(add_completion=False, no_args_is_help=True, help="拉起浏览器，等待人工完成扫码登录。")
@@ -124,28 +122,11 @@ def prepare_products_command(
     raise typer.Exit(code=exit_code)
 
 
-@app.command("generate-content", help="基于 today-pool 与商品图片生成待发布笔记内容，写出 contents.json，并为每条草稿绑定 selected_image_paths；依赖 LLM 配置与可选 trend-signals。")
+@app.command("generate-content", help="基于 today-pool 与商品图片生成待发布笔记内容，写出 contents.json，并为每条草稿绑定 selected_image_paths；依赖 LLM 配置。")
 def generate_content_command(
-    keyword: Annotated[str | None, typer.Option("--keyword", help="类目/趋势关键词，未指定则从商品名推断")] = None,
     contents_per_product: Annotated[int, typer.Option("--contents-per-product", help="每个商品生成的文案条数")] = 5,
-    search_limit: Annotated[int, typer.Option("--search-limit", help="（预留，当前未使用）")] = 20,
-    detail_limit: Annotated[int, typer.Option("--detail-limit", help="（预留，当前未使用）")] = 8,
 ) -> None:
-    payload, exit_code = build_phase2_payload(
-        keyword=keyword,
-        contents_per_product=contents_per_product,
-        search_limit=search_limit,
-        detail_limit=detail_limit,
-    )
-    emit_json(payload)
-    raise typer.Exit(code=exit_code)
-
-
-@app.command("prepare-trends", help="从 references/history-notes 生成 trend-signals.json，供 generate-content 使用；可选，不跑则 generate-content 用本地兜底。")
-def prepare_trends_command(
-    keyword: Annotated[str | None, typer.Option("--keyword", help="趋势关键词，默认 发饰")] = None,
-) -> None:
-    payload, exit_code = build_trend_signals_payload(keyword=keyword)
+    payload, exit_code = build_phase2_payload(contents_per_product=contents_per_product)
     emit_json(payload)
     raise typer.Exit(code=exit_code)
 

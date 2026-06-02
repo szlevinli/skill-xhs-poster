@@ -155,28 +155,8 @@ class Settings(BaseSettings):
         return self.data_dir / "contents.json"
 
     @property
-    def product_facts_path(self) -> Path:
-        return self.data_dir / "product-facts.json"
-
-    @property
-    def phase2_report_path(self) -> Path:
-        return self.data_dir / "phase2-report.json"
-
-    @property
     def image_semantic_facts_path(self) -> Path:
         return self.data_dir / "image-semantic-facts.json"
-
-    @property
-    def history_style_refs_path(self) -> Path:
-        return self.data_dir / "history-style-refs.json"
-
-    @property
-    def trend_signals_path(self) -> Path:
-        return self.data_dir / "trend-signals.json"
-
-    @property
-    def history_notes_dir(self) -> Path:
-        return self.project_root / "references" / "history-notes"
 
     @property
     def publish_log_path(self) -> Path:
@@ -200,22 +180,6 @@ class Settings(BaseSettings):
     @property
     def phase3_artifacts_dir(self) -> Path:
         return self.data_dir / "artifacts" / "phase3"
-
-    @property
-    def image_facts_path(self) -> Path:
-        return self.data_dir / "image-facts.json"
-
-    @property
-    def hot_notes_analysis_path(self) -> Path:
-        return self.data_dir / "hot-notes-analysis.json"
-
-    @property
-    def raw_hot_notes_path(self) -> Path:
-        return self.data_dir / "raw-hot-notes.json"
-
-    @property
-    def phase2_artifacts_dir(self) -> Path:
-        return self.data_dir / "artifacts" / "phase2"
 
     @property
     def auth_artifacts_dir(self) -> Path:
@@ -246,5 +210,4 @@ class Settings(BaseSettings):
         self.images_dir.mkdir(parents=True, exist_ok=True)
         self.phase3_records_dir.mkdir(parents=True, exist_ok=True)
         self.phase3_artifacts_dir.mkdir(parents=True, exist_ok=True)
-        self.phase2_artifacts_dir.mkdir(parents=True, exist_ok=True)
         self.auth_artifacts_dir.mkdir(parents=True, exist_ok=True)
