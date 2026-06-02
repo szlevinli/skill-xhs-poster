@@ -1,0 +1,16 @@
+# 准备批：抓商品 → 生成文案 → 制定发布计划（每天一次，由 xhs-prepare.timer 触发）
+# 用户级 unit：装到 ~/.config/systemd/user/，用 `systemctl --user` 管理。
+# 安装前需替换占位符：
+#   %h/xhs-poster      → 你的实际仓库目录（若不在 home 下，改成绝对路径）
+#   %h/.local/bin/uv   → `which uv` 的实际绝对路径
+[Unit]
+Description=xhs-poster 准备批：抓商品 + 生成文案 + 制定发布计划
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/xhs-poster
+EnvironmentFile=%h/xhs-poster/.env
+# 三步顺序执行；oneshot 下任一 ExecStart 非 0 退出即整链停（等同 && 语义），剩余步骤不再跑，等下次 timer。
+ExecStart=%h/.local/bin/uv run xhs-poster fetch-products
+ExecStart=%h/.local/bin/uv run xhs-poster generate-content
+ExecStart=%h/.local/bin/uv run xhs-poster plan-publish

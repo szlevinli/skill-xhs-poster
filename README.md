@@ -92,6 +92,10 @@ phase3 现在默认使用“计划文件 + 当日记录文件”：
 
 `phase1-state.json` 适合云服务器或 AI 编排层轮询，不建议依赖 stdout 流式事件。
 
+## VPS 定时部署（systemd）
+
+把准备批（fetch→generate→plan）与发布批（publish）跑成 systemd 用户级 timer，每天自动执行：见 [`deploy/README.md`](deploy/README.md) 与 `deploy/` 下的 service/timer 模板。
+
 ## 云服务器部署登录态
 
 推荐做法是先在 macOS 上登录，再把 auth-state JSON 上传到 Linux 云服务器。

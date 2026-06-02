@@ -1,0 +1,12 @@
+# 准备批定时器：每天一次（非黄金时段，如凌晨）。
+# 安装前替换占位符：<HH:MM> → 实际钟点，如 03:00。
+[Unit]
+Description=xhs-poster 准备批定时器（每天一次）
+
+[Timer]
+OnCalendar=<HH:MM>
+# 错过触发点（关机/休眠）后开机补跑一次。
+Persistent=true
+
+[Install]
+WantedBy=timers.target

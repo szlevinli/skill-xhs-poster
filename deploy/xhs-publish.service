@@ -1,0 +1,15 @@
+# 发布批：发布当日剩余可发笔记（每天两次黄金时段，由 xhs-publish.timer 触发）。
+# 用户级 unit：装到 ~/.config/systemd/user/，用 `systemctl --user` 管理。
+# 安装前需替换占位符：
+#   %h/xhs-poster      → 你的实际仓库目录（若不在 home 下，改成绝对路径）
+#   %h/.local/bin/uv   → `which uv` 的实际绝对路径
+[Unit]
+Description=xhs-poster 发布批：发布当日剩余可发笔记
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/xhs-poster
+EnvironmentFile=%h/xhs-poster/.env
+ExecStart=%h/.local/bin/uv run xhs-poster publish --count 20
+# 故意不设 Restart=：publish 退出码 0=≥1篇成功 / 1=全失败 / 2=掉登录。
+# 掉登录时反复重试只会在小红书侧刷异常行为，等下次 timer 即可（掉登录需人工重新导入 auth-state）。

@@ -1,0 +1,13 @@
+# 发布批定时器：每天两次黄金时段。
+# 一个 timer 写两行 OnCalendar 即每天触发两次；安装前替换两个 <HH:MM>，如 12:30 / 20:30。
+[Unit]
+Description=xhs-poster 发布批定时器（每天两次黄金时段）
+
+[Timer]
+OnCalendar=<HH:MM>
+OnCalendar=<HH:MM>
+# 错过触发点后开机补跑（仅补最近一次，不会把两个时段都补发）。
+Persistent=true
+
+[Install]
+WantedBy=timers.target
