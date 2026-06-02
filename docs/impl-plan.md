@@ -24,7 +24,7 @@
 
 | M | 名称 | 状态 | 提交 |
 |---|---|---|---|
-| M0 | 基线固化 | ⬜ | |
+| M0 | 基线固化 | ✅ | fda7355 |
 | M1 | 文案链路精简 + originality 简化 | ⬜ | |
 | M2 | consumer/SiteName 移除 | ⬜ | |
 | M3 | 术语统一 + 命名重构（products/content） | ⬜ | |
