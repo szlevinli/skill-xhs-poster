@@ -34,7 +34,7 @@
 | M7 | 反检测间隔 | ✅ | ad7df13 |
 | M8 | 可观测性（--verbose + 失败证据） | ✅ | 3a47694 |
 | M9 | 健壮性 | ✅ | 8cd2a19 |
-| M10 | systemd 运行化 | ⬜ | |
+| M10 | systemd 运行化 | ✅ | 16f8e92 |
 
 > M2–M10 当前只有 §9 概览（见 refactor-plan.md）。**做到哪个，就在它前一个里程碑收尾时把它展开成下面 M0/M1 这样的详细小节**，避免一次写一大份很快过时的细节。
 
@@ -575,13 +575,21 @@ xiaohongshu-data/publish/<date>/evidence/<product_id>-<angle>-<HHMMSS>/
 **回滚**：`deploy/` 仅新增文件 + `systemctl disable`，无代码逻辑，删文件即回滚。
 
 **收尾清单**：
-- [ ] `deploy/` 两套 service+timer + README 落地，占位符标注清晰
-- [ ] WorkingDirectory/EnvironmentFile/headless/无 Restart 等关键约束正确
-- [ ] VPS 实跑：准备批跑通 + 发布批真发 1–2 篇 + timer 生效 + journal 日志/退出码正确
-- [ ] smoke 绿；unit 文件校验通过
-- [ ] git 提交：`M10：systemd service/timer + 部署文档`
-- [ ] 进度表 M10 → ✅；**v2 重构全部完成**，更新 `memory/refactor-v2.md` 收尾里程碑
-- [ ] 提示用户：重构收官
+- [x] `deploy/` 两套 service+timer + README 落地，占位符标注清晰
+- [x] WorkingDirectory/EnvironmentFile/headless/无 Restart 等关键约束正确
+- [ ] **VPS 实跑（待用户在 VPS 执行）**：准备批跑通 + 发布批真发 1–2 篇 + timer 生效 + journal 日志/退出码正确 —— 见 `deploy/README.md` §5；本机 macOS 无 systemd，无法代跑
+- [x] smoke + pytest + ruff 绿（25 passed）；unit 文件人读核对（macOS 无 `systemd-analyze`，占位符未填前本就不过 verify，属预期）
+- [x] git 提交：`M10：systemd service/timer + 部署文档`（16f8e92）
+- [x] 进度表 M10 → ✅；**v2 重构全部完成**（代码/文档侧），更新 `memory/refactor-v2.md` 收尾里程碑
+- [ ] 提示用户：重构收官 + 在 VPS 完成 §5 实跑验收
+
+**M10 落地纪要（决策与坑）**：
+- **运行形态**：用户选 `uv run`（非 venv console-script）+ **用户级 systemd**（`systemctl --user` + `loginctl enable-linger`，非系统级）+ `OnCalendar` 用 `<HH:MM>` 占位符自填 + 发布批 `--count 20`。
+- **unit 关键约束**：`Type=oneshot`；准备批三条 `ExecStart=` 顺序执行（oneshot 下任一非 0 即整链停 = `&&` 语义，不加 `-` 前缀）；发布批**不设 `Restart=`**（掉登录 exit 2 反复重试只会刷异常行为，等下次 timer）；`WorkingDirectory=%h/xhs-poster` + `EnvironmentFile=%h/xhs-poster/.env`（`.env` 既被 systemd 注入也被 pydantic 按 cwd 读，二者一致）。`%h` 由 systemd 展开为 home；仓库路径/uv 路径/钟点是占位符，README §3 指明安装前替换。
+- **占位符 vs 可验证**：因用户选占位符，unit 未填前 `systemd-analyze verify` 必不过（`OnCalendar=<HH:MM>` 非法），且本机 macOS 无 systemd——故本里程碑本地验收 = 人读核对 + CLI 子命令名实测（`fetch-products`/`generate-content`/`plan-publish`/`publish`/`auth export|import|probe`/`login merchant` 全部 `--help` 核对存在）。真·systemd 验收只能在 VPS，已写进 `deploy/README.md` §5 交用户。
+- **headless 链路**：`publish` 的 headless 取自 auth `session.browser_mode`，auth_state→headless。故 VPS 必须走 auth_state（README §0 的 export→scp→import→probe），否则会尝试 headful 起浏览器失败。Playwright 浏览器装在本用户 `~/.cache/ms-playwright`，`configure_playwright_browser_path` 自动发现，无需额外 env。
+- **EnvironmentFile 限制**：要求纯 `KEY=value`，不能有 `export`/shell 引号/续行；最低 `.env` 仅 `MOONSHOT_API_KEY=` 满足。README §2 已警示。
+- **遗留（非 M10 范围）**：主 `README.md` 仍大量是 v2 前的旧内容（提 Phase1/Phase3、`prepare-products`、已删的"趋势信号"、`phase1-state.json`）。M10 只加了一节指向 `deploy/`，未重写旧 README——若要清理是独立任务。
 
 ---
 
