@@ -66,6 +66,12 @@ class _FakeSession:
     def maybe_recycle(self) -> None:
         return None
 
+    def ensure_list_page_healthy(self) -> None:
+        return None
+
+    def detect_login_lost(self) -> bool:
+        return False
+
     def publish_one(self, *, product_id: str, angle: int) -> PublishExecutionResult:
         return PublishExecutionResult(
             product_id=product_id,

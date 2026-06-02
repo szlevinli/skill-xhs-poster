@@ -372,7 +372,21 @@ def reconcile_publish_plan_with_records(
     daily_records = load_daily_records(settings, plan.date)
     record_by_key: dict[str, PublishRecord] = {}
     for record in daily_records.records:
-        record_by_key[f"{record.product_id}:{record.angle}"] = record
+        key = f"{record.product_id}:{record.angle}"
+        existing = record_by_key.get(key)
+        # 同一 dedupe_key 可能有多条记录（失败后续传重发、或重跑）。续传对账规则：
+        # 成功记录恒优先（已发成功的篇不能被随后一条 spurious failed 记录降级回 pending/failed）；
+        # 同状态时取更晚的尝试（attempted_at 较大者）。保证 reconcile 幂等且不重发已成功篇。
+        if existing is None:
+            record_by_key[key] = record
+            continue
+        if existing.status == "success" and record.status != "success":
+            continue
+        if record.status == "success" and existing.status != "success":
+            record_by_key[key] = record
+            continue
+        if record.attempted_at >= existing.attempted_at:
+            record_by_key[key] = record
 
     changed = False
     for item in plan.items:

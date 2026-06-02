@@ -10,10 +10,15 @@ from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
-from ..auth import require_authenticated_session
+from ..auth import (
+    LoginRequiredError,
+    is_session_page_authenticated,
+    require_authenticated_session,
+)
 from ..browser import (
     close_context_safely,
     get_alive_page,
+    is_ready_list_page,
     launch_merchant_context,
     open_product_list_page,
 )
@@ -71,6 +76,7 @@ class PublishSession:
         self.settings = settings
         self.verbose = verbose
         session = require_authenticated_session(settings)
+        self.session_info = session
         self.headless = session.browser_mode == "headless" if headless is None else headless
         self.auth_source: AuthSource = session.auth_source
         self._playwright = None
@@ -119,6 +125,54 @@ class PublishSession:
         if recycle_every > 0 and self._since_recycle >= recycle_every:
             self._close_context()
             self._open_context()
+
+    def detect_login_lost(self) -> bool:
+        """判断是否**确凿掉登录**（区别于普通单篇失败 / 页面崩溃）。
+
+        只有列表页仍存活、却已被重定向到登录态以外（customer/login/非 ark 鉴权页）时返回 True。
+        页面已关闭/读取异常时返回 False——那是页面健康问题，交给 ``ensure_list_page_healthy`` 自愈，
+        不能误判成掉登录把整批中止。正常单篇失败时列表页仍停在 app-item/list，也返回 False。
+        """
+        if self._list_page is None:
+            return False
+        page = self._list_page.page
+        if page.is_closed():
+            return False
+        return not is_session_page_authenticated(page)
+
+    def login_lost_error(self) -> LoginRequiredError:
+        """构造一个携带"批中途掉登录"信息的 LoginRequiredError，供编排层冒泡到 cli → exit 2。"""
+        session = self.session_info.model_copy(
+            update={
+                "status": "login_required",
+                "authenticated": False,
+                "message": "整批发布中途检测到商家端登录态失效，已中止后续发布；请重新登录或导入 auth-state 后续传。",
+            }
+        )
+        return LoginRequiredError(session)
+
+    def list_page_is_healthy(self) -> bool:
+        """常驻列表页是否仍可用于下一篇 ``open_publish_popup``（存活且停在就绪的列表页）。"""
+        if self._context is None or self._list_page is None:
+            return False
+        page = self._list_page.page
+        if page.is_closed():
+            return False
+        try:
+            return is_ready_list_page(page)
+        except Exception:
+            return False
+
+    def ensure_list_page_healthy(self) -> None:
+        """进下一篇前自愈：列表页不健康（页面崩/跳走）就重建会话，避免一篇坏页拖垮整批。
+
+        与 ``maybe_recycle`` 正交——recycle 是"到点重建"，本方法是"坏了才重建"，两者幂等可共存。
+        """
+        if self.list_page_is_healthy():
+            return
+        log_summary("列表页异常，重建会话以自愈后继续发布")
+        self._close_context()
+        self._open_context()
 
     def publish_one(
         self,
@@ -304,6 +358,7 @@ def run_publish_plan(
             for index, item in enumerate(pending_items):
                 if index > 0:
                     session.maybe_recycle()
+                    session.ensure_list_page_healthy()
                     _sleep_interval(settings)
                 try:
                     execution_result = session.publish_one(
@@ -360,6 +415,12 @@ def run_publish_plan(
                             error=str(exc),
                         )
                     )
+                    # 区分"掉登录"与"普通单篇失败"：掉登录是全局前提崩了，继续发只会篇篇失败
+                    # 且在小红书侧刷异常行为——立刻整批中止（冒泡到 cli → exit 2）。已发成功篇不回滚，
+                    # plan/records 保持续传可恢复态。普通失败则不中止，下一篇照常尝试。
+                    if session.detect_login_lost():
+                        log_summary("检测到商家端登录态失效，中止整批发布")
+                        raise session.login_lost_error() from exc
 
     success_count = sum(1 for result in results if result.status == "success")
     failed_count = len(results) - success_count

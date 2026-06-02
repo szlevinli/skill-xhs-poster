@@ -58,6 +58,20 @@ def _is_authenticated_merchant_page(page: Page) -> bool:
     return is_authenticated_ark_page(page)
 
 
+def is_session_page_authenticated(page: Page) -> bool:
+    """给定一个已打开的页面，轻量判断商家端登录是否仍有效（不重新导航）。
+
+    用于整批发布中途检测掉登录：只看当前页面的 URL/登录标志，开销小，可在循环里频繁调。
+    页面已关闭或读取异常时按"无法确认登录"返回 False，由调用方区分是掉登录还是页面崩溃。
+    """
+    if page.is_closed():
+        return False
+    try:
+        return _is_authenticated_merchant_page(page)
+    except Error:
+        return False
+
+
 def _build_session_info(
     *,
     authenticated: bool,
