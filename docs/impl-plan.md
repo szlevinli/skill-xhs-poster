@@ -33,7 +33,7 @@
 | M6 | 条件等待改造 | ✅ | 483cb9b |
 | M7 | 反检测间隔 | ✅ | ad7df13 |
 | M8 | 可观测性（--verbose + 失败证据） | ✅ | 3a47694 |
-| M9 | 健壮性 | ⬜ | |
+| M9 | 健壮性 | ✅ | 8cd2a19 |
 | M10 | systemd 运行化 | ⬜ | |
 
 > M2–M10 当前只有 §9 概览（见 refactor-plan.md）。**做到哪个，就在它前一个里程碑收尾时把它展开成下面 M0/M1 这样的详细小节**，避免一次写一大份很快过时的细节。
@@ -528,13 +528,60 @@ xiaohongshu-data/publish/<date>/evidence/<product_id>-<angle>-<HHMMSS>/
 **回滚**：`git revert` 本里程碑提交。
 
 **收尾清单**：
-- [ ] 登录失效整批退出（exit 2，不空转）+ 页面自愈 + 续传强化 三件落地
-- [ ] 单篇失败隔离/退出码语义回归不破（M5/M8 行为不变）
-- [ ] smoke + ruff + pyright + pytest 绿；新增健壮性单测通过
-- [ ] git 提交：`M9：登录失效整批退出 + 发布页自愈 + 断点续传强化`
-- [ ] 进度表 M9 → ✅；**展开 M10 的详细小节**（systemd：service/timer 模板 + 部署文档 + VPS 实跑发 1–2 篇验收）
-- [ ] 若发现新隐藏耦合，更新 `memory/refactor-v2.md`
+- [x] 登录失效整批退出（exit 2，不空转）+ 页面自愈 + 续传强化 三件落地
+- [x] 单篇失败隔离/退出码语义回归不破（M5/M8 行为不变）
+- [x] smoke + ruff + pyright + pytest 绿；新增健壮性单测通过（25 passed）
+- [x] git 提交：`M9：登录失效整批退出 + 发布页自愈 + 断点续传强化`（8cd2a19）
+- [x] 进度表 M9 → ✅；**展开 M10 的详细小节**（见下）
+- [x] 未发现新隐藏耦合（登录探针纯读 list page URL/auth 标志，不导航；自愈与 recycle 正交幂等；reconcile 强化仅改 record_by_key 选取规则）
 - [ ] 提示用户 `/clear` 继续 M10
+
+**M9 落地纪要（新 session 接 M10 前可不读，留档）**：
+- **掉登录 vs 普通失败的判别在异常路径**：`run_publish_plan` 循环 `except Exception` 里先记 failed（证据已在 `publish_one` 内捕获），再 `session.detect_login_lost()`——为真才 `raise session.login_lost_error()` 整批中止。`detect_login_lost` 只在「列表页仍存活但 URL/auth 标志已非登录态」时返回 True；页面已关闭/读取异常返回 False（那是页面崩，交自愈，不能误判成掉登录）。正常单篇失败时列表页仍停在 app-item/list → 返回 False → 不中止。**verify_success=False 的非异常失败路径不查掉登录**：掉登录在热路径上几乎都先以 `open_publish_popup`/`upload_images` 抛异常出现（`wait_until_ready` 的 `wait_for_url`/`wait_for_selector` 超时），verify-false 更多是真·发布被拒，且此时 list page 通常未被重定向、探针也判不出，故不在该路径加判定。
+- **页面自愈**：`ensure_list_page_healthy()` 在循环每篇之间（`index>0`，紧跟 `maybe_recycle` 之后、`_sleep_interval` 之前）调用；`list_page_is_healthy` = context+list_page 非空且 page 未关闭且 `is_ready_list_page(page)`。不健康就 `_close_context()`+`_open_context()`（复用 M5 recycle 机制）。与 `maybe_recycle`（到点重建）正交，二者都幂等可共存。
+- **续传强化只动 reconcile 的 record_by_key 选取**：同 dedupe_key 多条记录时成功恒优先、同状态取更晚 attempted_at。未处理「records 有但 plan 无对应 item」——因 `build_publish_plan` 经 `_load_success_dedupe_sets` 已把已发 today/ever 排除出 eligible，published 记录无 plan item 时本就不会再被选，不会重发，无需 reconcile 额外补。
+- **mid-batch LoginRequiredError 的 SessionInfo**：`login_lost_error()` 用 `self.session_info.model_copy(update=...)` 改 status/authenticated/message，不重新探活（省一次起 context）；cli `publish_command` 已 catch `LoginRequiredError`→exit 2，中途冒泡的同类型异常走同一出口。
+
+---
+
+## M10 — systemd 运行化
+
+**目标**（refactor-plan §4.8 / §9）：把工具从「手动逐条 `uv run`」变成 VPS 上 systemd 定时自动跑的两条流水线，并补部署文档 + 少量真跑验收。**这是最后一个里程碑，收尾即整个 v2 重构完成**。不改任何业务代码（前 9 个里程碑已把 CLI/退出码/可观测/健壮性备齐），只加 `deploy/` 编排产物 + 文档；唯一可能的代码改动是若发现 CLI 在「非交互/无 TTY/headless」下有水土不服才最小修。
+
+**两条流水线**（拆分理由 = 调度边界：准备批 vs 发布批，见 refactor-plan）：
+- **准备批** `xhs-prepare`：每天 1 次（非黄金时段，如凌晨）顺序跑 `fetch-products && generate-content && plan-publish`。任一步非 0 退出则整链停（`&&` 语义 / `Type=oneshot` 多 ExecStart 顺序失败即停），等下次 timer，不自动重启。
+- **发布批** `xhs-publish`：每天 2 次黄金时段（如 12:30 / 20:30）跑 `publish --count 20`，headless。退出码语义已由 M4/M5 落地（≥1 成功=0 / 全失败=1 / 掉登录=2）；**失败不 `Restart=`**，等下次 timer（避免掉登录后反复撞墙刷异常行为，决策见 §健壮性）。
+
+**前置状态**：M9 已完成（8cd2a19）。当前可用能力：四个子命令均 stderr 日志 + 规范退出码，无 JSON 依赖；`publish` 整批一会话 + 反检测间隔 + `--verbose` 证据 + 掉登录整批退出 + 页面自愈 + 续传。`.env` 按进程 cwd 找（`SettingsConfigDict(env_file=".env")`）——**systemd unit 必须 `WorkingDirectory=<仓库根>` + `EnvironmentFile=<仓库根>/.env`**，否则 Settings 读不到 key、数据目录也会落错地方。
+
+**勘察清单（编码前先做）**：
+- 确认 VPS 上的运行方式：是 `uv run xhs-poster ...` 还是装好的 console-script 绝对路径？systemd `ExecStart` 不走 shell、需绝对路径（`ExecStart=/usr/bin/env uv run ...` 或 venv 内 `xhs-poster` 绝对路径）。`&&` 串联在 `Type=oneshot` 用多个 `ExecStart=` 行表达，不能直接写 `&&`（除非 `ExecStart=/bin/bash -lc '...'`）。
+- 确认 headless 路径：`publish` 的 headless 取自 auth `session.browser_mode`（auth_state→headless）。VPS 必须走 auth_state（`auth import` 过），否则会尝试 headful 起浏览器失败。部署文档要写清「先在 macOS `auth export`→拷贝→VPS `auth import`」。
+- 确认 Playwright 浏览器在 VPS 已安装（`playwright install chromium` + 系统依赖）；`browser.py` 的 `configure_playwright_browser_path` 怎么定位浏览器、VPS 上要不要设 env。
+- timer 黄金时段与频次：跟用户确认具体钟点（`OnCalendar=`）。
+
+**涉及文件/产物**：
+- `deploy/xhs-prepare.service`（`Type=oneshot`，多 `ExecStart=` 顺序：fetch→generate→plan）+ `deploy/xhs-prepare.timer`（`OnCalendar=` 每天 1 次 + `Persistent=true`）。
+- `deploy/xhs-publish.service`（`Type=oneshot`，`ExecStart=... publish --count 20`）+ `deploy/xhs-publish.timer`（`OnCalendar=` 每天 2 次黄金时段）。
+- 两个 service 共性：`WorkingDirectory=<仓库根>`、`EnvironmentFile=<仓库根>/.env`、`User=`、无 `Restart=`、`StandardOutput/Error=journal`（journalctl 看日志，正合 stderr-only 设计）。
+- `deploy/README.md`：部署步骤（auth export/import、playwright install、unit 安装路径与 `systemctl enable --now`、改 OnCalendar、journalctl 看日志与退出码、`.env` 位置）。占位符（仓库路径/用户名/钟点）用 `<...>` 标明。
+- 主 `README` 或 `CLAUDE.md` 加一节指向 `deploy/`（可选）。
+
+**验收**（VPS 实跑，发现 D：少量验证避免污染线上）：
+- 本地：`bash scripts/smoke.sh` 绿；unit 文件 `systemd-analyze verify deploy/*.service deploy/*.timer`（若本机有 systemd）或人读核对。
+- VPS：`systemctl --user daemon-reload` → 手动 `systemctl start xhs-prepare.service` 跑通准备批（产出 products/contents/publish-plan）；`systemctl start xhs-publish.service` 真发 **1–2 篇**（临时 `--count 1`/小批）确认 journal 有完整步骤日志、退出码 0、records 落盘；确认 timer `systemctl list-timers` next-elapse 正确。
+- 回归：四子命令在 headless/无 TTY 下不报错；掉登录场景退出码 2（可临时使 auth_state 失效验一次）。
+
+**回滚**：`deploy/` 仅新增文件 + `systemctl disable`，无代码逻辑，删文件即回滚。
+
+**收尾清单**：
+- [ ] `deploy/` 两套 service+timer + README 落地，占位符标注清晰
+- [ ] WorkingDirectory/EnvironmentFile/headless/无 Restart 等关键约束正确
+- [ ] VPS 实跑：准备批跑通 + 发布批真发 1–2 篇 + timer 生效 + journal 日志/退出码正确
+- [ ] smoke 绿；unit 文件校验通过
+- [ ] git 提交：`M10：systemd service/timer + 部署文档`
+- [ ] 进度表 M10 → ✅；**v2 重构全部完成**，更新 `memory/refactor-v2.md` 收尾里程碑
+- [ ] 提示用户：重构收官
 
 ---
 
