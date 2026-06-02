@@ -177,6 +177,9 @@ def publish_command(
         PublishDedupScope, typer.Option("--dedupe-scope", help="去重范围：today 或 ever")
     ] = "today",
     seed: Annotated[int | None, typer.Option("--seed", help="随机模式的随机种子")] = None,
+    verbose: Annotated[
+        bool, typer.Option("--verbose", help="全程实时打印每步进度，并为每篇（含成功）保留 trace/steps 证据")
+    ] = False,
 ) -> None:
     cmd = "publish"
     try:
@@ -186,6 +189,7 @@ def publish_command(
             date=date,
             dedupe_scope=dedupe_scope,
             seed=seed,
+            verbose=verbose,
         )
     except LoginRequiredError as exc:
         log_error(f"[{cmd}] 登录态失效：{exc.session.message}")

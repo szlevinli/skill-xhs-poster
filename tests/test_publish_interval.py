@@ -54,7 +54,7 @@ class PublishIntervalSecondsTests(unittest.TestCase):
 class _FakeSession:
     """替身 PublishSession：不开浏览器，publish_one 直接返回成功结果。"""
 
-    def __init__(self, settings: Settings, *, headless: bool | None = None) -> None:
+    def __init__(self, settings: Settings, *, headless: bool | None = None, verbose: bool = False) -> None:
         self.settings = settings
 
     def __enter__(self) -> "_FakeSession":

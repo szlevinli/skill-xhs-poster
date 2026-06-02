@@ -42,16 +42,44 @@ def append_record(
     return save_daily_records(settings, daily_records)
 
 
-def save_publish_evidence(page, settings: Settings, *, record_date: str, product_id: str) -> dict:
-    """失败时落盘截图与 HTML（M8 再扩 trace/steps）。"""
-    evidence_dir = settings.publish_evidence_dir(record_date)
+def build_evidence_dir(
+    settings: Settings,
+    *,
+    record_date: str,
+    product_id: str,
+    angle: int | None,
+) -> Path:
+    """为单篇懒建证据子目录 ``publish/<date>/evidence/<product_id>-<angle>-<HHMMSS>/``。"""
+    stamp = datetime.now().strftime("%H%M%S")
+    evidence_dir = settings.publish_evidence_dir(record_date) / f"{product_id}-{angle or 0}-{stamp}"
     evidence_dir.mkdir(parents=True, exist_ok=True)
-    stamp = datetime.now().strftime("%Y%m%d-%H%M%S")
-    screenshot_path = evidence_dir / f"{product_id}-{stamp}.png"
-    html_path = evidence_dir / f"{product_id}-{stamp}.html"
+    return evidence_dir
+
+
+def save_publish_evidence(
+    page,
+    evidence_dir: Path,
+    *,
+    steps: list[dict] | None = None,
+) -> dict:
+    """落盘单篇证据：截图、HTML，以及（给定时）逐步明细 steps.jsonl。
+
+    trace.zip 由会话侧 ``context.tracing.stop(path=...)`` 直接写入同目录，不在此处理。
+    """
+    screenshot_path = evidence_dir / "screenshot.png"
+    html_path = evidence_dir / "page.html"
     page.screenshot_on_failure(str(screenshot_path))
     html_path.write_text(page.page.content(), encoding="utf-8")
-    return {
+    artifacts = {
+        "dir": str(evidence_dir),
         "screenshot": str(screenshot_path),
         "html": str(html_path),
     }
+    if steps is not None:
+        steps_path = evidence_dir / "steps.jsonl"
+        steps_path.write_text(
+            "".join(json.dumps(step, ensure_ascii=False) + "\n" for step in steps),
+            encoding="utf-8",
+        )
+        artifacts["steps"] = str(steps_path)
+    return artifacts

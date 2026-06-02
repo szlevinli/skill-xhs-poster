@@ -70,7 +70,7 @@ src/xhs_poster/
 | `contents.json` | generate-content 输出 | 文案内容，带 `date` 字段 |
 | `publish-plan.json` | plan-publish 输出 | 当日发布计划 |
 | `publish/YYYY-MM-DD/records.json` | publish 记录 | 当日发布账本 |
-| `publish/YYYY-MM-DD/evidence/` | publish 失败证据 | 失败时落盘截图 + HTML |
+| `publish/YYYY-MM-DD/evidence/<product>-<angle>-<HHMMSS>/` | publish 证据 | 按篇子目录：screenshot.png + page.html + steps.jsonl + trace.zip（默认仅失败保留 trace；`--verbose` 每篇全留） |
 | `images/{product_id}/` | fetch-products 下载 | 商品主图 |
 | `image-analysis.json` | 视觉分析缓存 | 长期缓存，避免重复调用视觉 LLM |
 

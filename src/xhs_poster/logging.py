@@ -10,3 +10,9 @@ def log_summary(message: str) -> None:
 
 def log_error(message: str) -> None:
     print(message, file=sys.stderr, flush=True)
+
+
+def log_step(message: str, *, verbose: bool) -> None:
+    """verbose 模式下实时打印单步进度到 stderr；非 verbose 静默。"""
+    if verbose:
+        print(message, file=sys.stderr, flush=True)

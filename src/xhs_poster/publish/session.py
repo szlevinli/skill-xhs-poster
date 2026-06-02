@@ -3,7 +3,10 @@ from __future__ import annotations
 import json
 import random
 import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from datetime import datetime
+from pathlib import Path
 
 from playwright.sync_api import sync_playwright
 
@@ -15,7 +18,7 @@ from ..browser import (
     open_product_list_page,
 )
 from ..config import Settings
-from ..logging import log_summary
+from ..logging import log_step, log_summary
 from ..merchant import ProductListPage
 from ..models import (
     AuthSource,
@@ -38,7 +41,23 @@ from .plan import (
     resolve_publish_inputs,
     save_publish_plan,
 )
-from .records import append_record, save_publish_evidence
+from .records import append_record, build_evidence_dir, save_publish_evidence
+
+
+@contextmanager
+def _step(name: str, steps: list[dict], *, verbose: bool) -> Iterator[None]:
+    """给单步发布操作计时并记录 ``{step, status, elapsed_ms}``，verbose 时实时打日志。"""
+    start = time.monotonic()
+    status = "success"
+    try:
+        yield
+    except Exception:
+        status = "failed"
+        raise
+    finally:
+        elapsed_ms = int((time.monotonic() - start) * 1000)
+        steps.append({"step": name, "status": status, "elapsed_ms": elapsed_ms})
+        log_step(f"[publish] {name} {status} {elapsed_ms}ms", verbose=verbose)
 
 
 class PublishSession:
@@ -48,8 +67,9 @@ class PublishSession:
     平衡提速与风控（很大=整批一会话，1=每篇一会话）。
     """
 
-    def __init__(self, settings: Settings, *, headless: bool | None = None):
+    def __init__(self, settings: Settings, *, headless: bool | None = None, verbose: bool = False):
         self.settings = settings
+        self.verbose = verbose
         session = require_authenticated_session(settings)
         self.headless = session.browser_mode == "headless" if headless is None else headless
         self.auth_source: AuthSource = session.auth_source
@@ -130,29 +150,56 @@ class PublishSession:
             image_paths=image_paths or (draft.selected_image_paths if draft else None),
         )
 
+        record_angle = draft.angle if draft else angle
+        steps: list[dict] = []
+        evidence_dir: Path | None = None
+
+        def capture_evidence() -> dict:
+            nonlocal evidence_dir
+            evidence_dir = build_evidence_dir(
+                settings, record_date=publish_date, product_id=product.id, angle=record_angle
+            )
+            return save_publish_evidence(publish_page, evidence_dir, steps=steps)
+
+        # trace 是 context 级，每篇 start/stop 一份；默认仅失败保留、verbose 全留，成功非 verbose 丢弃。
+        tracing = self._context.tracing if self._context is not None else None
+        if tracing is not None:
+            tracing.start(screenshots=True, snapshots=True, sources=True)
+
         popup = self._list_page.open_publish_popup(product.id)
         publish_page = PublishPage(popup, settings)
         self._since_recycle += 1
         try:
             try:
-                publish_page.upload_images(final_image_paths)
-                title_selector = publish_page.fill_title(final_title)
-                content_selector = publish_page.fill_content(final_content)
-                topic_results = [publish_page.add_topic(topic_keyword) for topic_keyword in final_topics]
-                product_binding = publish_page.add_product(product.id)
-                publish_page.click_publish()
-                publish_result = publish_page.verify_success()
+                with _step("upload_images", steps, verbose=self.verbose):
+                    publish_page.upload_images(final_image_paths)
+                with _step("fill_title", steps, verbose=self.verbose):
+                    title_selector = publish_page.fill_title(final_title)
+                with _step("fill_content", steps, verbose=self.verbose):
+                    content_selector = publish_page.fill_content(final_content)
+                with _step("add_topic", steps, verbose=self.verbose):
+                    topic_results = [publish_page.add_topic(topic_keyword) for topic_keyword in final_topics]
+                with _step("add_product", steps, verbose=self.verbose):
+                    product_binding = publish_page.add_product(product.id)
+                with _step("click_publish", steps, verbose=self.verbose):
+                    publish_page.click_publish()
+                with _step("verify_success", steps, verbose=self.verbose):
+                    publish_result = publish_page.verify_success()
                 artifacts = None
-                if not publish_result.get("success"):
-                    artifacts = save_publish_evidence(
-                        publish_page, settings, record_date=publish_date, product_id=product.id
-                    )
+                if not publish_result.get("success") or self.verbose:
+                    artifacts = capture_evidence()
             except Exception as exc:
-                artifacts = save_publish_evidence(
-                    publish_page, settings, record_date=publish_date, product_id=product.id
-                )
+                artifacts = capture_evidence()
                 raise RuntimeError(f"{exc} artifacts={json.dumps(artifacts, ensure_ascii=False)}") from exc
         finally:
+            if tracing is not None:
+                try:
+                    if evidence_dir is not None:
+                        tracing.stop(path=str(evidence_dir / "trace.zip"))
+                    else:
+                        tracing.stop()
+                except Exception:
+                    pass
             if not popup.is_closed():
                 try:
                     popup.close(run_before_unload=False)
@@ -231,6 +278,7 @@ def run_publish_plan(
     dedupe_scope: PublishDedupScope = "today",
     seed: int | None = None,
     headless: bool | None = None,
+    verbose: bool = False,
 ) -> PublishRunResult:
     settings = settings or Settings()
     settings.ensure_directories()
@@ -252,7 +300,7 @@ def run_publish_plan(
 
     if pending_items:
         # 整批共享一个浏览器会话：浏览器与列表页只在 PublishSession 内初始化一次。
-        with PublishSession(settings, headless=headless) as session:
+        with PublishSession(settings, headless=headless, verbose=verbose) as session:
             for index, item in enumerate(pending_items):
                 if index > 0:
                     session.maybe_recycle()
