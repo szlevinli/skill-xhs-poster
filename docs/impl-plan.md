@@ -229,8 +229,88 @@
 
 ---
 
-## M4–M10
+## M4 — 输出契约改造（日志 + 退出码）
 
-概览见 `docs/refactor-plan.md` §9。每个里程碑在其**前一个里程碑收尾时**展开为上面的详细格式（目标 / 前置状态 / 涉及文件 / 改动点 / 验收 / 回滚 / 收尾清单）。这样保证展开时基于最新的代码现状，而非过早写死。
+**目标**：删除 `emit_json` 与全部 JSON 响应壳模型，命令改为「人读日志（stderr）+ 退出码」。退出码语义统一为 `0` 成功 / `1` 其他失败 / `2` 登录态失效；**publish 批量按发现 B 改为「≥1 篇成功即 0」**（当前 `run-publish-plan` 是"有任一失败即 1"，是 bug，必须修）。`models.py` 删壳瘦身。**publish 系列命令最小改动**（去 JSON + 修退出码 + 一行汇总），不重构 `phase3.py` 结构/日志（留 M5 重写、M8 丰富证据）。
 
-> **为何不一次展开 M4–M10**：M5 是发布链路的重写支点，其细节依赖对 `phase3.py`/`merchant.py`(`PublishPage`/`ProductListPage`)/选择器的实地勘察（勘察本身是 M5 工作的一部分），且要等 M4 的输出契约定下；M6（条件等待）、M8（证据/trace）、M9（断点续传/自愈）又全部长在 M5 重写出的 `publish/session.py` 结构上。在 M5 代码尚不存在时细化它们，等于写一批很快返工的规格。M4 / M10 结构相对稳定，可在 M3 收尾后按需先做"设计意图"级预写，但文件级细节仍会随前序里程碑漂移。
+**前置状态**：M3 已完成。命令分两种输出模式：① auth/login（`probe/login/export/import`）直接 `emit_json(SessionInfo)`，退出码 0/2；② 流水线命令调 `build_*_payload()` 拿 `(dict, exit_code)` 再 `emit_json`。所有 JSON 壳与 `SkillError` **仅** 被 `cli.py` 与各 `build_*_payload` 使用（已核实无其他消费方）。
+
+**关键事实（务必先懂）**：
+- `cli.py:40 emit_json` + 13 处调用；`cli.py` 仅为 `emit_json` 而 `import json`。
+- **壳模型（删）**：`SkillError`、`FetchProductsResult`、`GenerateContentResult`、`Phase3Success`、`Phase3CandidatesSuccess`、`Phase3PlanSuccess`、`Phase3RunPlanSuccess`。
+- **领域模型（留）**：`SessionInfo`（auth 状态，含 `.authenticated/.status/.message/.site`）、`FetchProductsExecutionResult`、`GenerateContentExecutionResult`、`Phase3ExecutionResult`、`Phase3CandidatesResult`、`Phase3PlanResult`、`Phase3RunPlanResult` 及全部数据模型。`Phase3DedupScope/Phase3PlanMode`（CLI 选项 Literal）留 M5。
+- 各命令的**核心函数**（壳删掉后 cli 直接调）：`run_fetch_products`（→`FetchProductsExecutionResult`，字段 `success_count/failed_count/skipped_count/run_status/progress_ref/total_products`）、`build_generate_content_outputs`、`run_phase3`（publish-note，结果 `.publish_result["success"]`）、`build_phase3_candidates`、`build_phase3_plan`、`run_phase3_plan`（→`Phase3RunPlanResult`，字段 `count_selected/count_attempted/count_succeeded/count_failed`）。
+- `products/fetch.py`、`content/generate.py`、`phase3.py` 底部各有 `main()/__main__`（print json + SystemExit）——死入口，删。
+
+**涉及文件**：
+
+新增：
+- `src/xhs_poster/logging.py` — 极简日志 seam（M8 再扩 --verbose/分级/trace）：
+  ```python
+  from __future__ import annotations
+  import sys
+
+  def log_summary(message: str) -> None:
+      """面向人的单行结果/进度，输出到 stderr（systemd journal 可读）。"""
+      print(message, file=sys.stderr, flush=True)
+
+  def log_error(message: str) -> None:
+      print(message, file=sys.stderr, flush=True)
+  ```
+
+改写：
+- `cli.py`：
+  - 删 `emit_json` 与 `import json`；加 `from .logging import log_summary, log_error`。
+  - 删 `build_*_payload` 的 import，改为 import 上述**核心函数**（`from .products.fetch import run_fetch_products`、`from .content.generate import build_generate_content_outputs`、`from .phase3 import run_phase3, build_phase3_candidates, build_phase3_plan, run_phase3_plan`）。
+  - **退出码 + 汇总策略移进各命令体**（这是 CLI 策略，不是领域逻辑）。统一形态：
+    ```python
+    try:
+        result = <核心函数>(...)
+    except LoginRequiredError as exc:
+        log_error(f"[{cmd}] 登录态失效：{exc.session.message}")
+        raise typer.Exit(code=2)
+    except Exception as exc:
+        log_error(f"[{cmd}] 失败：{exc}")
+        raise typer.Exit(code=1)
+    log_summary(f"[{cmd}] <人读汇总>")
+    raise typer.Exit(code=<0/1>)
+    ```
+  - 各命令退出码：
+    - `fetch-products`：`success_count==0 → 1`，否则 `0`；登录失效 `2`。`--images-per-product` 的 `warnings.warn` 从删掉的 build 包装挪进本命令体。
+    - `generate-content`：成功 `0`，异常 `1`（无登录路径）。
+    - `publish-note`（`run_phase3`）：`publish_result["success"] → 0`，否则 `1`；登录 `2`。
+    - `list-publish-candidates` / `plan-publish`：成功 `0`，异常 `1`。
+    - **`run-publish-plan`（发现 B）**：`count_succeeded >= 1 → 0`；`count_attempted == 0 → 0`（无 pending，no-op，照常打汇总）；`count_attempted > 0 且 count_succeeded == 0 → 1`；登录失效 `2`；其他异常 `1`。
+  - 汇总文案示例（按领域模型实际字段写）：`[fetch-products] 就绪 N / 失败 M / 跳过 K，状态=complete`；`[run-publish-plan] {count_succeeded}/{count_attempted} 成功，{count_failed} 失败`；`[plan-publish] 计划 {count_selected} 篇 → publish-plan.json`。
+  - `APP_HELP` 去掉"输出为 JSON，便于脚本或下游消费"，改"输出为人读日志（stderr）+ 退出码（0 成功 / 1 失败 / 2 登录态失效）"。
+- `products/fetch.py`：删 `build_fetch_products_payload` 与 `main()/__main__`；删 `FetchProductsResult/SkillError` 的 import；保留 `run_fetch_products`。顺带清理 `FetchProductsExecutionResult` 里 M3 遗留的 `today_pool_path` 字段（与新文件名不符）：日志用得到就改名 `products_path`，用不到就删。
+- `content/generate.py`：删 `build_generate_content_payload` 与 `main()/__main__`；删 `GenerateContentResult/SkillError` import；保留 `build_generate_content_outputs`。同样处理 `image_semantic_facts_path` 遗留字段。
+- `phase3.py`（**最小改动**）：删 4 个 `build_phase3_*_payload` 与 `main()/__main__`；删 `*Success/SkillError` import；**核心函数 `run_phase3/build_phase3_candidates/build_phase3_plan/run_phase3_plan` 保持不动**（M5 重写）。
+- `models.py`：删上述 7 个壳模型。确认删后无残留 import。
+- `CLAUDE.md`：架构块加 `logging.py` 一行；`cli.py` 注释"输出全部为 JSON（待 M4 改造）"→"人读日志 + 退出码"；Coding Conventions 第 87 行"CLI 子命令均通过 emit_json() 输出，exit code 0=成功，2=未登录/失败"→"输出人读日志到 stderr + 退出码（0 成功 / 1 失败 / 2 登录态失效；publish 批量 ≥1 成功即 0）"。
+
+**验收**（新 session 可独立执行）：
+- `bash scripts/smoke.sh` 绿；`uv run ruff check src/xhs_poster` 过；
+- `grep -rnE "emit_json|SkillError|Phase3Success|Phase3CandidatesSuccess|Phase3PlanSuccess|Phase3RunPlanSuccess|FetchProductsResult|GenerateContentResult" src/xhs_poster` 无残留；
+- `uv run xhs-poster generate-content >/tmp/o 2>/tmp/e; echo $?` —— 缺 `products.json` 时退出码 `1`、**stdout 无 JSON**、stderr 有一行人读错误；
+- `uv run xhs-poster fetch-products --help` 等 `--help` 正常；
+- run-publish-plan 退出码逻辑：因不真发，验收 = 审 cli 里 `count_succeeded/count_attempted` 的映射 + 一个最小 pytest（构造 `Phase3RunPlanResult` 三种计数组合断言退出码），确认"≥1 成功→0、全失败→1、无 pending→0"。
+
+**回滚**：`git revert` 本里程碑两笔提交。
+
+**收尾清单**：
+- [ ] `bash scripts/smoke.sh` 绿 + `generate-content` 缺数据时退出码/无 JSON 验证通过
+- [ ] grep 无 emit_json/壳模型残留
+- [ ] git 提交（代码）：`M4：输出契约改日志+退出码，删 emit_json/JSON 壳，修 publish 部分失败退出码（发现 B）`
+- [ ] 进度表提交：`进度表：M4 ✅`（记录代码提交 hash）
+- [ ] **展开 M5 的详细小节**（这是重写支点：先实地勘察 `phase3.py`/`merchant.py`/`PublishPage` 再展开）
+- [ ] 若发现新隐藏耦合，更新 `memory/refactor-v2.md`
+- [ ] 提示用户 `/clear` 继续 M5
+
+---
+
+## M5–M10
+
+概览见 `docs/refactor-plan.md` §9。每个里程碑在其**前一个里程碑收尾时**展开为上面的详细格式。
+
+> **为何仍不一次展开 M5–M10**：M5 是发布链路的重写支点，其细节依赖对 `phase3.py`/`merchant.py`(`PublishPage`/`ProductListPage`)/选择器的实地勘察（勘察本身是 M5 工作的一部分）；M6（条件等待）、M8（证据/trace）、M9（断点续传/自愈）又全部长在 M5 重写出的 `publish/session.py` 结构上。在 M5 代码尚不存在时细化它们，等于写一批很快返工的规格。M10（systemd）结构相对稳定，可在 M5 后按需先做"设计意图"级预写。
