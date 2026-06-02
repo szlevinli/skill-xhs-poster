@@ -30,7 +30,7 @@
 | M3 | 术语统一 + 命名重构（products/content） | ✅ | 9779964 |
 | M4 | 输出契约改造 | ✅ | 8934e3b |
 | M5 | 发布会话复用 + publish 命名落位 | ✅ | 4d7afbd |
-| M6 | 条件等待改造 | ⬜ | |
+| M6 | 条件等待改造 | ✅ | 483cb9b |
 | M7 | 反检测间隔 | ⬜ | |
 | M8 | 可观测性（--verbose + 失败证据） | ⬜ | |
 | M9 | 健壮性 | ⬜ | |
@@ -392,7 +392,50 @@
 
 ---
 
-## M7–M10
+## M7 — 反检测间隔
+
+**目标**：在整批发布的**每篇之间**插入随机 30–90s 间隔（可配置），把发布节奏从"机械连发"变成更像人工的停顿，降低风控触发概率。行为对外等价（仍能发布、续传、失败隔离），冒烟全绿。**本里程碑只加间隔，不动等待方式（M6 已定）、不动会话结构（M5 已定）、不丰富证据（M8）。**
+
+> ⚠️ 间隔是**真实风控**而非低效浪费（refactor-plan §3.3 / 决策 2）。默认值偏保守；可通过 env 调小/调大。注意它与 M5 的 `publish_session_recycle_every`、M6 的条件等待是正交的三件事，别混。
+
+**前置状态**：M6 已完成（483cb9b）。发布编排在 `publish/session.py` 的 `run_publish_plan`：`pending_items` 循环里，`index > 0` 时已调用 `session.maybe_recycle()`（M5 留的会话重建旋钮）。**间隔就插在这里**——与 `maybe_recycle` 同位置（每篇开始前、首篇除外）。`PublishSession` 单篇逻辑（`publish_one`）不需要改。
+
+**配置项**（`config.py`，仿照 `publish_session_recycle_every` 的写法：`Field` + `AliasChoices` + 中文 description）：
+- `publish_interval_min_seconds: float`，默认 `30`，别名 `XHS_POSTER_PUBLISH_INTERVAL_MIN_SECONDS` / `PUBLISH_INTERVAL_MIN_SECONDS`。
+- `publish_interval_max_seconds: float`，默认 `90`，别名同上 `..._MAX_...`。
+- 语义：每篇之间 `sleep(random.uniform(min, max))`。`min<=0 and max<=0` → 关闭间隔（测试/调试用）。`min>max` 时取 `max=min`（或直接报错；选稳妥的 clamp，不要静默发疯）。
+
+**改动点**：
+- `config.py`：加上述两个字段。
+- `publish/session.py`：
+  - `run_publish_plan` 循环顶部（`index > 0` 分支，`maybe_recycle()` 之后或之前）插入间隔。**间隔要可被打断不留脏状态**：放在"已写完上一篇 records/plan"之后、"开始下一篇"之前——当前结构天然满足（上一篇结果在 `publish_one` 内即时落盘）。
+  - 用一个独立小函数（如 `_publish_interval_seconds(settings) -> float` + `_sleep_interval(...)`）封装随机+clamp，便于测试与日志。
+  - **日志**：sleep 前用 `log_summary`（见 `logging.py`）打一行"下一篇前等待 Xs（反检测间隔）"，让 systemd/journal 能看出不是卡死。
+- **不在** `publish_one` 内 sleep（那是单篇内部，间隔语义是篇与篇之间）。
+- 失败篇是否也等？**等**——失败后继续下一篇之间同样插间隔（连续失败快速重试更像脚本）。即间隔只看"是否还有下一篇"，不看上一篇成败。
+
+**勘察清单（编码前）**：确认 `import random`、`import time`（session.py 当前未 import；`time.sleep` 是阻塞 sleep，整批是同步 Playwright，可直接用）。确认 `logging.py` 的 `log_summary` 签名。确认 `count==1` 或单篇 pending 时**不会** sleep（只有一篇，无"之间"）。
+
+**验收**（新 session 可独立执行）：
+- `bash scripts/smoke.sh` 绿；`uv run ruff check src tests` 过；`uv run pyright src/xhs_poster/publish src/xhs_poster/config.py` 零新增；`uv run pytest -q` 绿；
+- 新增单测（`tests/`，仿 `test_run_publish_plan_exit_code.py` 的 monkeypatch 风格，**不真发**）：
+  - 间隔函数：`min/max` 边界、关闭（都≤0）、`min>max` clamp、随机值落在 `[min,max]`（可 monkeypatch `random.uniform` 断言被调用参数）；
+  - 编排：N 篇 pending 时 sleep 被调用 `N-1` 次（monkeypatch 掉真实 sleep，断言调用次数 + 首篇不 sleep）；1 篇时 0 次；
+- 手验：`PUBLISH_INTERVAL_MIN_SECONDS=0 PUBLISH_INTERVAL_MAX_SECONDS=0` 时无间隔日志；设非零时日志能看到等待行。
+
+**回滚**：`git revert` 本里程碑提交。
+
+**收尾清单**：
+- [ ] config 两字段 + session 间隔接入 + 日志
+- [ ] smoke + ruff + pyright + pytest 绿；新增间隔单测通过
+- [ ] git 提交：`M7：每篇之间插入可配置随机 30–90s 反检测间隔`
+- [ ] 进度表 M7 → ✅；**展开 M8 的详细小节**
+- [ ] 若发现新隐藏耦合，更新 `memory/refactor-v2.md`
+- [ ] 提示用户 `/clear` 继续 M8
+
+---
+
+## M8–M10
 
 概览见 `docs/refactor-plan.md` §9。每个里程碑在其**前一个里程碑收尾时**展开为上面的详细格式。
 
