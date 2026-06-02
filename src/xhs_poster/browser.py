@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 from playwright.sync_api import BrowserContext, Error, Page, Playwright, sync_playwright
 
 from .config import Settings
-from .models import AuthSource, SiteName
+from .models import AuthSource
 
 
 class SessionExpiredError(RuntimeError):
@@ -23,16 +23,16 @@ def configure_playwright_browser_path(settings: Settings) -> None:
         os.environ["PLAYWRIGHT_BROWSERS_PATH"] = str(fallback_path)
 
 
-def site_profile_dir(settings: Settings, site: SiteName) -> Path:
-    return settings.merchant_profile_dir if site == "merchant" else settings.consumer_profile_dir
+def merchant_profile_dir(settings: Settings) -> Path:
+    return settings.merchant_profile_dir
 
 
-def site_auth_state_path(settings: Settings, site: SiteName) -> Path:
-    return settings.merchant_auth_state_path if site == "merchant" else settings.consumer_auth_state_path
+def merchant_auth_state_path(settings: Settings) -> Path:
+    return settings.merchant_auth_state_path
 
 
-def profile_has_state(settings: Settings, site: SiteName) -> bool:
-    profile_dir = site_profile_dir(settings, site)
+def profile_has_state(settings: Settings) -> bool:
+    profile_dir = merchant_profile_dir(settings)
     try:
         next(profile_dir.iterdir())
     except (FileNotFoundError, StopIteration):
@@ -40,11 +40,11 @@ def profile_has_state(settings: Settings, site: SiteName) -> bool:
     return True
 
 
-def available_auth_sources(settings: Settings, site: SiteName) -> list[AuthSource]:
+def available_auth_sources(settings: Settings) -> list[AuthSource]:
     sources: list[AuthSource] = []
-    if site_auth_state_path(settings, site).exists():
+    if merchant_auth_state_path(settings).exists():
         sources.append("auth_state")
-    if profile_has_state(settings, site):
+    if profile_has_state(settings):
         sources.append("profile")
     if not sources:
         sources.append("missing")
@@ -185,16 +185,15 @@ def open_product_list_page(
     raise RuntimeError("未能从首页进入商品管理列表页。")
 
 
-def launch_site_persistent_context(
+def launch_merchant_persistent_context(
     playwright: Playwright,
     settings: Settings,
-    site: SiteName,
     *,
     headless: bool = False,
 ) -> BrowserContext:
     settings.ensure_directories()
     configure_playwright_browser_path(settings)
-    profile_dir = site_profile_dir(settings, site)
+    profile_dir = merchant_profile_dir(settings)
     return playwright.chromium.launch_persistent_context(
         user_data_dir=str(profile_dir),
         headless=headless,
@@ -202,10 +201,9 @@ def launch_site_persistent_context(
     )
 
 
-def launch_site_runtime_context(
+def launch_merchant_runtime_context(
     playwright: Playwright,
     settings: Settings,
-    site: SiteName,
     *,
     headless: bool = False,
     auth_source: AuthSource | None = None,
@@ -215,17 +213,17 @@ def launch_site_runtime_context(
 
     resolved_source = auth_source
     if resolved_source is None:
-        resolved_source = available_auth_sources(settings, site)[0]
+        resolved_source = available_auth_sources(settings)[0]
 
     if resolved_source == "auth_state":
         browser = playwright.chromium.launch(headless=headless)
         context = browser.new_context(
-            storage_state=str(site_auth_state_path(settings, site)),
+            storage_state=str(merchant_auth_state_path(settings)),
             accept_downloads=True,
         )
         return context, resolved_source
 
-    context = launch_site_persistent_context(playwright, settings, site, headless=headless)
+    context = launch_merchant_persistent_context(playwright, settings, headless=headless)
     return context, resolved_source
 
 
@@ -236,26 +234,9 @@ def launch_merchant_context(
     headless: bool = False,
     auth_source: AuthSource | None = None,
 ) -> tuple[BrowserContext, AuthSource]:
-    return launch_site_runtime_context(
+    return launch_merchant_runtime_context(
         playwright,
         settings,
-        "merchant",
-        headless=headless,
-        auth_source=auth_source,
-    )
-
-
-def launch_consumer_context(
-    playwright: Playwright,
-    settings: Settings,
-    *,
-    headless: bool = False,
-    auth_source: AuthSource | None = None,
-) -> tuple[BrowserContext, AuthSource]:
-    return launch_site_runtime_context(
-        playwright,
-        settings,
-        "consumer",
         headless=headless,
         auth_source=auth_source,
     )
@@ -298,27 +279,6 @@ def merchant_context(
     configure_playwright_browser_path(settings)
     with sync_playwright() as playwright:
         context, _ = launch_merchant_context(
-            playwright,
-            settings,
-            headless=headless,
-            auth_source=auth_source,
-        )
-        try:
-            yield context
-        finally:
-            close_context_safely(context)
-
-
-@contextmanager
-def consumer_context(
-    settings: Settings,
-    *,
-    headless: bool = False,
-    auth_source: AuthSource | None = None,
-):
-    configure_playwright_browser_path(settings)
-    with sync_playwright() as playwright:
-        context, _ = launch_consumer_context(
             playwright,
             settings,
             headless=headless,

@@ -13,7 +13,7 @@ from .auth import (
     login_site,
     probe_site_session,
 )
-from .models import Phase3DedupScope, Phase3PlanMode, SiteName
+from .models import Phase3DedupScope, Phase3PlanMode
 from .phase1 import build_phase1_payload
 from .phase2 import build_phase2_payload
 from .phase3 import (
@@ -27,7 +27,7 @@ APP_HELP = """小红书商家端自动发帖工具。输出为 JSON，便于脚�
 
 流程：prepare-products（拉商品与主图，支持断点续传）→ generate-content（生成文案）→ plan-publish（生成当天发布计划）→ run-publish-plan（执行当天计划）。
 首次使用需先执行 login merchant 完成本机登录；云服务器部署推荐使用 auth export / auth import 迁移登录态。"""
-auth_app = typer.Typer(add_completion=False, no_args_is_help=True, help="探测商家端/用户端是否已登录。")
+auth_app = typer.Typer(add_completion=False, no_args_is_help=True, help="探测商家端是否已登录。")
 login_app = typer.Typer(add_completion=False, no_args_is_help=True, help="拉起浏览器，等待人工完成扫码登录。")
 
 app = typer.Typer(
@@ -41,24 +41,22 @@ def emit_json(payload: dict) -> None:
     typer.echo(json.dumps(payload, ensure_ascii=False, indent=2))
 
 
-@auth_app.command("probe", help="探测指定站点是否已有有效登录态；退出码 0 表示已登录，2 表示未登录或超时。")
+@auth_app.command("probe", help="探测商家端是否已有有效登录态；退出码 0 表示已登录，2 表示未登录或超时。")
 def auth_probe(
-    site: Annotated[SiteName, typer.Argument(help="站点：merchant（商家端）或 consumer（用户端）")],
     timeout_ms: Annotated[int, typer.Option("--timeout-ms", help="请求超时毫秒数")] = 8_000,
 ) -> None:
-    payload = probe_site_session(site, timeout_ms=timeout_ms)
+    payload = probe_site_session(timeout_ms=timeout_ms)
     emit_json(payload.model_dump(mode="json"))
     raise typer.Exit(code=0 if payload.authenticated else 2)
 
 
 @auth_app.command("export", help="从本地已登录 profile 导出 auth-state JSON，便于上传到云服务器。")
 def auth_export(
-    site: Annotated[SiteName, typer.Argument(help="站点：merchant（商家端）或 consumer（用户端）")],
     output: Annotated[Path | None, typer.Option("--output", help="导出的 auth-state 文件路径")] = None,
     timeout_ms: Annotated[int, typer.Option("--timeout-ms", help="登录态校验毫秒数")] = 8_000,
 ) -> None:
     try:
-        payload = export_site_auth_state(site, output_path=output, timeout_ms=timeout_ms)
+        payload = export_site_auth_state(output_path=output, timeout_ms=timeout_ms)
         emit_json(payload.model_dump(mode="json"))
         raise typer.Exit(code=0)
     except LoginRequiredError as exc:
@@ -68,12 +66,11 @@ def auth_export(
 
 @auth_app.command("import", help="导入 auth-state JSON 到本机/服务器默认路径，并立即做无头校验。")
 def auth_import(
-    site: Annotated[SiteName, typer.Argument(help="站点：merchant（商家端）或 consumer（用户端）")],
     input_path: Annotated[Path | None, typer.Option("--input", help="待导入的 auth-state 文件路径")] = None,
     timeout_ms: Annotated[int, typer.Option("--timeout-ms", help="导入后校验毫秒数")] = 8_000,
 ) -> None:
     try:
-        payload = import_site_auth_state(site, input_path=input_path, timeout_ms=timeout_ms)
+        payload = import_site_auth_state(input_path=input_path, timeout_ms=timeout_ms)
         emit_json(payload.model_dump(mode="json"))
         raise typer.Exit(code=0)
     except LoginRequiredError as exc:
@@ -81,25 +78,13 @@ def auth_import(
         raise typer.Exit(code=2)
 
 
-@login_app.command("merchant", help="打开商家端登录页，等待扫码；成功后退出码 0，未完成则 2。成功后会写入本地 profile，可继续执行 auth export merchant 导出云端复用的 auth-state。")
+@login_app.command("merchant", help="打开商家端登录页，等待扫码；成功后退出码 0，未完成则 2。成功后会写入本地 profile，可继续执行 auth export 导出云端复用的 auth-state。")
 def login_merchant(
     timeout_ms: Annotated[int, typer.Option("--timeout-ms", help="等待登录的毫秒数，0 表示一直等")] = 0,
     debug_auth: Annotated[bool, typer.Option("--debug-auth", help="登录成功/失败时写出截图、HTML 与 cookie 摘要")] = False,
 ) -> None:
-    _run_login("merchant", timeout_ms, debug_auth=debug_auth)
-
-
-@login_app.command("consumer", help="打开用户端（小红书 App 同账号）登录页，等待扫码；成功后会写入本地 profile。当前流程主要用商家端。")
-def login_consumer(
-    timeout_ms: Annotated[int, typer.Option("--timeout-ms", help="等待登录的毫秒数，0 表示一直等")] = 0,
-    debug_auth: Annotated[bool, typer.Option("--debug-auth", help="登录成功/失败时写出截图、HTML 与 cookie 摘要")] = False,
-) -> None:
-    _run_login("consumer", timeout_ms, debug_auth=debug_auth)
-
-
-def _run_login(site: SiteName, timeout_ms: int, *, debug_auth: bool = False) -> None:
     try:
-        payload = login_site(site, timeout_ms=timeout_ms, debug_auth=debug_auth)
+        payload = login_site(timeout_ms=timeout_ms, debug_auth=debug_auth)
         emit_json(payload.model_dump(mode="json"))
         raise typer.Exit(code=0)
     except LoginRequiredError as exc:

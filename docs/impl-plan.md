@@ -25,7 +25,7 @@
 | M | 名称 | 状态 | 提交 |
 |---|---|---|---|
 | M0 | 基线固化 | ✅ | fda7355 |
-| M1 | 文案链路精简 + originality 简化 | ⬜ | |
+| M1 | 文案链路精简 + originality 简化 | ✅ | 8be265c |
 | M2 | consumer/SiteName 移除 | ⬜ | |
 | M3 | 术语统一 + 命名重构（products/content） | ⬜ | |
 | M4 | 输出契约改造 | ⬜ | |
@@ -114,6 +114,39 @@
 
 ---
 
-## M2–M10
+## M2 — consumer/SiteName 移除
 
-概览见 `docs/refactor-plan.md` §9。每个里程碑在其**前一个里程碑收尾时**展开为上面 M0/M1 的详细格式（目标 / 前置状态 / 涉及文件 / 改动点 / 验收 / 回滚 / 收尾清单）。这样保证展开时基于最新的代码现状，而非过早写死。
+**目标**：彻底删除 consumer 概念与 `SiteName` 类型。所有鉴权函数固化为商家端单站点，CLI 删去 `login consumer` 与 auth 命令的 `site` 参数。行为与现有商家端流程完全不变，`compileall` + 冒烟通过。
+
+**前置状态**：M1 已完成（删 6 个空转模块、originality 改相似度查重）。`consumer.py` 仍存在，SiteName、consumer_* 散落各处。
+
+**涉及文件**：
+- **删除**：`src/xhs_poster/consumer.py`
+- **改写**：
+  - `models.py` — 删 `SiteName = Literal["merchant", "consumer"]`；`SessionInfo.site` 改 `Literal["merchant"]`；`SkillError.site` 字段删（或改 `str | None`，M4 会统一删 SkillError，先删字段）。
+  - `config.py` — 删 `consumer_home_url`、`consumer_auth_state_path_override`、`consumer_profile_dir`、`consumer_auth_state_path`；`ensure_directories()` 去掉 consumer_* 两行。
+  - `browser.py` — 删 `SiteName` import；`site_profile_dir / site_auth_state_path / profile_has_state / available_auth_sources / launch_site_persistent_context / launch_site_runtime_context` 全去掉 `site` 参数，固化为商家端；删 `launch_consumer_context` 与 `consumer_context`；`launch_merchant_context` 直接内联调用（可保留函数名，删 site 参数的内部版本）。
+  - `auth.py` — 删 `SiteName` import；删 `_has_consumer_auth_cookies / _consumer_has_logged_in_markers / _site_home_url / _site_profile_dir / _site_auth_state_path` 等 consumer 辅助函数（或简化为直接用 settings 属性）；`_is_authenticated_page / _probe_context / login_site` 中删除 `if site == "consumer"` 分支；所有公开函数删 `site: SiteName` 参数（固化为 merchant）；`_build_session_info` 中 `site` 参数改为 `Literal["merchant"]` 或直接硬编码。
+  - `cli.py` — 删 `login consumer` 命令与 `login_consumer` 函数；删 auth_probe / auth_export / auth_import 的 `site` Argument；删 `_run_login` 的 `site` 参数；更新对 auth 模块的调用签名（不再传 site）；删 `SiteName` import。
+
+**验收**（新 session 可独立执行）：
+- `bash scripts/smoke.sh` 绿；
+- `grep -rn "consumer\|SiteName" src/` 无残留（`consumer.py` 已删，无需排除）；
+- `uv run xhs-poster --help` 输出无 `consumer`、无 `site` 参数；
+- `uv run xhs-poster auth probe` 能运行（不传 site，直接探测商家端）；
+- `uv run xhs-poster login --help` 仅有 `merchant` 子命令（或直接取消子命令层级，视改动量决定）。
+
+**回滚**：`git revert` 本里程碑提交。
+
+**收尾清单**：
+- [ ] `bash scripts/smoke.sh` 绿
+- [ ] `grep -rn "consumer\|SiteName" src/` 无残留
+- [ ] git 提交：`M2：删 consumer/SiteName，auth 固化商家端单站点`
+- [ ] 进度表 M2 → ✅；展开 M3 的详细小节
+- [ ] 提示用户 `/clear` 继续 M3
+
+---
+
+## M3–M10
+
+概览见 `docs/refactor-plan.md` §9。每个里程碑在其**前一个里程碑收尾时**展开为上面的详细格式（目标 / 前置状态 / 涉及文件 / 改动点 / 验收 / 回滚 / 收尾清单）。这样保证展开时基于最新的代码现状，而非过早写死。

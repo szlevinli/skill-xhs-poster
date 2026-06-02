@@ -221,7 +221,7 @@ def run_phase1(
     state.completed_at = None
     state.run_status = "running"
 
-    session = require_authenticated_session("merchant", settings)
+    session = require_authenticated_session(settings)
     run_headless = session.browser_mode == "headless" if headless is None else headless
     candidate_limit = max(limit * 3, limit + 10)
 

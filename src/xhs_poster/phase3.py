@@ -463,7 +463,7 @@ def run_phase3(
 ) -> Phase3ExecutionResult:
     settings = settings or Settings()
     settings.ensure_directories()
-    session = require_authenticated_session("merchant", settings)
+    session = require_authenticated_session(settings)
     run_headless = session.browser_mode == "headless" if headless is None else headless
 
     today_pool = load_today_pool(settings)

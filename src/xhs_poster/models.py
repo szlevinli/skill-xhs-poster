@@ -122,14 +122,13 @@ class Phase1ExecutionResult(BaseModel):
     warnings: list[str] = Field(default_factory=list)
 
 
-SiteName = Literal["merchant", "consumer"]
 SessionStatus = Literal["authenticated", "login_required"]
 BrowserMode = Literal["headless", "headful"]
 AuthSource = Literal["auth_state", "profile", "missing"]
 
 
 class SessionInfo(BaseModel):
-    site: SiteName
+    site: Literal["merchant"]
     status: SessionStatus
     authenticated: bool
     auth_source: AuthSource
@@ -146,7 +145,6 @@ class SkillError(BaseModel):
     status: Literal["error"] = "error"
     error: str
     message: str
-    site: SiteName | None = None
     login: SessionInfo | None = None
     details: dict | None = None
 

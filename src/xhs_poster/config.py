@@ -50,10 +50,6 @@ class Settings(BaseSettings):
         default="https://ark.xiaohongshu.com/app-item/good/edit/{product_id}",
         description="商品编辑页 URL 模板，{product_id} 会被替换。",
     )
-    consumer_home_url: str = Field(
-        default="https://www.xiaohongshu.com",
-        description="消费者端首页 URL。",
-    )
     llm_base_url: str = Field(
         default="https://api.moonshot.cn/v1",
         validation_alias=AliasChoices("XHS_POSTER_LLM_BASE_URL", "LLM_BASE_URL", "MOONSHOT_BASE_URL"),
@@ -105,15 +101,6 @@ class Settings(BaseSettings):
         ),
         description="商家端 auth-state 文件路径，默认位于 data_dir/auth/merchant-state.json。",
     )
-    consumer_auth_state_path_override: Path | None = Field(
-        default=None,
-        validation_alias=AliasChoices(
-            "XHS_POSTER_CONSUMER_AUTH_STATE_PATH",
-            "CONSUMER_AUTH_STATE_PATH",
-        ),
-        description="用户端 auth-state 文件路径，默认位于 data_dir/auth/consumer-state.json。",
-    )
-
     @property
     def data_dir(self) -> Path:
         return self.project_root / self.data_subdir
@@ -121,10 +108,6 @@ class Settings(BaseSettings):
     @property
     def merchant_profile_dir(self) -> Path:
         return self.data_dir / "profiles" / "merchant"
-
-    @property
-    def consumer_profile_dir(self) -> Path:
-        return self.data_dir / "profiles" / "consumer"
 
     @property
     def images_dir(self) -> Path:
@@ -137,10 +120,6 @@ class Settings(BaseSettings):
     @property
     def merchant_auth_state_path(self) -> Path:
         return self.merchant_auth_state_path_override or self.auth_dir / "merchant-state.json"
-
-    @property
-    def consumer_auth_state_path(self) -> Path:
-        return self.consumer_auth_state_path_override or self.auth_dir / "consumer-state.json"
 
     @property
     def today_pool_path(self) -> Path:
@@ -204,9 +183,7 @@ class Settings(BaseSettings):
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.auth_dir.mkdir(parents=True, exist_ok=True)
         self.merchant_auth_state_path.parent.mkdir(parents=True, exist_ok=True)
-        self.consumer_auth_state_path.parent.mkdir(parents=True, exist_ok=True)
         self.merchant_profile_dir.mkdir(parents=True, exist_ok=True)
-        self.consumer_profile_dir.mkdir(parents=True, exist_ok=True)
         self.images_dir.mkdir(parents=True, exist_ok=True)
         self.phase3_records_dir.mkdir(parents=True, exist_ok=True)
         self.phase3_artifacts_dir.mkdir(parents=True, exist_ok=True)
