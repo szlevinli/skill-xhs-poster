@@ -29,7 +29,7 @@
 | M2 | consumer/SiteName 移除 | ✅ | b86ae02 |
 | M3 | 术语统一 + 命名重构（products/content） | ✅ | 9779964 |
 | M4 | 输出契约改造 | ✅ | 8934e3b |
-| M5 | 发布会话复用 + publish 命名落位 | ⬜ | |
+| M5 | 发布会话复用 + publish 命名落位 | ✅ | 4d7afbd |
 | M6 | 条件等待改造 | ⬜ | |
 | M7 | 反检测间隔 | ⬜ | |
 | M8 | 可观测性（--verbose + 失败证据） | ⬜ | |
@@ -357,7 +357,42 @@
 
 ---
 
-## M6–M10
+## M6 — 条件等待改造
+
+**目标**：消除发布链路里的固定 `wait_for_timeout` 死 sleep，改为等待"真实就绪信号"（元素可见/可点击、URL 变化、网络/DOM 状态），把单篇有效操作时间压到 ≤ 90s（不含 M7 的反检测间隔）。行为对外等价（仍能发布、续传、失败隔离），冒烟全绿。**本里程碑只动等待方式，不动会话结构（M5 已定）、不加反检测间隔（M7）、不丰富证据（M8）。**
+
+> ⚠️ **风控权衡**：把死 sleep 全删成 0 等待会让操作节奏过于机械、像脚本。M6 的目标是删**无效**等待（固定等"够久"的保险 sleep），不是把节奏压到极限——真实的人为停顿由 M7 的随机间隔统一承担。条件等待加合理超时即可，不必追求极致。
+
+**前置状态**：M5 已完成（4d7afbd）。发布链路死 sleep 现集中在 `publish/page.py` 的 `PublishPage`（M5 从 merchant.py 原样搬运，未改）：`wait_until_ready` / `open_upload_material_step` / `upload_images`（上传后 8s/3s）/ `add_topic`（多处 800ms/1s）/ `add_product`（候选轮询里已是条件等待，但开关弹层用固定 sleep）/ `verify_success`（2s）等。`merchant.py` 的 `ProductListPage.open_publish_popup`/`_prepare_publish_click` 也有固定 sleep，但属"进入发布页"前置，**发布热路径以 PublishPage 为主**——M6 聚焦 `publish/page.py`，列表页 sleep 视收益决定是否一并改。
+
+**勘察清单（编码前先做）**：`grep -n "wait_for_timeout" src/xhs_poster/publish/page.py src/xhs_poster/merchant.py`，逐处判定：① 该 sleep 在等什么（元素出现 / 动画结束 / 上传完成 / 路由跳转）；② 是否已有可等待的确定信号（selector / url / JS 条件）；③ 删不掉的（如纯防抖）保留但缩短并注释原因。
+
+**改动点**（按信号类型替换，不要一刀切删）：
+- **等元素就绪** → `locator.wait_for(state="visible"/"attached", timeout=...)` 或 `expect(locator).to_be_visible()`；替换 `_click_text_action` / `fill_title` / `_get_editor_locator` 等点击前后的固定 sleep。
+- **等上传完成** → 等待预览缩略图出现 / 上传进度消失 / 文件输入回填，替换 `upload_images` 里 8s/3s 的保险等待。
+- **等路由跳转** → 已用 `wait_for_url` 的保留；`verify_success` 的 2s 改为等成功标志元素或 url，超时回退保留判定逻辑。
+- **等 mention 候选** → `add_topic` 已有 `wait_for_function` 雏形，把周边 800ms/1s 收敛进条件等待。
+- 统一封装一个小 helper（如 `_wait_visible(selector, timeout)`），避免散落重复；放 `publish/page.py` 内即可，暂不外提。
+
+**验收**（新 session 可独立执行）：
+- `bash scripts/smoke.sh` 绿；`uv run ruff check src tests` 过；`uv run pyright src/xhs_poster/publish` 零新增；`uv run pytest -q` 绿；
+- `grep -n "wait_for_timeout" src/xhs_poster/publish/page.py` 仅剩注明原因的必要项（数量较 M5 显著下降）；
+- 单篇耗时实测/桩验：对照 `docs/baseline/perf-baseline.md`，单篇有效操作（不含反检测间隔）≤ 90s；不为测耗时真发线上（发现 D：跑到"点发布前"或用历史 records 估算）。
+
+**回滚**：`git revert` 本里程碑提交。
+
+**收尾清单**：
+- [ ] smoke + ruff + pyright + pytest 绿
+- [ ] page.py 死 sleep 显著减少，剩余项均有注释说明
+- [ ] 单篇耗时较基线下降并记录
+- [ ] git 提交：`M6：发布页死 sleep 改条件等待，单篇有效操作压到 ≤90s`
+- [ ] 进度表 M6 → ✅；**展开 M7 的详细小节**
+- [ ] 若发现新隐藏耦合，更新 `memory/refactor-v2.md`
+- [ ] 提示用户 `/clear` 继续 M7
+
+---
+
+## M7–M10
 
 概览见 `docs/refactor-plan.md` §9。每个里程碑在其**前一个里程碑收尾时**展开为上面的详细格式。
 
