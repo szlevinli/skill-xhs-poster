@@ -21,14 +21,21 @@ class PublishPage:
     def wait_until_ready(self) -> None:
         self.page.wait_for_url("**/app-note/publish**", timeout=20_000)
         self.page.wait_for_load_state("domcontentloaded")
-        self.page.wait_for_timeout(2_000)
+        # 发布页是 SPA，domcontentloaded 后仍在水合；用网络空闲取代固定 2s 保险等待。
+        try:
+            self.page.wait_for_load_state("networkidle", timeout=8_000)
+        except Error:
+            pass
 
-    def _click_text_action(self, text: str) -> bool:
+    def _click_text_action(self, text: str, timeout: int = 4_000) -> bool:
+        # 等目标文案出现再点（取代点击后的固定 2s）；下游步骤各自有就绪闸门。
         locator = self.page.get_by_text(text, exact=True).first
-        if locator_is_visible(locator):
+        try:
+            locator.wait_for(state="visible", timeout=timeout)
             locator.click()
-            self.page.wait_for_timeout(2_000)
             return True
+        except Error:
+            pass
         clicked = self.page.evaluate(
             """
             (targetText) => {
@@ -41,10 +48,7 @@ class PublishPage:
             """,
             text,
         )
-        if clicked:
-            self.page.wait_for_timeout(2_000)
-            return True
-        return False
+        return bool(clicked)
 
     def _clear_blocking_modal(self) -> None:
         if _wait_for_modal_mask_to_clear(self.page, timeout_ms=1_500):
@@ -56,7 +60,6 @@ class PublishPage:
                 return
             if not dismissed:
                 self.page.keyboard.press("Escape")
-                self.page.wait_for_timeout(500)
                 if _wait_for_modal_mask_to_clear(self.page, timeout_ms=1_500):
                     return
 
@@ -135,17 +138,19 @@ class PublishPage:
 
             if target_index is None:
                 diagnostics.append(self.inspect_upload_state())
-                self.page.wait_for_timeout(2_000)
+                self.page.wait_for_timeout(2_000)  # 未命中上传控件，重试前的退避
                 continue
 
             file_input = file_inputs.nth(target_index)
             if target_multiple:
                 file_input.set_input_files(paths)
+                # 等图片实际上传/落地完成；无稳定 DOM 信号可等，保留固定保险等待。
                 self.page.wait_for_timeout(8_000)
                 return
 
             for path in paths:
                 file_input.set_input_files(path)
+                # 同上：逐张上传需等其网络完成，避免后续步骤抢跑导致缺图。
                 self.page.wait_for_timeout(3_000)
             return
 
@@ -154,10 +159,10 @@ class PublishPage:
         )
 
     def open_note_info_step(self) -> None:
+        # 点击进入笔记信息步骤即可；标题框/编辑器的就绪由各调用方轮询等待。
         note_info = self.page.get_by_text("填写笔记信息", exact=True).first
         if locator_is_visible(note_info):
             note_info.click()
-            self.page.wait_for_timeout(2_000)
 
     def fill_title(self, title: str) -> str:
         self.open_note_info_step()
@@ -165,26 +170,34 @@ class PublishPage:
             "input[placeholder*='填写标题']",
             "input[placeholder*='标题']",
         ]
-        for selector in selectors:
-            locator = self.page.locator(selector).first
-            if locator_is_visible(locator):
-                locator.fill(title)
-                return selector
-        raise RuntimeError("未找到标题输入框。")
+        deadline = time.monotonic() + 8
+        while True:
+            for selector in selectors:
+                locator = self.page.locator(selector).first
+                if locator_is_visible(locator):
+                    locator.fill(title)
+                    return selector
+            if time.monotonic() >= deadline:
+                raise RuntimeError("未找到标题输入框。")
+            self.page.wait_for_timeout(200)  # 笔记信息渲染中，轮询等待标题框出现
 
     def _get_editor_locator(self):
         self.open_note_info_step()
-        for selector in (".ql-editor", "[contenteditable='true']", "textarea"):
-            locator = self.page.locator(selector).first
-            if locator_is_visible(locator):
-                return locator, selector
-        raise RuntimeError("未找到正文编辑器。")
+        selectors = (".ql-editor", "[contenteditable='true']", "textarea")
+        deadline = time.monotonic() + 8
+        while True:
+            for selector in selectors:
+                locator = self.page.locator(selector).first
+                if locator_is_visible(locator):
+                    return locator, selector
+            if time.monotonic() >= deadline:
+                raise RuntimeError("未找到正文编辑器。")
+            self.page.wait_for_timeout(200)  # 编辑器渲染中，轮询等待出现
 
     def fill_content(self, content: str) -> str:
         editor, selector = self._get_editor_locator()
         editor.click()
         editor.fill(content)
-        self.page.wait_for_timeout(500)
         return selector
 
     def _get_first_topic_candidate(self, topic_keyword: str) -> dict | None:
@@ -214,6 +227,7 @@ class PublishPage:
                 timeout=4_000,
             )
         except Error:
+            # mention 候选等待超时，再给一拍让列表补齐后做最后一次读取。
             self.page.wait_for_timeout(1_000)
         return self.page.evaluate(
             """
@@ -300,14 +314,16 @@ class PublishPage:
         )
         if not clicked:
             self.page.keyboard.press("Enter")
-        self.page.wait_for_timeout(800)
+        # mention 是否落地由 _verify_topic_applied 轮询确认，此处不再固定等待。
         return candidate
 
     def _verify_topic_applied(self, topic_keyword: str) -> dict:
-        self.page.wait_for_timeout(1_000)
         editor, selector = self._get_editor_locator()
-        verification = self.page.evaluate(
-            """
+        deadline = time.monotonic() + 4
+        verification: dict = {"applied": False, "reason": "verify_timeout"}
+        while True:
+            verification = self.page.evaluate(
+                """
             ({ topicKeyword, selector }) => {
                 const editor = document.querySelector(selector) || document.querySelector('.ql-editor') || document.querySelector('[contenteditable="true"]');
                 if (!editor) return { applied: false, reason: 'editor_not_found' };
@@ -345,13 +361,15 @@ class PublishPage:
                 };
             }
             """,
-            {"topicKeyword": topic_keyword, "selector": selector},
-        )
-        if not verification.get("applied"):
-            raise RuntimeError(
-                f"话题“{topic_keyword}”未成功转为可点击节点：{verification.get('reason')}"
+                {"topicKeyword": topic_keyword, "selector": selector},
             )
-        return verification
+            if verification.get("applied"):
+                return verification
+            if time.monotonic() >= deadline:
+                raise RuntimeError(
+                    f"话题“{topic_keyword}”未成功转为可点击节点：{verification.get('reason')}"
+                )
+            self.page.wait_for_timeout(300)  # 轮询等待 mention 转为可点击节点
 
     @staticmethod
     def _is_skippable_topic_error(message: str) -> bool:
@@ -365,7 +383,7 @@ class PublishPage:
         editor.click()
         self.page.keyboard.press("End")
         self.page.keyboard.type("#")
-        self.page.wait_for_timeout(800)
+        self.page.wait_for_timeout(800)  # 等 mention 插件对“#”就位后再输入关键词
         self.page.keyboard.type(topic_keyword)
         try:
             candidate = self._click_first_topic_candidate(topic_keyword)
@@ -374,7 +392,6 @@ class PublishPage:
             except RuntimeError:
                 # 部分页面中首次点击不会提交 mention，再回退为 Enter 提交当前高亮项。
                 self.page.keyboard.press("Enter")
-                self.page.wait_for_timeout(800)
                 verification = self._verify_topic_applied(topic_keyword)
         except RuntimeError as exc:
             message = str(exc)
@@ -408,7 +425,6 @@ class PublishPage:
         add_button.click()
         search_input = self.page.get_by_placeholder("搜索商品ID 或 商品名称").first
         search_input.wait_for(state="visible", timeout=10_000)
-        self.page.wait_for_timeout(500)
 
     def _dismiss_add_product_dialog(self) -> None:
         for locator in (
@@ -420,10 +436,10 @@ class PublishPage:
         ):
             if locator_is_visible(locator):
                 locator.click()
-                self.page.wait_for_timeout(500)
+                self.page.wait_for_timeout(500)  # 等关闭动画收尾，避免紧接重开弹层时抖动
                 return
         self.page.keyboard.press("Escape")
-        self.page.wait_for_timeout(500)
+        self.page.wait_for_timeout(500)  # 同上：Escape 关闭后给一拍
 
     def _click_add_product_dialog_save(self) -> bool:
         clicked = self.page.evaluate(
@@ -449,8 +465,7 @@ class PublishPage:
             }
             """
         )
-        if clicked:
-            self.page.wait_for_timeout(800)
+        # 保存结果由 _verify_product_bound 轮询确认，此处不再固定等待。
         return bool(clicked)
 
     def _click_product_candidate(self, product_id: str, timeout_ms: int = 12_000) -> dict:
@@ -545,9 +560,9 @@ class PublishPage:
             )
             last_state = candidate
             if candidate.get("found"):
-                self.page.wait_for_timeout(500)
+                self.page.wait_for_timeout(500)  # 等勾选状态落地后再让调用方点“保存”
                 return candidate
-            self.page.wait_for_timeout(400)
+            self.page.wait_for_timeout(400)  # 候选轮询间隔
         raise RuntimeError(
             f"添加商品弹层未找到商品 {product_id} 的可勾选结果：{last_state.get('reason')}"
         )
@@ -600,7 +615,7 @@ class PublishPage:
             last_state = verification
             if verification.get("bound"):
                 return verification
-            self.page.wait_for_timeout(400)
+            self.page.wait_for_timeout(400)  # 绑定确认轮询间隔
         raise RuntimeError(f"商品 {product_id} 保存后未确认绑定成功：{last_state.get('reason')}")
 
     def add_product(self, product_id: str) -> dict:
@@ -629,10 +644,8 @@ class PublishPage:
 
                 search_input.click()
                 search_input.fill("")
-                self.page.wait_for_timeout(200)
                 search_input.fill(product_id)
-                self.page.wait_for_timeout(1_000)
-
+                # 搜索结果就绪由 _click_product_candidate 轮询等待，不再固定等待。
                 candidate = self._click_product_candidate(product_id)
                 result["candidate"] = candidate
                 result["checkbox_clicked"] = True
@@ -644,7 +657,6 @@ class PublishPage:
                 verification = self._verify_product_bound(product_id)
                 if verification.get("modal_still_visible"):
                     self._dismiss_add_product_dialog()
-                    self.page.wait_for_timeout(500)
                     verification = self._verify_product_bound(product_id)
                 result["verification"] = verification
                 return result
@@ -652,7 +664,7 @@ class PublishPage:
                 last_error = exc
                 result["errors"].append(f"attempt_{attempt}: {exc}")
                 self._dismiss_add_product_dialog()
-                self.page.wait_for_timeout(800)
+                self.page.wait_for_timeout(800)  # 整轮失败后的重试退避
 
         raise RuntimeError(str(last_error) if last_error else f"商品 {product_id} 绑定失败")
 
@@ -669,7 +681,11 @@ class PublishPage:
         except Error:
             pass
 
-        self.page.wait_for_timeout(2_000)
+        # 等跳转后的列表页基本渲染完再读 body 判定成功，取代固定 2s。
+        try:
+            self.page.wait_for_load_state("networkidle", timeout=5_000)
+        except Error:
+            pass
         body_text = self.page.locator("body").inner_text(timeout=3_000)
         success_markers = ["发布成功", "笔记管理", "笔记列表", "发布完成"]
         success_signals = [
