@@ -1,0 +1,2423 @@
+{
+  "date": "2026-04-28",
+  "total_products": 20,
+  "contents_per_product": 2,
+  "analysis_ref": "hot-notes-analysis.json",
+  "product_facts_ref": "product-facts.json",
+  "phase2_report_ref": "phase2-report.json",
+  "contents": {
+    "69ed6ba582f56100154b753d": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "这个奶油黄抓夹🧈 扎完头发心情都变亮了",
+        "content": "上周穿白T恤随手抓了个头发出门，被便利店小姐姐问链接。其实我就是用这只奶油黄的蝴蝶结抓夹，齿状夹的部分能稳稳兜住发尾，塑料材质很轻，戴一天也不坠头皮。颜色不是那种扎眼的亮黄，偏果冻感的半透明调，阳光底下会透一点光，搭浅色衣服特别干净。",
+        "tags": "#抓夹 #发饰分享 #奶油黄 #日常发型 #鲨鱼夹",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/009.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/011.jpg"
+        ],
+        "selected_image_count": 6,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新个人经验",
+          "core_input_evidence": "上周穿白T恤被便利店小姐姐问链接的具体经历，包含穿搭场景和陌生人反馈",
+          "product_fact_anchors": [
+            "奶油黄/黄色",
+            "蝴蝶结形状",
+            "塑料材质",
+            "齿状夹结构"
+          ],
+          "supporting_differences": [
+            "不同场景：便利店/白T恤日常场景，非通勤约会等泛化场景",
+            "不同决策问题：从'被陌生人主动问'的社交反馈切入，而非自评颜值高低"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "塑料抓夹最怕夹不稳🫠 这个弹簧我实测过了",
+        "content": "我发量中等偏少，之前买过几个塑料抓夹，弹簧松的走两步就滑。这只奶油黄的弹簧夹我特意来回开合试了二十几次，回弹还是紧的，塑料齿的弧度能卡住发束不往下滑。洗澡前盘头发或者平时随手一抓都行，塑料材质沾了水擦干就好，不像金属的会生锈留印子。",
+        "tags": "#抓夹 #发夹推荐 #鲨鱼夹 #头饰发饰 #发饰分享",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/010.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/012.jpg"
+        ],
+        "selected_image_count": 6,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新实测",
+          "core_input_evidence": "来回开合二十几次测试弹簧回弹，以及沾水擦干的使用实测",
+          "product_fact_anchors": [
+            "塑料材质",
+            "弹簧夹/弹簧结构",
+            "塑料齿",
+            "奶油黄/黄色"
+          ],
+          "supporting_differences": [
+            "不同决策问题：针对'夹不稳'的功能痛点实测，而非泛泛谈质感好坏",
+            "不同对比样本：与金属材质对比生锈问题，与过往松垮塑料夹对比弹簧寿命"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e8cff0f89e9d00158b19b9": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "灰棕色抓夹真的比黑色显温柔！",
+        "content": "之前一直用黑色鲨鱼夹，直到换了这个灰棕色，才发现颜色对整体氛围影响这么大。不是那种很跳的棕，带一点灰调，夹在头上和发色融合得很自然，不会像黑色那么死板。\n上周通勤连戴了三天，同事突然问我是不是换发型了，其实只是把黑夹子换成了这个。黄皮也能hold住，不会像浅粉色那样显暗沉。现在包里常备一个，临时要盘发也不慌。",
+        "tags": "#抓夹 #发饰分享 #灰棕色 #通勤发型 #鲨鱼夹",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cff0f89e9d00158b19b9/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cff0f89e9d00158b19b9/003.jpg"
+        ],
+        "selected_image_count": 2,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新对比样本",
+          "core_input_evidence": "个人从黑色抓夹切换到灰棕色的实际对比体验，包括同事反馈和黄皮适配的实测观察",
+          "product_fact_anchors": [
+            "灰棕色",
+            "鲨鱼夹结构"
+          ],
+          "supporting_differences": [
+            "不同决策问题：从'哪个颜色百搭'转向'哪个颜色更显温柔气质'",
+            "不同素材组合方式：个人对比经验+他人反馈+肤色适配，而非单纯展示颜色"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "这种果冻感的抓夹夹一天也不扯头皮",
+        "content": "我头发偏厚，以前用金属抓夹到下午就头疼，换了这个醋酸材质的南瓜夹之后好多了。表面是有点透的果冻质感，不是那种廉价亮面塑料，开合的时候能感觉到厚度，夹齿咬合比较紧但不会有刮感。\n特意测试过，早上八点夹上，晚上六点取下，头皮没有那种被揪着的酸胀。厚度确实比普通塑料夹扎实，我这种发量多的也能全夹住不散。",
+        "tags": "#抓夹 #发夹推荐 #厚发量 #鲨鱼夹 #发饰分享",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cff0f89e9d00158b19b9/002.jpg"
+        ],
+        "selected_image_count": 1,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新实测",
+          "core_input_evidence": "个人从早上八点到晚上六点的全天佩戴实测，对比金属抓夹的头皮不适感，验证醋酸材质+加厚结构的舒适度",
+          "product_fact_anchors": [
+            "醋酸材质（果冻质感/透明感）",
+            "加厚结构",
+            "南瓜夹/鲨鱼夹夹齿开合"
+          ],
+          "supporting_differences": [
+            "不同人群：针对厚发量、易头皮敏感的人群，而非泛泛推荐",
+            "不同场景：全天通勤实测场景，而非仅展示佩戴效果"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e8ce1cd528ea001554e391": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "灰棕色抓夹真的自带滤镜感🍂",
+        "content": "之前一直买黑色抓夹，直到试了这只灰棕色——不是那种很跳的颜色，但夹在头上莫名显温柔。我黄皮素颜出门，后脑勺随便一盘，光线一打居然有点奶茶调的感觉。图里这种大号南瓜造型，我发量中等能全夹住，通勤赶地铁也不掉。",
+        "tags": "#抓夹 #发饰分享 #灰棕色 #通勤发型 #头饰发饰",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/009.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/011.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/013.jpg"
+        ],
+        "selected_image_count": 7,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新个人经验",
+          "core_input_evidence": "黄皮素颜实测灰棕色的显色效果，对比之前黑色抓夹的沉闷感",
+          "product_fact_anchors": [
+            "灰棕色",
+            "大号南瓜造型"
+          ],
+          "supporting_differences": [
+            "不同决策问题：从'显白吗'切入，而非泛泛夸颜色好看",
+            "不同素材组合方式：素颜+赶地铁场景，弱化精致感强调真实可用"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "塑料抓夹能做到这种磨砂感我服了",
+        "content": "拿到手先摸了一圈夹齿，不是廉价光面塑料，是那种有点绒感的哑光质地。我对比过家里另一只亮面白夹，这只灰棕色的确实更'吃光'，阳光下不会反光得很突兀。夹齿开合的阻尼也刚好，我细软发夹一天不会松，但也不会紧到扯头皮。",
+        "tags": "#抓夹 #发夹推荐 #磨砂质感 #鲨鱼夹 #日常发型",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/010.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/012.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/014.jpg"
+        ],
+        "selected_image_count": 7,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新对比样本",
+          "core_input_evidence": "与家中亮面白夹的触感、反光度、夹持松紧度逐项对比",
+          "product_fact_anchors": [
+            "塑料材质",
+            "夹齿结构",
+            "灰棕色哑光表面"
+          ],
+          "supporting_differences": [
+            "不同观点/结论：不回避'塑料'材质，转而论证'塑料也可以有质感'",
+            "不同结构组织：触感→视觉→功能，三层递进而非情绪铺陈"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e8ce13cf371700153abcd9": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "这个灰棕色抓夹在暖光下意外好看",
+        "content": "上周整理抽屉翻出来这只灰棕色小号抓夹，本来觉得颜色太低调差点送人。结果那天下午阳光斜照进来，发现它居然带着一点奶茶调，配我染过的棕发意外地融在一起。半扎的时候从后面看，扇形轮廓刚好露出一点边，不像黑色那么死板，又比浅色耐脏。现在通勤三天有两天都在用它，随手一夹就能出门。",
+        "tags": "#抓夹 #灰棕色 #发饰分享 #日常发型 #鲨鱼夹",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/009.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/011.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/013.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/015.jpg"
+        ],
+        "selected_image_count": 8,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新个人经验",
+          "core_input_evidence": "抽屉翻出差点送人的真实经历，暖光下发现奶茶色调的个人观察，三天用两天的实际使用频率",
+          "product_fact_anchors": [
+            "灰棕色",
+            "扇形轮廓",
+            "小号尺寸"
+          ],
+          "supporting_differences": [
+            "不同决策问题：从差点送人到留用的颜色认知反转，而非单纯夸颜色好看",
+            "不同素材组合方式：个人经历（翻抽屉）+ 光线观察（暖光/奶茶调）+ 实际使用频率，而非直接展示颜色"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "PC材质用久了才发现一个好处",
+        "content": "之前买金属抓夹夹久了头皮疼，这只PC材质的用了两个月，最直观的感受是轻。小号扇形的设计，夹齿开合力度刚好，我发量中等半扎不会滑，也不会像有些塑料夹那样用久了弹簧松掉。有回洗澡前随手夹在浴袍领口，忘了取下来，第二天发现居然没变形，这才注意到它材质韧性还行。现在包里常备一只，出差也带着。",
+        "tags": "#抓夹 #鲨鱼夹 #发饰分享 #头饰发饰 #抓夹推荐",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/010.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/012.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/014.jpg"
+        ],
+        "selected_image_count": 7,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新实测",
+          "core_input_evidence": "两个月实际使用对比金属夹的头皮疼问题，洗澡后夹在浴袍领口未变形的韧性测试",
+          "product_fact_anchors": [
+            "PC材质",
+            "夹齿开合",
+            "弹簧结构",
+            "小号扇形"
+          ],
+          "supporting_differences": [
+            "不同对比样本：与金属抓夹的疼痛感对比，而非泛泛说'舒服'",
+            "不同场景：出差携带+浴室意外测试，而非仅日常佩戴场景"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e8ce09f1fe0f0015509969": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "灰棕色抓夹真的自带滤镜感🍂",
+        "content": "上周去书店随手拍了张，灰棕色放在桌上意外地和松枝装饰很搭。不是那种很跳的颜色，但光线一照会有种雾蒙蒙的温柔感。我头发偏深，半扎的时候露出来一小截，朋友还以为我换了新发色。镂空爱心的轮廓比实心款透气很多，夏天扎也不会显得头顶闷闷的。",
+        "tags": "#抓夹 #发饰分享 #灰棕色 #日常发型 #鲨鱼夹",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/009.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/011.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/013.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/015.jpg"
+        ],
+        "selected_image_count": 8,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新案例",
+          "core_input_evidence": "书店场景实拍，灰棕色与松枝装饰的色彩搭配效果，以及深色头发半扎时的视觉融合经验",
+          "product_fact_anchors": [
+            "灰棕色",
+            "镂空爱心"
+          ],
+          "supporting_differences": [
+            "不同场景：从常规室内/通勤转向书店+节日装饰的特定光线环境",
+            "不同决策问题：不强调显白或百搭，而是验证深色发系的融合度与头顶透气感"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "PC材质抓夹用了两个月没变形✓",
+        "content": "之前买过金属弹簧的，夹久了后脑勺发酸，塑料薄的又容易裂。这个PC材质的用了两个月，开合的齿还是原来的松紧度，没有越用越松。镂空爱心的边缘处理得挺圆润，取下来的时候不会勾头发。我发量中等，全扎或半抓都能卡住，洗澡后湿发用也没见发白或者脆化。",
+        "tags": "#抓夹 #发夹推荐 #鲨鱼夹 #头饰发饰 #发饰分享",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/010.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/012.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/014.jpg"
+        ],
+        "selected_image_count": 7,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新实测",
+          "core_input_evidence": "两个月持续使用后的开合松紧度、湿发使用后的材质状态（无发白/脆化）、与过往金属/薄塑料抓夹的对比体验",
+          "product_fact_anchors": [
+            "PC材质",
+            "夹齿/开合"
+          ],
+          "supporting_differences": [
+            "不同对比样本：以用户自有的金属弹簧款、薄塑料款作为反面参照，而非泛泛说'比其他好'",
+            "不同决策问题：针对'用久变形''湿发损坏''勾头发'等具体使用痛点逐一验证"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e8cdf264c86a0015c62451": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "这个米白色抓夹真的不挑发色！",
+        "content": "上周染了冷棕之后发现以前的发夹都显突兀，翻到这个米白色交叉款试了下，意外很融。不是死白，是带点奶油调的米白，搭我现在的发色和之前原生黑头发都试过，不会抢戏又有点温柔感。\n\n盒子里拿出来第一眼觉得颜色很干净，没有花里胡哨的图案，就是纯色基础款。我通勤赶时间随便一抓，同事居然问是不是去做了造型。其实就这个交叉结构夹得稳，齿够长不会滑。",
+        "tags": "#抓夹 #米白色 #发饰分享 #通勤发型 #鲨鱼夹",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/009.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/011.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/013.jpg"
+        ],
+        "selected_image_count": 7,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新个人经验",
+          "core_input_evidence": "染发后冷棕发色与原生黑发分别试戴，验证米白色跨发色兼容性",
+          "product_fact_anchors": [
+            "米白色",
+            "交叉结构"
+          ],
+          "supporting_differences": [
+            "不同决策问题：解决染发后原有发夹不兼容的痛点，而非泛泛夸颜色好看",
+            "不同素材组合方式：将发色变化作为前置冲突，引出颜色实测，而非直接展示单品"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "塑料感？这个我摸完直接留了两",
+        "content": "之前买过便宜抓夹，塑料脆得吓人，夹两次弹簧那直接崩开。这个拿到手先按了按弹簧，金属线圈回弹很顺，不是那种廉价塑料弹簧。齿的部分有做防滑的波浪纹，我发量中等偏厚，早上赶地铁跑几步也没散。\n\n表面是哑光处理，不是油亮亮的廉价光面，凑近看也没有注塑毛边。放木质收纳盒里和旁边植物搭着拍了一张，质感确实在线。现在一个放公司一个放包里，换着用。",
+        "tags": "#鲨鱼夹 #发夹推荐 #质感发饰 #头饰发饰 #抓夹测评",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/010.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/012.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/014.jpg"
+        ],
+        "selected_image_count": 7,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新对比样本",
+          "core_input_evidence": "与此前崩坏的廉价塑料抓夹对比，实测金属弹簧回弹、波浪防滑齿、哑光表面处理",
+          "product_fact_anchors": [
+            "金属弹簧/线圈",
+            "波浪纹防滑齿",
+            "哑光表面"
+          ],
+          "supporting_differences": [
+            "不同观点/结论：不回避塑料材质本身，但通过弹簧结构、表面处理、做工细节重新定义质感标准",
+            "不同场景：通勤赶地铁的跑动场景验证夹持稳定性，而非静态展示"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e6efcdf1fe0f0015c4f24b": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "这个粉白条纹抓夹，随手一夹就很有春夏感",
+        "content": "上周去朋友家蹭饭，她随手从抽屉里翻出这个抓夹给我救急，说你看这个粉白条纹配绿色小蝴蝶结，比你那些黑夹子活泼多了。我半信半疑夹上，结果照镜子发现确实显气色，齿状夹口咬得也挺牢，碎发没乱飞。现在它成了我包里常备，赶时间的时候抓两下就出门，比扎马尾省事。",
+        "tags": "#抓夹 #发饰分享 #韩系发饰 #日常发型 #鲨鱼夹",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/007.jpg"
+        ],
+        "selected_image_count": 4,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新个人经验",
+          "core_input_evidence": "朋友家救急借用的真实经历，从抽屉翻出、半信半疑到成为包中常备的完整决策转变过程",
+          "product_fact_anchors": [
+            "粉白条纹配色",
+            "绿色蝴蝶结装饰",
+            "齿状夹口结构"
+          ],
+          "supporting_differences": [
+            "不同决策问题：从救急场景切入，解决赶时间出门的实用需求，而非单纯追求颜值",
+            "不同素材组合方式：将朋友推荐+借用体验+长期复购意愿三层递进，区别于单一场景展示"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "塑料夹能做到这个咬合感，我倒是有点意外",
+        "content": "我对塑料抓夹一直挺挑剔的，之前买过几个看着好看，夹两下就松了或者扯头皮。这个拿到手先试了开合力度，齿口是带点弧度的 scalloped 设计，不是直愣愣戳进去那种。我头发偏细软，夹了整下午没往下溜，也没觉得夹得头疼。蝴蝶造型那款我反而没敢买，怕太夸张，这个条纹款低调些，通勤也能用。",
+        "tags": "#抓夹 #发夹推荐 #鲨鱼夹 #头饰发饰 #发饰分享",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/008.jpg"
+        ],
+        "selected_image_count": 4,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新对比样本",
+          "core_input_evidence": "以过往买过的塑料抓夹为对照组，实测当前商品的齿口弧度和咬合持久度，明确排除蝴蝶造型款的选择过程",
+          "product_fact_anchors": [
+            "塑料材质",
+            "scallopededge齿口弧度",
+            "齿状夹口结构"
+          ],
+          "supporting_differences": [
+            "不同观点/结论：不盲目推荐同系列蝴蝶款，主动说明排除理由，建立真实决策可信度",
+            "不同人群：针对细软发质用户的夹持痛点，区别于通用发量人群的泛泛推荐"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e458b719f8df0015a3f70d": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "这个粉色爱心抓夹 扎完被同事问了三遍链接",
+        "content": "早上急着出门随便一夹，到公司电梯里就被隔壁组姐妹盯着看。粉色不是那种很怯的荧光感，是带点灰调的橡皮粉，配这个爱心轮廓意外地不甜腻。我发量中等偏厚，后脑勺盘两圈刚好卡住，通勤一整天没松过。周末穿白T牛仔裤也试了下，居然比想象中好搭很多。",
+        "tags": "#抓夹 #发饰分享 #粉色系 #通勤发型 #鲨鱼夹",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/009.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/011.jpg"
+        ],
+        "selected_image_count": 6,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新个人经验",
+          "core_input_evidence": "本人实际通勤佩戴体验：发量中等偏厚、盘两圈、全天未松；以及白T牛仔裤的周末搭配测试",
+          "product_fact_anchors": [
+            "粉色（橡皮粉灰调）",
+            "爱心轮廓"
+          ],
+          "supporting_differences": [
+            "不同场景：通勤紧急出门 vs 周末休闲白T牛仔裤，打破单一场景局限",
+            "不同决策问题：从'粉色会不会太甜腻/难搭'的顾虑切入，用实测打消疑虑"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "醋酸材质抓夹用了两周 和普通塑料真的不一样",
+        "content": "之前图便宜买的塑料夹，夏天出汗多了边缘会发白，这个醋酸材质的摸起来是温润的，不是那种轻飘飘的脆感。爱心中间那个弹簧结构我特意看了，开合力度刚好，不会夹到头皮疼。上周洗完头半干的时候用过，也没出现滑齿的情况，比我预期中耐造。",
+        "tags": "#抓夹 #发夹推荐 #醋酸抓夹 #头饰发饰 #鲨鱼夹",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/010.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/012.jpg"
+        ],
+        "selected_image_count": 6,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新对比样本",
+          "core_input_evidence": "与过往廉价塑料夹的两周对比实测：边缘发白问题、出汗场景、半干发滑齿测试、弹簧开合力度体感",
+          "product_fact_anchors": [
+            "醋酸材质（温润非脆感）",
+            "弹簧结构/开合"
+          ],
+          "supporting_differences": [
+            "不同观点/结论：不吹'高级感'虚词，而是对比指出'不是轻飘飘的脆感'，反向定义质感",
+            "不同素材组合方式：材质触感 + 结构细节（弹簧）+ 湿发场景实测，三层事实叠加而非单点描述"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e458a428de740015f0a9ee": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "这个粉色抓夹实物比滤镜还温柔",
+        "content": "上周约会前翻抽屉，顺手抓了这只粉色醋酸抓夹应急。本来担心会显黑，结果半扎发别在后脑勺，灯光下是那种透透的珍珠粉，不是廉价的荧光感。夹齿部分能看到金属小弹簧，开合很顺，我发量中等也没滑下来。那天穿米白针织衫，意外搭出一种轻复古的氛围，朋友还问是不是新买的耳环配套买的。",
+        "tags": "#抓夹 #发饰分享 #粉色系 #氛围感发型 #鲨鱼夹",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/009.jpg"
+        ],
+        "selected_image_count": 5,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新个人经验",
+          "core_input_evidence": "上周约会前实际使用，发现粉色在灯光下呈珍珠光泽而非荧光感，与米白针织衫搭配产生轻复古效果",
+          "product_fact_anchors": [
+            "粉色醋酸材质",
+            "金属弹簧夹齿结构"
+          ],
+          "supporting_differences": [
+            "不同决策问题：从担心显黑转为实际显温柔，解决黄皮选粉色的顾虑",
+            "不同场景组合：约会应急场景+针织衫搭配，非通勤或上课常规场景"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "醋酸材质和塑料真的不一样",
+        "content": "之前买过几只便宜的鲨鱼夹，夏天出汗后边缘会发白变脆，这只用了两个月还没这个问题。图片里能看到表面有层温润的光泽，不是喷漆是材质本身透出来的。我特意对比过，同样光线下半透明的地方能看到夹齿的金属轮廓，树脂做不出这种通透感。现在每天通勤抓半扎发，夹齿咬合的位置也没变形，算是今年买的发饰里用得最勤的一只。",
+        "tags": "#抓夹 #发夹推荐 #醋酸抓夹 #质感发饰 #通勤发型",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/010.jpg"
+        ],
+        "selected_image_count": 5,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新对比样本",
+          "core_input_evidence": "与之前便宜的塑料鲨鱼夹进行两个月使用对比，观察到边缘不发白、夹齿不变形，且透光可见金属轮廓",
+          "product_fact_anchors": [
+            "醋酸半透明材质",
+            "金属夹齿/弹簧结构"
+          ],
+          "supporting_differences": [
+            "不同观点结论：不强调高级感而是强调耐用性对比，从塑料发白的失败教训切入",
+            "不同结构组织：先抛旧物问题→再验证新材质→最后落回日常高频使用，非颜色→细节→场景的传统结构"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e4589712212a0015b01069": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "这个粉色蝴蝶结发梳🎀扎完被同事问了三遍链接",
+        "content": "上周通勤随手拿了这个粉色发梳，没想到扎半马尾被隔壁工位小姐姐追着问。晕染的粉不是那种很跳的颜色，有点雾蒙蒙的温柔感，蝴蝶结上面还有个小字母B，近看也不显廉价。\n\n我发量中等，齿梳插进去能卡住碎发，下午三点也没往下掉。米白色那只也想入了，感觉搭浅色毛衣会很好看。",
+        "tags": "#抓夹 #发饰分享 #粉色系 #通勤发型 #蝴蝶结发饰",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/009.jpg"
+        ],
+        "selected_image_count": 5,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新案例",
+          "core_input_evidence": "上周通勤实际使用，被同事追问链接的具体场景；下午三点未掉落的持妆实测",
+          "product_fact_anchors": [
+            "粉色晕染",
+            "蝴蝶结+字母B装饰",
+            "发梳齿结构"
+          ],
+          "supporting_differences": [
+            "不同决策问题：从单纯好看转向通勤持妆稳定性验证",
+            "不同素材组合方式：同事追问的外部反馈+下午三点的时效锚点，而非单纯自拍展示"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "塑料感劝退党🙋‍♀️但这个梳齿细节我服",
+        "content": "买发饰最怕拿到手轻飘飘的塑料片，这个发梳我捏了捏齿根还算扎实。金属齿是偏哑光的，不是那种亮到反光的廉价金，插进头发时摩擦力刚好，不会滑出来。",
+        "tags": "#抓夹 #发夹推荐 #质感发饰 #头饰发饰 #鲨鱼夹",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/010.jpg"
+        ],
+        "selected_image_count": 5,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新实测",
+          "core_input_evidence": "实际捏压齿根测试硬度；金属齿哑光质感与廉价亮金的对比触摸体验",
+          "product_fact_anchors": [
+            "金属发梳齿",
+            "哑光质感",
+            "蝴蝶结装饰"
+          ],
+          "supporting_differences": [
+            "不同观点/结论：不夸整体高级，只承认齿根扎实，对塑料感保持警惕的保守结论",
+            "不同表达切口：从触觉验证切入而非视觉氛围，用捏、插、滑的动词链替代形容词堆叠"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e45889b8ecfa00153dc84c": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "这个黑金配色抓夹，通勤戴被同事问了三次",
+        "content": "上周急着出门随手抓了这只，电梯里被同事盯着看，还以为是新耳环。黑底配金色小球其实挺低调的，但光泽感让整个人看起来没那么丧。\n我头发偏厚，中号刚好能兜住，蝴蝶结形状从侧面看比纯圆的那种显后脑勺饱满。今天配白T也没违和，算是近期利用率最高的一只了。",
+        "tags": "#抓夹 #发饰分享 #鲨鱼夹 #通勤发型 #黑金配色",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/009.jpg"
+        ],
+        "selected_image_count": 5,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新案例",
+          "core_input_evidence": "个人通勤场景实测：被同事询问三次、电梯场景、配白T的实测搭配",
+          "product_fact_anchors": [
+            "黑色光泽底",
+            "金色装饰球",
+            "蝴蝶结形状",
+            "中号尺寸"
+          ],
+          "supporting_differences": [
+            "不同决策问题：从'显不显老气'转向'被主动询问的社交反馈'",
+            "不同素材组合方式：电梯场景+白T搭配+发量适配，三要素叠加而非单讲颜色"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "塑料感抓夹戴腻了，这只金属球细节有点东西",
+        "content": "之前买的便宜抓夹用两个月就松齿，这只拿在手里分量刚好，不是轻飘飘的塑料壳。金色小球是嵌进去的，不是贴上去的，用了两周没掉色。\n弹簧夹开合很顺，我发量多也能一次夹稳，不用反复调整。光泽表面沾了指纹擦一下就行，比磨砂的耐脏些。",
+        "tags": "#抓夹 #发夹推荐 #鲨鱼夹 #质感发饰 #发量多",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/010.jpg"
+        ],
+        "selected_image_count": 5,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新对比样本",
+          "core_input_evidence": "与'便宜抓夹'的对比实测：两周使用后的掉色情况、弹簧开合顺滑度、发量多适配性",
+          "product_fact_anchors": [
+            "金色装饰球嵌入结构",
+            "光泽表面",
+            "弹簧夹开合机制",
+            "金属球材质"
+          ],
+          "supporting_differences": [
+            "不同观点/结论：不夸'高级'而强调'分量刚好''耐脏'等务实判断",
+            "不同结构组织：先抛旧物痛点再讲当前解决，而非直接描述材质名词"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e4587fa545700015801d2d": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "这个米白豹纹抓夹，搭灰色毛衣意外很温柔",
+        "content": "上周穿灰色毛衣出门，随手抓了这只米白底色的豹纹抓夹，没想到比纯黑款更衬气色。豹纹图案不是那种夸张的大斑块，是细细碎碎的小斑点，远看像奶茶冻里的黑糖纹路。金色小爱心扣在夹尾，盘发时刚好露一点边，不抢眼但会被人多看两眼。\n\n我发量中等偏厚，之前用浅色抓夹总怕显头扁，这只大号夹齿够深，从后脑勺斜斜一挽，下午逛了三小时街也没松。米白色在秋冬深色外套里反而成了亮点，不像黑色抓夹那样直接隐形掉。",
+        "tags": "#抓夹 #发饰分享 #秋冬发型 #鲨鱼夹 #日常出门",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/009.jpg"
+        ],
+        "selected_image_count": 5,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新案例",
+          "core_input_evidence": "灰色毛衣实穿搭配案例，验证米白色豹纹在秋冬深色衣物中的提亮效果，区别于常规黑色抓夹的隐形属性",
+          "product_fact_anchors": [
+            "米白色底色",
+            "豹纹图案",
+            "金色心形装饰",
+            "大号夹齿结构"
+          ],
+          "supporting_differences": [
+            "不同决策问题：不是问'好不好看'，而是解决'浅色抓夹会不会显头扁/秋冬浅色是否突兀'的顾虑",
+            "不同素材组合方式：将背景中的灰色毛衣道具转化为真实穿搭场景，而非单纯展示发夹本体"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "醋酸材质抓夹我买了不少，这只弹簧手感不太一样",
+        "content": "家里醋酸抓夹有六七只，用久了发现有些弹簧会越夹越松。这只我特意反复开合试了二十几次，弹簧回弹还是脆的，夹齿根部有橡胶垫片，抓起头发来不会滑。豹纹是印压在醋酸板里的，不是表面贴膜，指甲刮了两下没起皮——之前买过便宜款，两周就磨花了。\n\n金色小爱心是嵌在夹体上的，不是胶水粘的，我掰了掰没晃动。整体重量比金属抓夹轻一半，但比塑料款有分量，盘高发时坠感刚好，不会扯得头皮发紧。",
+        "tags": "#抓夹 #发夹推荐 #醋酸抓夹 #发饰分享 #鲨鱼夹",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/010.jpg"
+        ],
+        "selected_image_count": 5,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新实测",
+          "core_input_evidence": "二十次开合弹簧回弹测试、指甲刮擦豹纹表面耐磨测试、金色心形嵌合牢固度掰动测试，对比家中现有醋酸抓夹的衰减问题",
+          "product_fact_anchors": [
+            "醋酸材质",
+            "弹簧机制",
+            "橡胶垫片/夹齿结构",
+            "金色心形装饰嵌合方式"
+          ],
+          "supporting_differences": [
+            "不同观点/结论：不夸'质感好'的泛化结论，而是指出'比金属轻、比塑料有分量'的具体权衡，以及弹簧寿命的实测对比",
+            "不同结构组织：以'问题-测试-验证'的递进结构替代常规的'外观-功能-总结'三段式"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e45867c444070015898826": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "雾霾蓝抓夹真的自带降温感🧊",
+        "content": "上周去闺蜜家蹭空调，她随手递了个抓夹让我把头发挽起来，结果一照镜子被这个雾霾蓝惊艳到了。不是那种很跳脱的蓝，像阴天海边雾蒙蒙的颜色，衬得整个人特别干净。我发量偏多，这个蝴蝶结造型的超大号居然能全包住，夹齿咬得很稳，下午逛街一下午没散。\n\n以前觉得蓝色系发饰很难搭，但这个雾霾蓝意外好配，米白衬衫或者灰色针织衫都很和谐。闺蜜说她入了同系列的米白色，下次换着戴试试。",
+        "tags": "#抓夹 #雾霾蓝 #发饰分享 #鲨鱼夹 #日常发型",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/009.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/011.jpg"
+        ],
+        "selected_image_count": 6,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新个人经验",
+          "core_input_evidence": "上周去闺蜜家实际借用雾霾蓝抓夹的个人经历，包含发量偏多、夹齿稳固、下午逛街未散等真实使用反馈",
+          "product_fact_anchors": [
+            "雾霾蓝",
+            "蝴蝶结造型",
+            "超大号"
+          ],
+          "supporting_differences": [
+            "不同决策问题：从'蓝色系难搭配'的顾虑切入，转化为实际好搭的惊喜发现",
+            "不同素材组合方式：以闺蜜互动场景+换色预期收尾，区别于单纯自拍展示"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "醋酸材质的抓夹确实不一样🎀",
+        "content": "之前用的塑料抓夹要么太轻夹不住，要么重的扯头皮，这个醋酸材质的平衡感很微妙。表面有层温润的光泽，不是廉价亮面，对着光能看出晕染的纹理层次，蝴蝶结的弧度做得比较立体，从侧面看不会扁塌塌的。\n\n我特意对比了家里两个旧抓夹，一个是磨砂塑料容易留指纹，一个是金属的太重。这个醋酸的重量刚好，早上赶地铁单手就能夹好，到公司摘下来也没有静电炸毛的情况。",
+        "tags": "#抓夹 #发夹推荐 #醋酸抓夹 #头饰发饰 #鲨鱼夹",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/010.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/012.jpg"
+        ],
+        "selected_image_count": 6,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新对比样本",
+          "core_input_evidence": "将当前醋酸晕染抓夹与家中磨砂塑料抓夹、金属抓夹进行三项对比（重量、光泽质感、使用后的头发状态）",
+          "product_fact_anchors": [
+            "醋酸晕染纹理",
+            "蝴蝶结弧度立体",
+            "超大号"
+          ],
+          "supporting_differences": [
+            "不同场景：以'赶地铁单手操作'的通勤痛点替代静态展示",
+            "不同观点/结论：不强调'高级感'等抽象词，而是落实到'不扯头皮''无静电'等身体感知"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e4585111535800150fd0ca": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "这个豹纹粉抓夹，扎高马尾意外显温柔",
+        "content": "之前觉得豹纹太野不好搭，直到试了这支粉色底的醋酸抓夹。它不是那种刺眼的粉，是混着玳瑁纹的浅粉调，夹在马尾上反而衬得发色很柔。上周去咖啡馆随手一夹，朋友问是不是换了新发色，其实是抓夹的反光让整体看起来亮了。香蕉夹的竖夹结构比我旧的鲨鱼夹顺手，高马尾能撑住不散，低头喝咖啡也不会滑。",
+        "tags": "#抓夹 #发饰分享 #高马尾 #粉色系 #日常发型",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/009.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/011.jpg"
+        ],
+        "selected_image_count": 6,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新个人经验",
+          "core_input_evidence": "上周去咖啡馆的实际佩戴体验，朋友误以为是新发色的即时反馈",
+          "product_fact_anchors": [
+            "粉色底玳瑁纹（豹纹）",
+            "香蕉夹竖夹结构"
+          ],
+          "supporting_differences": [
+            "不同决策问题：从'豹纹难搭'的顾虑切入，而非直接夸好看",
+            "不同素材组合方式：将颜色效果与社交反馈绑定，而非单纯描述色值"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "醋酸抓夹用了三个月，齿没松是真的",
+        "content": "塑料抓夹我断过至少五支，这支醋酸材质的香蕉夹从春天用到现在。夹齿的咬合还是紧的，开合处没有发白或者裂口，玳瑁纹的表层也没刮花。我头发偏厚，之前用金属夹扯头皮，这个轻很多，夹一整天太阳穴不会胀。最近发现它搭米白衬衫特别好看，材质的光泽和衣服面料意外地配。",
+        "tags": "#抓夹 #发夹推荐 #醋酸材质 #头饰发饰 #通勤发型",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/010.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/012.jpg"
+        ],
+        "selected_image_count": 6,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新实测",
+          "core_input_evidence": "三个月实际使用周期，对比此前断过的五支塑料抓夹的损耗记录",
+          "product_fact_anchors": [
+            "醋酸材质",
+            "夹齿咬合结构"
+          ],
+          "supporting_differences": [
+            "不同人群：厚发人群的佩戴痛点（金属夹扯头皮）",
+            "不同场景：从耐用测试延伸到通勤穿搭的意外适配"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e45842f1fe0f0015b33685": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "这个粉金配色抓夹，随手一夹就很有贵气感",
+        "content": "上周去朋友婚礼试造型，化妆师随手拿了这个粉金色抓夹给我盘发，原本担心粉色会太甜，结果镜子里看是那种很低调的玫瑰金调，搭我染的棕发意外地和谐。圆形金属标在光下有点细闪，不是那种廉价亮片感。\n\n我现在日常通勤也用它，穿黑西装或者米色针织衫都能配，不像纯黑抓夹那么沉闷。发量中等偏多的姐妹可以参考，我及腰长发盘两圈能夹稳，夹齿开合挺顺的，不会扯头皮。",
+        "tags": "#抓夹 #发饰分享 #粉色控 #通勤发型 #盘发教程",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/009.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/011.jpg"
+        ],
+        "selected_image_count": 6,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新个人经验",
+          "core_input_evidence": "婚礼试造型时化妆师首次使用、日常通勤黑西装/米色针织衫的实测搭配反馈",
+          "product_fact_anchors": [
+            "粉金色（semantic_colors含Gold，display_color为粉色）",
+            "圆形金属标/品牌logo（semantic_product_elements含Hairclipwithacircularemblem、Brandlogo）"
+          ],
+          "supporting_differences": [
+            "不同场景：从婚礼造型场景切入，再落到日常通勤，区别于纯日常分享",
+            "不同决策问题：解决'粉色会不会太甜''搭深色衣服会不会突兀'的顾虑，而非泛泛夸颜色好看"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "用了两周才发现，这个抓夹的金属扣是有点分量的",
+        "content": "买的时候看图以为是全塑料轻飘飘的那种，拿到手才发现圆形标那块是金属件，有点沉甸感，夹在头上反而更稳当。我之前用的塑料抓夹骑车总往下滑，这个因为重心靠后，意外很牢。\n\n夹齿内侧是磨砂质感，不是光面的，我细软发质也没怎么打滑。不过金属部分确实容易留指纹，我随身带个小绒布偶尔擦擦，算是为颜值付出的额外劳动吧。",
+        "tags": "#抓夹 #鲨鱼夹 #发夹推荐 #细软发质 #质感好物",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/010.jpg"
+        ],
+        "selected_image_count": 5,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新实测",
+          "core_input_evidence": "两周实际使用中发现金属件有分量、重心靠后不易滑落、夹齿内侧磨砂质感防滑的实测对比",
+          "product_fact_anchors": [
+            "金属装饰/圆形金属标（semantic_product_elements含发夹上的金属装饰、Hairclipwithacircularemblem）",
+            "夹齿结构/开合机制（semantic_product_elements含Clipmechanism）"
+          ],
+          "supporting_differences": [
+            "不同观点/结论：不回避缺点（金属留指纹需擦拭），形成真实感，区别于纯好评种草",
+            "不同人群：针对细软发质+骑车场景的防滑需求，而非泛化'所有发质适用'"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e45842891c6a0015c5f66a": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "🎀这个棕色抓夹也太优雅了叭！",
+        "content": "最近看到这款抓夹女珍珠花朵巧克力棕鲨鱼夹大号高级感发夹2026新款发量大发饰，第一眼就被它的棕色调调吸引住了🎀\n\n棕色调很显眼，发夹上的装饰性花朵细节比较抓眼，随手一夹都很提气质。",
+        "tags": "#抓夹 #发夹推荐 #发饰分享 #头饰发饰 #日常发型",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/009.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/011.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/013.jpg"
+        ],
+        "selected_image_count": 7,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新案例",
+          "core_input_evidence": "以当前商品 抓夹女珍珠花朵巧克力棕鲨鱼夹大号高级感发夹2026新款发量大发饰 的图片事实作为新案例，围绕颜色颜值补充独立观察，明确写到这些商品锚点：Brown、Tan、Flower-shaped hair clip with pearl center、Flower-shaped hair clip with a pearl-like center、Hair、Hair clip、Fashion display",
+          "product_fact_anchors": [
+            "抓夹女珍珠花朵巧克力棕鲨鱼夹大号高级感发夹2026新款发量大发饰",
+            "抓夹",
+            "发夹"
+          ],
+          "supporting_differences": [
+            "不同决策问题：本篇聚焦颜色颜值，并结合发夹上的装饰性花朵这个具体商品细节，而不是复述历史笔记同一卖点",
+            "不同素材组合方式：结合棕色与日常生活这两个当前商品事实组织内容"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "🎀这款抓夹的细节质感真的很加分",
+        "content": "我会特别在意发饰的表面纹理和细节处理，这款抓夹女珍珠花朵巧克力棕鲨鱼夹大号高级感发夹2026新款发量大发饰看起来就很耐看🎀\n\n从主图能看到发夹上的装饰性花朵细节比较明显，整体光泽和层次感都在线，属于越看越顺眼的类型。",
+        "tags": "#抓夹 #发夹推荐 #发饰分享 #头饰发饰 #日常发型",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/010.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/012.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/014.jpg"
+        ],
+        "selected_image_count": 7,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新案例",
+          "core_input_evidence": "以当前商品 抓夹女珍珠花朵巧克力棕鲨鱼夹大号高级感发夹2026新款发量大发饰 的图片事实作为新案例，围绕材质质感补充独立观察，明确写到这些商品锚点：Brown、Tan、Flower-shaped hair clip with pearl center、Flower-shaped hair clip with a pearl-like center、Hair、Hair clip、Fashion display",
+          "product_fact_anchors": [
+            "抓夹女珍珠花朵巧克力棕鲨鱼夹大号高级感发夹2026新款发量大发饰",
+            "抓夹",
+            "发夹"
+          ],
+          "supporting_differences": [
+            "不同决策问题：本篇聚焦材质质感，并结合发夹上的装饰性花朵这个具体商品细节，而不是复述历史笔记同一卖点",
+            "不同素材组合方式：结合棕色与日常生活这两个当前商品事实组织内容"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e4583462c5c00016a281ff": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "深灰色小花夹上头的瞬间，我懂了什么叫低调精致",
+        "content": "之前买过亮闪闪的银色发夹，上班总被同事问是不是要去约会。这支深灰色花朵夹完全相反，夹在侧边几乎和发色融在一起，低头看文件时才闪一点金属细光。上周赶早会随手别了两只，午休照镜子发现灰棕调的花瓣衬得刘海特别干净，没有那种刻意打扮的用力感。现在包里常备一只，赶时间的时候比抓夹省事多了。",
+        "tags": "#发夹 #发饰分享 #刘海夹 #高级感发饰 #通勤发型",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/009.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/011.jpg"
+        ],
+        "selected_image_count": 6,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新个人经验",
+          "core_input_evidence": "本人真实购买后对比亮银色发夹的职场佩戴体验，发现深灰色在办公场景中的'隐形精致'效果，以及赶早会时随手别两只的具体使用方式",
+          "product_fact_anchors": [
+            "深灰色",
+            "花朵形状装饰"
+          ],
+          "supporting_differences": [
+            "不同决策问题：历史笔记侧重'温柔''氛围感'，本条解决'亮色发夹职场太突兀'的决策痛点",
+            "不同场景：选择办公通勤而非约会逛街，素材组合为'文件/早会/午休镜子'的职场动线"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "金属细框+小水钻这支，我掰开看了夹齿才下单",
+        "content": "买迷你夹最怕夹不稳，走两步就滑下来。这支我特意掰开合了几次，夹齿是带防滑纹的金属片，不是那种塑料齿会变形。花朵中间的小水钻嵌在金属环里，我指甲抠了抠没松动，比胶水粘的踏实。昨天戴去书店，低头翻书三小时，回家摘的时候头发上没留压痕，金属细框确实比粗夹子轻很多。",
+        "tags": "#发夹推荐 #头饰发饰 #迷你发夹 #发饰测评 #小众发饰",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/010.jpg"
+        ],
+        "selected_image_count": 5,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新实测",
+          "core_input_evidence": "本人现场测试夹齿开合结构、验证水钻镶嵌牢固度、三小时佩戴后检查头发压痕，均为针对该商品具体结构的实测行为",
+          "product_fact_anchors": [
+            "金属环",
+            "防滑齿",
+            "花朵形状装饰"
+          ],
+          "supporting_differences": [
+            "不同观点/结论：历史笔记强调'好看''温柔'，本条以'先验结构再验佩戴'的理性决策视角切入，结论落在'轻''无压痕'而非氛围感",
+            "不同素材组合方式：将'掰夹齿''抠水钻''书店三小时'三个测试动作串联为完整验证叙事，而非感受式描述"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e4581b64c86a001505a133": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "这个蝴蝶抓夹的配色，我戴出门被问了三次",
+        "content": "上周戴去逛街，奶茶店排队的时候前面小姐姐突然回头问我链接。我自己也是拿到手才发现，翅膀上橙黄蓝红的渐变比卖家图还鲜活，不是那种塑料感很重的印刷色，是像琉璃一样透亮的层次。我头发到腰，本来担心彩色发夹会显幼稚，结果配牛仔外套反而很点睛，扎个低马尾随手一夹就出门。",
+        "tags": "#抓夹 #发饰分享 #蝴蝶发夹 #彩色发饰 #日常发型",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/009.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/011.jpg"
+        ],
+        "selected_image_count": 6,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新个人经验",
+          "core_input_evidence": "上周实际戴去逛街被问链接的真实经历，包含具体场景（奶茶店排队）和互动细节",
+          "product_fact_anchors": [
+            "橙黄蓝红渐变的彩色翅膀",
+            "蝴蝶形状"
+          ],
+          "supporting_differences": [
+            "不同决策问题：针对'彩色发夹是否显幼稚'的顾虑进行回应，而非单纯夸好看",
+            "不同素材组合方式：将蝴蝶翅膀的琉璃透亮感与牛仔外套的日常场景组合，打破'复古=正式'的刻板印象"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "摸过才知道，不是轻飘飘的那种塑料夹",
+        "content": "我买过太多抓夹，捏开那一下的手感就能判断会不会用两次就松。这个蝴蝶夹的夹齿咬合很紧实，我发量多也能一次夹稳，走路不晃。翅膀边缘的水钻是嵌进去的，不是胶水随便粘的，我特意抠了抠没掉。醋酸材质的光泽和廉价塑料真的不一样，对着光看有那种温润的通透感，我放在洗手台上，室友以为是小众设计师款。",
+        "tags": "#抓夹 #发夹推荐 #醋酸抓夹 #质感发饰 #头饰发饰",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/010.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/012.jpg"
+        ],
+        "selected_image_count": 6,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新实测",
+          "core_input_evidence": "实际测试夹齿咬合紧实度（发量多场景）、手抠水钻牢固度、醋酸材质对光通透感对比",
+          "product_fact_anchors": [
+            "醋酸材质",
+            "水钻/宝石装饰",
+            "夹齿结构"
+          ],
+          "supporting_differences": [
+            "不同观点/结论：不回避'塑料感'质疑，通过实测手感、咬合力度、镶嵌工艺建立信任，而非直接断言'高级'",
+            "不同结构组织：以'买过太多→测试方法→具体动作（抠水钻、对光看）→他人反馈'的递进，替代常规的'外观→优点→总结'结构"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e458102e7f630015cb4450": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "这个粉色花朵抓夹也太温柔了叭",
+        "content": "上周去咖啡馆被邻桌女生问链接，才意识到这个抓夹真的有点东西。我是黄皮平时不敢碰粉色，但这个花瓣是带点奶调的浅粉，不是那种荧光感，夹在发尾反而衬得肤色很柔和。五瓣花的造型，中间还有颗珍珠感的圆珠，盘发的时候从侧面看像朵真花落在头发上。今天急着出门，随手一抓就很有造型感，不用刻意打理。",
+        "tags": "#抓夹 #发饰分享 #粉色系 #温柔发型 #鲨鱼夹",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/009.jpg"
+        ],
+        "selected_image_count": 5,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新个人经验",
+          "core_input_evidence": "黄皮实测粉色不显黑的个人佩戴经验，以及咖啡馆被陌生人询问的真实社交反馈",
+          "product_fact_anchors": [
+            "粉色花瓣（奶调浅粉，非荧光）",
+            "五瓣花造型+中间珍珠感圆珠"
+          ],
+          "supporting_differences": [
+            "不同决策问题：从'黄皮能不能穿粉色'的肤色焦虑切入，而非泛泛夸颜色好看",
+            "不同素材组合方式：将社交场景（被问链接）与肤色测试结合，叠加珍珠圆珠的细节特写"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "终于找到顺手又好看的醋酸抓夹了",
+        "content": "之前买过几个便宜抓夹，夹齿太松走两步就散，或者塑料感太重像小时候的发卡。这个拿到手第一感觉是分量刚好，不是轻飘飘的，花瓣边缘摸起来光滑没有毛刺。夹齿部分有金属质感的涂层，开合的时候弹力很稳，我发量中等偏厚，盘两圈能牢牢卡住。最意外的是透明夹身和棕色过渡的那截设计，凑近看有点像琥珀的纹理，不是单调的纯色。",
+        "tags": "#抓夹 #发夹推荐 #高级感发饰 #鲨鱼夹 #头饰发饰",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/010.jpg"
+        ],
+        "selected_image_count": 5,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新对比样本",
+          "core_input_evidence": "与'便宜抓夹夹齿松、塑料感重'的过往失败购买经历做横向对比，实测当前商品夹齿弹力和发量承载力",
+          "product_fact_anchors": [
+            "夹齿金属质感涂层+弹力稳定",
+            "透明夹身与棕色过渡的琥珀纹理"
+          ],
+          "supporting_differences": [
+            "不同观点/结论：不回避'便宜货踩雷'的负面经验，以此反衬当前商品的质感差异",
+            "不同结构组织：从触觉（分量、光滑度）到功能（弹力、发量承载）再到视觉细节（琥珀纹理），三层递进而非平面罗列"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ],
+    "69e197a9c3604d0015f88123": [
+      {
+        "angle": 1,
+        "angle_name": "颜色颜值",
+        "title": "这组粉色系刺绣发夹，女儿戴出门被问了三次链接",
+        "content": "上周带女儿去公园，她别着那枚草莓刺绣的粉色BB夹，阳光底下颜色特别柔，隔壁宝妈过来问是不是手工做的。其实是我凑单买的套装，里面米白和粉色搭得刚好，蕾丝边不会显得廉价。\n\n我自己试了试别刘海，发现这种小夹子比大抓夹更适合碎发多的情况。刺绣的针脚很细，海星那枚她洗澡都不肯摘，说是「美人鱼用的」。现在每天她自己挑颜色，反而省了我搭配的功夫。",
+        "tags": "#发夹 #儿童发饰 #发饰分享 #头饰发饰 #宝宝穿搭",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/001.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/003.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/005.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/007.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/009.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/011.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/013.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/015.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/017.jpg"
+        ],
+        "selected_image_count": 9,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新案例",
+          "core_input_evidence": "带女儿去公园被宝妈问链接的真实场景，包含具体互动细节（问是不是手工做的、女儿挑颜色省搭配功夫）",
+          "product_fact_anchors": [
+            "粉色",
+            "草莓刺绣",
+            "蕾丝边",
+            "米白色"
+          ],
+          "supporting_differences": [
+            "不同决策问题：从「给女儿买」转向「自己被种草也试戴」，解决「儿童发夹大人能不能用」的隐性顾虑",
+            "不同素材组合方式：以公园偶遇对话开场，而非直接展示产品图，用第三方验证替代自夸"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      },
+      {
+        "angle": 2,
+        "angle_name": "材质质感",
+        "title": "刺绣发夹我买过不少，这套的针脚确实密实",
+        "content": "之前图便宜买过一批刺绣发夹，洗两次就脱线，女儿扯了一下花直接散了。这套拿到手先检查了针脚，草莓那枚的走线很密，背面没有线头乱窜，夹齿开合也顺，她头发细软夹得住。\n\n我特意选了有蕾丝的那几枚试戴，不是硬邦邦的塑料感，布料软但型不塌。现在她上幼儿园我带两枚备用，午睡摘下来塞包里，压了一天也没变形。",
+        "tags": "#发夹推荐 #发饰分享 #儿童发饰 #头饰发饰 #发夹",
+        "reference_notes": [],
+        "selected_image_paths": [
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/002.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/004.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/006.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/008.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/010.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/012.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/014.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/016.jpg",
+          "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/018.jpg"
+        ],
+        "selected_image_count": 9,
+        "originality_check": {
+          "passed": true,
+          "core_input_type": "新失败教训",
+          "core_input_evidence": "之前买过便宜刺绣发夹洗后脱线、被女儿扯散的真实踩雷经历，形成对比验证当前商品针脚密度和耐用性",
+          "product_fact_anchors": [
+            "刺绣针脚",
+            "草莓刺绣",
+            "蕾丝",
+            "夹齿开合"
+          ],
+          "supporting_differences": [
+            "不同观点/结论：从「刺绣发夹=易坏」的负面预设，转向「针脚密度决定寿命」的选购标准，提供可复制的判断方法",
+            "不同结构组织：以失败教训前置制造悬念，再用实测细节（背面无线头、夹齿顺滑、压后不变形）逐条回应"
+          ],
+          "nearest_history_notes": [],
+          "rejection_reasons": []
+        }
+      }
+    ]
+  },
+  "generation": {
+    "69ed6ba582f56100154b753d": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e8cff0f89e9d00158b19b9": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e8ce1cd528ea001554e391": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e8ce13cf371700153abcd9": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e8ce09f1fe0f0015509969": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e8cdf264c86a0015c62451": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e6efcdf1fe0f0015c4f24b": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e458b719f8df0015a3f70d": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e458a428de740015f0a9ee": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e4589712212a0015b01069": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e45889b8ecfa00153dc84c": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e4587fa545700015801d2d": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e45867c444070015898826": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e4585111535800150fd0ca": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e45842f1fe0f0015b33685": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e45842891c6a0015c5f66a": {
+      "source": "llm_fallback",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": "The read operation timed out"
+    },
+    "69e4583462c5c00016a281ff": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e4581b64c86a001505a133": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e458102e7f630015cb4450": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    },
+    "69e197a9c3604d0015f88123": {
+      "source": "llm",
+      "provider": "moonshot",
+      "model": "kimi-k2.6",
+      "error": null
+    }
+  },
+  "statuses": {
+    "69ed6ba582f56100154b753d": "ok",
+    "69e8cff0f89e9d00158b19b9": "ok",
+    "69e8ce1cd528ea001554e391": "ok",
+    "69e8ce13cf371700153abcd9": "ok",
+    "69e8ce09f1fe0f0015509969": "ok",
+    "69e8cdf264c86a0015c62451": "ok",
+    "69e6efcdf1fe0f0015c4f24b": "ok",
+    "69e458b719f8df0015a3f70d": "ok",
+    "69e458a428de740015f0a9ee": "ok",
+    "69e4589712212a0015b01069": "ok",
+    "69e45889b8ecfa00153dc84c": "ok",
+    "69e4587fa545700015801d2d": "ok",
+    "69e45867c444070015898826": "ok",
+    "69e4585111535800150fd0ca": "ok",
+    "69e45842f1fe0f0015b33685": "ok",
+    "69e45842891c6a0015c5f66a": "partial",
+    "69e4583462c5c00016a281ff": "ok",
+    "69e4581b64c86a001505a133": "ok",
+    "69e458102e7f630015cb4450": "ok",
+    "69e197a9c3604d0015f88123": "ok"
+  },
+  "warnings": {
+    "69ed6ba582f56100154b753d": [],
+    "69e8cff0f89e9d00158b19b9": [],
+    "69e8ce1cd528ea001554e391": [],
+    "69e8ce13cf371700153abcd9": [],
+    "69e8ce09f1fe0f0015509969": [],
+    "69e8cdf264c86a0015c62451": [],
+    "69e6efcdf1fe0f0015c4f24b": [],
+    "69e458b719f8df0015a3f70d": [],
+    "69e458a428de740015f0a9ee": [],
+    "69e4589712212a0015b01069": [],
+    "69e45889b8ecfa00153dc84c": [],
+    "69e4587fa545700015801d2d": [],
+    "69e45867c444070015898826": [],
+    "69e4585111535800150fd0ca": [],
+    "69e45842f1fe0f0015b33685": [],
+    "69e45842891c6a0015c5f66a": [
+      "正文生成回退为模板：The read operation timed out"
+    ],
+    "69e4583462c5c00016a281ff": [],
+    "69e4581b64c86a001505a133": [],
+    "69e458102e7f630015cb4450": [],
+    "69e197a9c3604d0015f88123": []
+  },
+  "input_refs": {
+    "69ed6ba582f56100154b753d": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/010.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/011.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69ed6ba582f56100154b753d/012.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "这是一组黄色的塑料发夹，设计为蝴蝶结形状，放置在一块浅色布料上。；这是一组黄色塑料材质的发夹，放置在一块浅色布料上。",
+      "semantic_categories": [
+        "发饰",
+        "Hair accessories",
+        "办公用品",
+        "Hair Accessories"
+      ],
+      "semantic_colors": [
+        "黄色",
+        "Yellow",
+        "Gold"
+      ]
+    },
+    "69e8cff0f89e9d00158b19b9": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cff0f89e9d00158b19b9/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cff0f89e9d00158b19b9/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cff0f89e9d00158b19b9/003.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "The image displays a collection of hair claws in different colors.；The image displays a set of three plastic hair claws in different colors.",
+      "semantic_categories": [
+        "Hair accessories"
+      ],
+      "semantic_colors": [
+        "Mint green",
+        "White",
+        "Yellow",
+        "Clear"
+      ]
+    },
+    "69e8ce1cd528ea001554e391": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/010.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/011.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/012.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/013.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce1cd528ea001554e391/014.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "The image displays a collection of hair claws in various pastel colors.；The image displays two plastic hair claws in pink and white colors, placed on a light surface.",
+      "semantic_categories": [
+        "Hair accessories",
+        "发饰"
+      ],
+      "semantic_colors": [
+        "Light blue",
+        "Beige",
+        "White",
+        "Pink",
+        "Grey",
+        "粉色",
+        "白色"
+      ]
+    },
+    "69e8ce13cf371700153abcd9": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/010.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/011.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/012.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/013.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/014.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce13cf371700153abcd9/015.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "The image showcases a collection of hair clips designed in the shape of a butterfly, displayed on a flat surface with a festive background.；The image displays a collection of hair clips with a butterfly design.",
+      "semantic_categories": [
+        "Hair accessories",
+        "发饰",
+        "家居用品",
+        "Fashion accessories"
+      ],
+      "semantic_colors": [
+        "White",
+        "Beige",
+        "Pink",
+        "Grey",
+        "白色",
+        "Light blue",
+        "浅蓝色",
+        "Pale blue"
+      ]
+    },
+    "69e8ce09f1fe0f0015509969": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/010.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/011.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/012.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/013.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/014.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8ce09f1fe0f0015509969/015.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "The image displays a collection of hair clips with a heart design, placed on a surface with a festive decoration in the background.；The image displays a collection of hair clips with a cloud design, placed on a flat surface.",
+      "semantic_categories": [
+        "Hair accessories",
+        "发饰",
+        "Hair Accessories"
+      ],
+      "semantic_colors": [
+        "Pink",
+        "Grey",
+        "White",
+        "Beige",
+        "Blue",
+        "粉色"
+      ]
+    },
+    "69e8cdf264c86a0015c62451": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/010.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/011.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/012.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/013.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e8cdf264c86a0015c62451/014.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "The image shows a set of hair clips displayed in a wooden box with a fabric lining.；The image displays a collection of hair clips in a wooden box with a beige lining.",
+      "semantic_categories": [
+        "Hair accessories",
+        "Hair Accessories"
+      ],
+      "semantic_colors": [
+        "White",
+        "Beige",
+        "Pink",
+        "Grey",
+        "Gold"
+      ]
+    },
+    "69e6efcdf1fe0f0015c4f24b": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e6efcdf1fe0f0015c4f24b/008.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "The image showcases a hair accessory, specifically a hair claw clip, being worn and displayed.；这是一张展示手持发夹的图片。",
+      "semantic_categories": [
+        "Hair Accessories",
+        "发饰",
+        "Hair accessories"
+      ],
+      "semantic_colors": [
+        "Red",
+        "White",
+        "Blue",
+        "红色",
+        "白色"
+      ]
+    },
+    "69e458b719f8df0015a3f70d": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/010.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/011.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458b719f8df0015a3f70d/012.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "图片展示了一位女性后脑勺的发型，头发被一个黑色的发夹固定成一个发髻。；这是一张展示一把剪刀的图片，剪刀放置在一个布袋上，布袋上印有字母，旁边是一个编织篮子。",
+      "semantic_categories": [
+        "发饰",
+        "家居用品",
+        "Hair accessories",
+        "时尚饰品",
+        "Fashion accessories"
+      ],
+      "semantic_colors": [
+        "黑色",
+        "棕色",
+        "金色",
+        "红色",
+        "米色",
+        "Dark brown",
+        "Brown"
+      ]
+    },
+    "69e458a428de740015f0a9ee": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458a428de740015f0a9ee/010.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "The image shows a hand holding two hair clips with intricate designs.；这是一张展示手工发夹的图片。",
+      "semantic_categories": [
+        "Hair accessories",
+        "发饰",
+        "Home decor or accessory",
+        "饰品"
+      ],
+      "semantic_colors": [
+        "Ivory",
+        "Brown",
+        "Orange",
+        "白色",
+        "棕色",
+        "透明",
+        "White",
+        "Translucent",
+        "珍珠色"
+      ]
+    },
+    "69e4589712212a0015b01069": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4589712212a0015b01069/010.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "这是一张展示发饰的图片，具体为一个带有蝴蝶结装饰的发梳。；The image displays a hair accessory, specifically a hair comb with decorative elements.",
+      "semantic_categories": [
+        "发饰",
+        "Hair accessories",
+        "Hair Accessories"
+      ],
+      "semantic_colors": [
+        "米白色",
+        "金色",
+        "Ivory",
+        "Gold",
+        "银色"
+      ]
+    },
+    "69e45889b8ecfa00153dc84c": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45889b8ecfa00153dc84c/010.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "The image shows a hand holding a shiny black hair accessory with a flower design.；这是一张展示黑色发夹的图片，发夹设计成蝴蝶结形状，带有金属装饰。",
+      "semantic_categories": [
+        "Hair accessory",
+        "发饰",
+        "Hair accessories"
+      ],
+      "semantic_colors": [
+        "Black",
+        "Gold",
+        "黑色",
+        "金色",
+        "深棕色",
+        "Dark brown"
+      ]
+    },
+    "69e4587fa545700015801d2d": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4587fa545700015801d2d/010.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "The image displays a pair of hair clips with a leopard print design and heart-shaped embellishments.；这是一张展示豹纹图案发夹的图片。",
+      "semantic_categories": [
+        "Hair accessories",
+        "发饰"
+      ],
+      "semantic_colors": [
+        "Black",
+        "Tan",
+        "Gold",
+        "棕色",
+        "黑色",
+        "Beige",
+        "Dark brown"
+      ]
+    },
+    "69e45867c444070015898826": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/010.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/011.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45867c444070015898826/012.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "The image displays a collection of hair clips on a fabric mat.；A woman with a stylish bun hairstyle secured by a large, glossy black hair clip.",
+      "semantic_categories": [
+        "Hair accessories",
+        "Hair Accessories",
+        "时尚饰品",
+        "Accessories",
+        "Fashion accessories",
+        "时尚配饰"
+      ],
+      "semantic_colors": [
+        "Black",
+        "Tortoiseshell",
+        "Amber",
+        "Clear",
+        "Gold",
+        "棕色",
+        "Brown"
+      ]
+    },
+    "69e4585111535800150fd0ca": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/010.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/011.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4585111535800150fd0ca/012.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "The image displays a set of hair clips with various patterns and colors.；A person with a ponytail hairstyle secured by a hair accessory.",
+      "semantic_categories": [
+        "Hair accessories",
+        "发饰",
+        "Fashion accessories"
+      ],
+      "semantic_colors": [
+        "Tortoiseshell",
+        "Black",
+        "White",
+        "Brown",
+        "Dark brown",
+        "黑色",
+        "Tortoiseshell pattern (mixture of dark and light browns, black, and amber)"
+      ]
+    },
+    "69e45842f1fe0f0015b33685": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/010.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842f1fe0f0015b33685/011.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "The image showcases a person with a hair accessory.；The image showcases a person with a stylish hairdo secured by a hair accessory.",
+      "semantic_categories": [
+        "Hair Accessories",
+        "Hair accessories",
+        "Fashion accessories",
+        "发饰"
+      ],
+      "semantic_colors": [
+        "Brown",
+        "Gold",
+        "Black",
+        "棕色",
+        "金色"
+      ]
+    },
+    "69e45842891c6a0015c5f66a": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/010.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/011.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/012.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/013.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e45842891c6a0015c5f66a/014.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "The image showcases a hairstyle with a hair accessory.；The image showcases a person with a ponytail hairstyle adorned with a decorative hair clip.",
+      "semantic_categories": [
+        "Hair Accessories",
+        "Hair accessories",
+        "发饰"
+      ],
+      "semantic_colors": [
+        "Brown",
+        "Tan",
+        "Gold",
+        "Silver",
+        "Tortoiseshell",
+        "棕色"
+      ]
+    },
+    "69e4583462c5c00016a281ff": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/010.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4583462c5c00016a281ff/011.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "The image shows a hair accessory being worn and held.；这是一对设计为花朵形状的耳环，由金属和装饰性宝石组成。",
+      "semantic_categories": [
+        "Hair accessories",
+        "珠宝首饰",
+        "Jewelry",
+        "Hair accessories and jewelry",
+        "Hair Accessories",
+        "珠宝饰品",
+        "发饰"
+      ],
+      "semantic_colors": [
+        "Silver",
+        "Black",
+        "White",
+        "银色",
+        "棕色"
+      ]
+    },
+    "69e4581b64c86a001505a133": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/010.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/011.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e4581b64c86a001505a133/012.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "这是一张展示手工制作蝴蝶形状装饰品的照片。；这张照片展示了一位女性后脑勺上的彩色发夹。",
+      "semantic_categories": [
+        "装饰品",
+        "发饰",
+        "时尚配饰",
+        "Hair accessories",
+        "时尚饰品",
+        "Hair Accessories",
+        "饰品"
+      ],
+      "semantic_colors": [
+        "橙色",
+        "黄色",
+        "蓝色",
+        "红色",
+        "棕色",
+        "Blue",
+        "Yellow"
+      ]
+    },
+    "69e458102e7f630015cb4450": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e458102e7f630015cb4450/010.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "The image shows a hair accessory with a flower design.；The image shows a hand holding a hair clip with a flower design.",
+      "semantic_categories": [
+        "Hair accessory",
+        "Hair accessories",
+        "Hair Accessories",
+        "发饰"
+      ],
+      "semantic_colors": [
+        "Yellow",
+        "Silver",
+        "Clear",
+        "Tan",
+        "Pink",
+        "黄色"
+      ]
+    },
+    "69e197a9c3604d0015f88123": {
+      "image_paths": [
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/001.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/002.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/003.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/004.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/005.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/006.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/007.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/008.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/009.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/010.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/011.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/012.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/013.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/014.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/015.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/016.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/017.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/018.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/019.jpg",
+        "/Users/lihaiqiang/workspace/git-repositories/uv_projects/skill-xhs-poster/xiaohongshu-data/images/69e197a9c3604d0015f88123/020.jpg"
+      ],
+      "history_files": [],
+      "trend_source": "local_fallback",
+      "trend_keywords": [
+        "通勤",
+        "上课",
+        "约会",
+        "逛街",
+        "日常出门",
+        "温柔",
+        "精致",
+        "轻复古",
+        "氛围感",
+        "日常好搭"
+      ],
+      "semantic_summary": "这是一组色彩丰富、图案多样的发夹套装，每个发夹都装在独立的卡片上，卡片上印有'Smiling girl'字样。；The image shows a pair of fabric hair clips with embroidered designs.",
+      "semantic_categories": [
+        "发饰",
+        "Hair accessories",
+        "饰品",
+        "儿童发饰",
+        "装饰品",
+        "Decorative item"
+      ],
+      "semantic_colors": [
+        "蓝色",
+        "粉色",
+        "紫色",
+        "黄色",
+        "绿色",
+        "Beige",
+        "Pink",
+        "米色",
+        "Yellow",
+        "浅蓝色",
+        "白色",
+        "White"
+      ]
+    }
+  }
+}
