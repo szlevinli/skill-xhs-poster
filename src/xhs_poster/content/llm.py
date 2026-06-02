@@ -8,8 +8,8 @@ from typing import Any
 
 import httpx
 
-from .config import Settings
-from .models import (
+from ..config import Settings
+from ..models import (
     ContentDraft,
     ContentGenerationMeta,
     ProductSemanticFacts,

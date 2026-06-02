@@ -58,20 +58,20 @@ class TodayPool(BaseModel):
         return self
 
 
-Phase1RunStatus = Literal["running", "partial", "complete", "failed"]
-Phase1FetchStatus = Literal["pending", "in_progress", "complete", "failed"]
-Phase1ArtifactStatus = Literal["missing", "partial", "complete"]
+ProductsRunStatus = Literal["running", "partial", "complete", "failed"]
+ProductFetchStatus = Literal["pending", "in_progress", "complete", "failed"]
+ProductArtifactStatus = Literal["missing", "partial", "complete"]
 
 
-class Phase1ImagesArtifact(BaseModel):
-    status: Phase1ArtifactStatus = "missing"
+class ProductImagesArtifact(BaseModel):
+    status: ProductArtifactStatus = "missing"
     paths: list[str] = Field(default_factory=list)
     assets: list[ProductImageAsset] = Field(default_factory=list)
     count: int = 0
     source: str = ""
 
     @model_validator(mode="after")
-    def _sync_assets(self) -> "Phase1ImagesArtifact":
+    def _sync_assets(self) -> "ProductImagesArtifact":
         if not self.paths and self.assets:
             self.paths = [asset.path for asset in self.assets]
         if not self.count:
@@ -79,24 +79,24 @@ class Phase1ImagesArtifact(BaseModel):
         return self
 
 
-class Phase1Artifacts(BaseModel):
-    images: Phase1ImagesArtifact = Field(default_factory=Phase1ImagesArtifact)
+class ProductArtifacts(BaseModel):
+    images: ProductImagesArtifact = Field(default_factory=ProductImagesArtifact)
 
 
-class Phase1ProductState(BaseModel):
+class ProductFetchState(BaseModel):
     product_id: str
     product_name: str
     list_discovered: bool = False
-    fetch_status: Phase1FetchStatus = "pending"
+    fetch_status: ProductFetchStatus = "pending"
     attempt_count: int = 0
     last_error: str | None = None
     updated_at: str = ""
-    artifacts: Phase1Artifacts = Field(default_factory=Phase1Artifacts)
+    artifacts: ProductArtifacts = Field(default_factory=ProductArtifacts)
 
 
-class Phase1State(BaseModel):
+class ProductsState(BaseModel):
     date: str
-    run_status: Phase1RunStatus = "running"
+    run_status: ProductsRunStatus = "running"
     started_at: str = ""
     updated_at: str = ""
     completed_at: str | None = None
@@ -105,10 +105,10 @@ class Phase1State(BaseModel):
     success_count: int = 0
     failed_count: int = 0
     skipped_count: int = 0
-    products: dict[str, Phase1ProductState] = Field(default_factory=dict)
+    products: dict[str, ProductFetchState] = Field(default_factory=dict)
 
 
-class Phase1ExecutionResult(BaseModel):
+class FetchProductsExecutionResult(BaseModel):
     date: str
     run_status: Literal["complete", "partial"]
     progress_ref: str
@@ -385,7 +385,7 @@ class Phase3RunPlanSuccess(BaseModel):
     data: Phase3RunPlanResult
 
 
-class Phase2ExecutionResult(BaseModel):
+class GenerateContentExecutionResult(BaseModel):
     date: str
     total_products: int
     contents_per_product: int
@@ -397,11 +397,11 @@ class Phase2ExecutionResult(BaseModel):
     warnings: dict[str, list[str]] = Field(default_factory=dict)
 
 
-class Phase2Success(BaseModel):
+class GenerateContentResult(BaseModel):
     status: Literal["ok"] = "ok"
-    data: Phase2ExecutionResult
+    data: GenerateContentExecutionResult
 
 
-class Phase1Success(BaseModel):
+class FetchProductsResult(BaseModel):
     status: Literal["ok", "partial"] = "ok"
-    data: Phase1ExecutionResult
+    data: FetchProductsExecutionResult

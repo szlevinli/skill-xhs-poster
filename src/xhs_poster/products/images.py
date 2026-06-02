@@ -4,7 +4,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from .models import ProductImageAsset
+from ..models import ProductImageAsset
 
 
 IMAGE_FILE_SUFFIXES = {".jpg", ".jpeg", ".png", ".webp"}

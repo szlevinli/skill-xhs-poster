@@ -122,20 +122,20 @@ class Settings(BaseSettings):
         return self.merchant_auth_state_path_override or self.auth_dir / "merchant-state.json"
 
     @property
-    def today_pool_path(self) -> Path:
-        return self.data_dir / "today-pool.json"
+    def products_path(self) -> Path:
+        return self.data_dir / "products.json"
 
     @property
-    def phase1_state_path(self) -> Path:
-        return self.data_dir / "phase1-state.json"
+    def products_state_path(self) -> Path:
+        return self.data_dir / "products-state.json"
 
     @property
     def contents_path(self) -> Path:
         return self.data_dir / "contents.json"
 
     @property
-    def image_semantic_facts_path(self) -> Path:
-        return self.data_dir / "image-semantic-facts.json"
+    def image_analysis_path(self) -> Path:
+        return self.data_dir / "image-analysis.json"
 
     @property
     def publish_log_path(self) -> Path:

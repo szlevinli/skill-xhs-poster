@@ -147,6 +147,90 @@
 
 ---
 
-## M3–M10
+## M3 — 术语统一 + 命名重构（products / content）
+
+**目标**：消除 products 与 content 两条链路上的 `phase*` 命名，按业务语义重组为 `products/` 与 `content/` 两个子包；CLI `prepare-products` 改名 `fetch-products`；三个产品/内容数据文件改语义名。**publish 链路（`phase3.py` / `merchant.py` / `image_pipeline.py` / `Phase3*` / `run-publish-plan` / `publish-note` / `list-publish-candidates`）整体不动，留 M5**（发现 F：不给将被重写的代码白搬）。行为不变，冒烟全绿。
+
+**前置状态**：M2 已完成（consumer/SiteName 已删）。`src/xhs_poster/` 仍是扁平布局：`phase1/phase2/phase3 + merchant + image_* + content_gen + originality` 并列；`__init__.py` 为空（`__all__: list[str] = []`）。
+
+**关键耦合（务必先懂）**：
+- `merchant.py`（1199 行）含三类：`ProductDetailPage`（抓图）、`ProductListPage`（**fetch 与 publish 共用**，`phase1` 与 `phase3` 都 import）、`PublishPage`（发布）。因 `ProductListPage` 横跨两端，**M3 不拆 `merchant.py`**——整体留顶层，products 侧继续 `from ..merchant import ProductListPage`，待 M5 重写 publish 时再拆 `publish/page.py`。
+- `image_pipeline.py` **只被 `merchant.py` import**（不被 phase1 用），属页面抽取/发布侧共享底层。**故不并入 `products/images.py`**（这点与 refactor-plan §6 映射表不同，是基于实际依赖图的修正）；它随 `merchant.py` 留顶层，M5 再归位。M3 只把 products-only 的 `image_assets.py` 折进 `products/images.py`。
+- `phase3.py` 不在 M3 改名范围，但它读 `settings.today_pool_path`（4 处）。该 config 属性随数据文件改名后，`phase3.py` 的读取处必须同步改，否则 publish 读不到商品池。
+
+**涉及文件**：
+
+新增（空 `__init__.py`，与根同风格，不写 `__all__`）：
+- `src/xhs_poster/products/__init__.py`
+- `src/xhs_poster/content/__init__.py`
+
+模块移动 / 改名（`git mv`）：
+
+| 旧 | 新 |
+|---|---|
+| `phase1.py` | `products/fetch.py` |
+| `image_assets.py` | `products/images.py` |
+| `phase2.py` | `content/generate.py` |
+| `content_gen.py` | `content/llm.py` |
+| `image_semantics.py` | `content/vision.py` |
+| `image_allocation.py` | `content/images.py` |
+| `merchant.py` / `phase3.py` / `originality.py` / `image_pipeline.py` | **不动（顶层保留，留 M5）** |
+
+**改动点**：
+
+1. **`git mv` 移动 6 个模块**到上表新位置。
+
+2. **重写被移动模块的内部相对导入**（顶层 `.x` → 子包 `..x`；同包内引用改 `.新名`）：
+   - `products/fetch.py`：`.auth`→`..auth`、`.browser`→`..browser`、`.config`→`..config`、`.models`→`..models`、`.merchant`→`..merchant`、`.image_assets import build_local_assets`→`.images import build_local_assets`。
+   - `content/generate.py`：`.config`→`..config`、`.models`→`..models`、`.originality`→`..originality`、`.content_gen`→`.llm`、`.image_allocation`→`.images`、`.image_semantics`→`.vision`（被导入的符号名 `analyze_product_image_semantics` / `load_image_semantic_facts` / `save_image_semantic_facts` / `allocate_image_paths` / `generate_product_contents` / `check_draft_similarity` 保持不变，只改模块路径）。
+   - `content/llm.py`、`content/vision.py`、`products/images.py`：`.config`→`..config`、`.models`→`..models`。
+
+3. **`cli.py`**：
+   - `from .phase1 import build_phase1_payload` → `from .products.fetch import build_fetch_products_payload`
+   - `from .phase2 import build_phase2_payload` → `from .content.generate import build_generate_content_payload`
+   - 命令 `@app.command("prepare-products")` → `@app.command("fetch-products")`（函数体不变）；更新其 help 文本里的 `phase1-state.json`/`today-pool.json` → `products-state.json`/`products.json`。
+   - `generate-content` / `plan-publish` / `publish-note` help 文本中的 `today-pool` 措辞 → `products`。
+   - **不改** `run-publish-plan` / `publish-note` / `list-publish-candidates` 命令名（留 M5）。
+
+4. **`config.py`** 路径属性 + 文件名改语义名（仅 products/content 三项；`phase3_*` 全留 M5）：
+   - `today_pool_path` → `products_path`，`"today-pool.json"` → `"products.json"`
+   - `phase1_state_path` → `products_state_path`，`"phase1-state.json"` → `"products-state.json"`
+   - `image_semantic_facts_path` → `image_analysis_path`，`"image-semantic-facts.json"` → `"image-analysis.json"`
+   - `contents_path` / `publish_plan_path` / `phase3_*` 不变。
+
+5. **改名所有对上述 config 属性的引用**（`grep -rn "today_pool_path\|phase1_state_path\|image_semantic_facts_path" src/`）：`products/fetch.py`、`content/generate.py`、`content/vision.py`，以及 **`phase3.py`（4 处读 `today_pool_path` + RuntimeError 文案中的 `today-pool.json`）**。
+
+6. **`models.py` 内 phase1/phase2 命名的符号改名**（`models.py` 不移动；`Phase3*` 留 M5）：
+   - 存活的领域模型 `Phase1State`（断点续传检查点，products-state.json 内容）→ `ProductsState`。
+   - JSON 响应壳 `Phase1Success` → `FetchProductsResult`、`Phase2Success` → `GenerateContentResult`（M4 会删除它们；M3 仍改名，以保证 products/ 与 content/ 模块零 `phase1/phase2` token，且让 M4 只需"删除+换日志"而非"先改名再删"）。
+   - 对应 `build_phase1_payload`→`build_fetch_products_payload`、`build_phase2_payload`→`build_generate_content_payload`（函数体不动，M4 重写契约）。
+   - 模型内 `today_pool_path: str` / `image_semantic_facts_path` 等**数据名字段**不含 `phase`，不阻塞 M3，留 M4 随壳删除（不无谓改动）。
+   - **`models.py` 顶层仍保留 `Phase3*` 等 publish 模型**，故 M3 后 `models.py` 仍有 `phase3` token —— 正常，M5 处理。
+
+7. **数据文件不自动迁移**：旧 `today-pool.json` / `phase1-state.json` / `image-semantic-facts.json` 为运行时产物，改名后重跑 `fetch-products` / `generate-content` 重新生成；视觉缓存若想保留，手工 `mv image-semantic-facts.json image-analysis.json`，否则触发一次视觉 LLM 重算（可接受）。
+
+**验收**（新 session 可独立执行）：
+- `bash scripts/smoke.sh` 绿；
+- `grep -rnE "phase1|phase2|image_pipeline|image_assets|content_gen|image_semantics|image_allocation" src/xhs_poster/products src/xhs_poster/content` 无残留（两包已完全去旧名）；
+- `phase3.py` / `merchant.py` 仍能 `from .merchant import ProductListPage` 编译通过（publish 链路未破）；
+- `uv run xhs-poster --help` 出现 `fetch-products`、不再有 `prepare-products`；`run-publish-plan` / `publish-note` / `list-publish-candidates` 仍在；
+- `uv run xhs-poster generate-content`（需 `products.json` 存在 + `.env` 有 LLM key）跑通，产出结构不变的 `contents.json`；
+- 可选实跑：`uv run xhs-poster fetch-products --limit 1`，确认写出 `products.json` / `products-state.json`。
+
+**回滚**：`git revert` 本里程碑提交（`git mv` 与改名随之回退）。
+
+**收尾清单**：
+- [ ] `bash scripts/smoke.sh` 绿 + `generate-content` 实跑通过
+- [ ] products/ 与 content/ grep 无旧名残留；publish 链路（phase3/merchant/image_pipeline）编译通过
+- [ ] git 提交：`M3：术语统一+命名重构，phase1/2 → products/content 包`
+- [ ] 进度表 M3 → ✅；**展开 M4 的详细小节**（参照本节格式）
+- [ ] 若发现新的隐藏耦合，更新 `memory/refactor-v2.md`
+- [ ] 提示用户 `/clear` 继续 M4
+
+---
+
+## M4–M10
 
 概览见 `docs/refactor-plan.md` §9。每个里程碑在其**前一个里程碑收尾时**展开为上面的详细格式（目标 / 前置状态 / 涉及文件 / 改动点 / 验收 / 回滚 / 收尾清单）。这样保证展开时基于最新的代码现状，而非过早写死。
+
+> **为何不一次展开 M4–M10**：M5 是发布链路的重写支点，其细节依赖对 `phase3.py`/`merchant.py`(`PublishPage`/`ProductListPage`)/选择器的实地勘察（勘察本身是 M5 工作的一部分），且要等 M4 的输出契约定下；M6（条件等待）、M8（证据/trace）、M9（断点续传/自愈）又全部长在 M5 重写出的 `publish/session.py` 结构上。在 M5 代码尚不存在时细化它们，等于写一批很快返工的规格。M4 / M10 结构相对稳定，可在 M3 收尾后按需先做"设计意图"级预写，但文件级细节仍会随前序里程碑漂移。

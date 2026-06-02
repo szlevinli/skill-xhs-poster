@@ -13,8 +13,8 @@ from typing import Any
 import httpx
 from PIL import Image
 
-from .config import Settings
-from .models import ImageSemanticFact, ImageSemanticFactsBundle, ProductSemanticFacts
+from ..config import Settings
+from ..models import ImageSemanticFact, ImageSemanticFactsBundle, ProductSemanticFacts
 
 
 JSON_BLOCK_RE = re.compile(r"```(?:json)?\s*(\{.*\})\s*```", re.DOTALL)
@@ -76,7 +76,7 @@ def _guess_mime_type(image_path: Path) -> str:
 
 
 def load_image_semantic_facts(settings: Settings) -> ImageSemanticFactsBundle:
-    path = settings.image_semantic_facts_path
+    path = settings.image_analysis_path
     if not path.exists():
         return ImageSemanticFactsBundle(date=str(date.today()))
     payload = ImageSemanticFactsBundle.model_validate_json(path.read_text(encoding="utf-8"))
@@ -84,7 +84,7 @@ def load_image_semantic_facts(settings: Settings) -> ImageSemanticFactsBundle:
 
 
 def save_image_semantic_facts(settings: Settings, bundle: ImageSemanticFactsBundle) -> None:
-    _save_json_atomic(settings.image_semantic_facts_path, bundle.model_dump(mode="json"))
+    _save_json_atomic(settings.image_analysis_path, bundle.model_dump(mode="json"))
 
 
 def _build_cache_index(bundle: ImageSemanticFactsBundle) -> dict[str, ImageSemanticFact]:

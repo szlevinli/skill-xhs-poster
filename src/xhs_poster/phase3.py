@@ -34,11 +34,11 @@ from .models import (
 )
 
 def load_today_pool(settings: Settings) -> TodayPool:
-    if not settings.today_pool_path.exists():
+    if not settings.products_path.exists():
         raise RuntimeError(
-            f"未找到 today-pool.json，请先执行 prepare-products：{settings.today_pool_path}"
+            f"未找到 products.json，请先执行 fetch-products：{settings.products_path}"
         )
-    return TodayPool.model_validate_json(settings.today_pool_path.read_text(encoding="utf-8"))
+    return TodayPool.model_validate_json(settings.products_path.read_text(encoding="utf-8"))
 
 
 def load_contents_bundle(
@@ -104,13 +104,13 @@ def save_phase3_daily_records(settings: Settings, records: Phase3DailyRecords) -
 def resolve_product(today_pool: TodayPool, product_id: str | None) -> ProductSummary:
     if product_id is None:
         if not today_pool.products:
-            raise RuntimeError("today-pool.json 中没有可用商品。")
+            raise RuntimeError("products.json 中没有可用商品。")
         return today_pool.products[0]
 
     for product in today_pool.products:
         if product.id == product_id:
             return product
-    raise RuntimeError(f"today-pool.json 中不存在商品 {product_id}。")
+    raise RuntimeError(f"products.json 中不存在商品 {product_id}。")
 
 
 def resolve_image_paths(

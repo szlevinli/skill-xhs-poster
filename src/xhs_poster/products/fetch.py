@@ -6,17 +6,17 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Sequence
 
-from .auth import LoginRequiredError, require_authenticated_session
-from .browser import get_alive_page, merchant_context, open_product_list_page
-from .config import Settings
-from .image_assets import build_local_assets
-from .merchant import ProductListPage
-from .models import (
-    Phase1ExecutionResult,
+from ..auth import LoginRequiredError, require_authenticated_session
+from ..browser import get_alive_page, merchant_context, open_product_list_page
+from ..config import Settings
+from .images import build_local_assets
+from ..merchant import ProductListPage
+from ..models import (
+    FetchProductsExecutionResult,
     ProductImageAsset,
-    Phase1ProductState,
-    Phase1State,
-    Phase1Success,
+    ProductFetchState,
+    ProductsState,
+    FetchProductsResult,
     ProductFailure,
     ProductSummary,
     SkillError,
@@ -34,22 +34,22 @@ def save_json_atomic(path: Path, payload: str) -> None:
     temp_path.replace(path)
 
 
-def load_phase1_state(settings: Settings) -> Phase1State:
-    if not settings.phase1_state_path.exists():
-        return Phase1State(date=str(date.today()))
+def load_products_state(settings: Settings) -> ProductsState:
+    if not settings.products_state_path.exists():
+        return ProductsState(date=str(date.today()))
 
     try:
-        state = Phase1State.model_validate_json(settings.phase1_state_path.read_text(encoding="utf-8"))
+        state = ProductsState.model_validate_json(settings.products_state_path.read_text(encoding="utf-8"))
     except Exception:
-        return Phase1State(date=str(date.today()))
+        return ProductsState(date=str(date.today()))
 
     state.date = str(date.today())
     return state
 
 
-def save_phase1_state(settings: Settings, state: Phase1State) -> None:
+def save_products_state(settings: Settings, state: ProductsState) -> None:
     settings.ensure_directories()
-    save_json_atomic(settings.phase1_state_path, state.model_dump_json(indent=2))
+    save_json_atomic(settings.products_state_path, state.model_dump_json(indent=2))
 
 
 def save_today_pool(settings: Settings, today_pool: TodayPool) -> None:
@@ -79,7 +79,7 @@ def ensure_clean_image_dir(
 
 
 def mark_images_complete(
-    state: Phase1ProductState,
+    state: ProductFetchState,
     *,
     assets: Sequence[ProductImageAsset],
     image_paths: list[str],
@@ -97,7 +97,7 @@ def mark_images_complete(
 
 
 def mark_images_failed(
-    state: Phase1ProductState,
+    state: ProductFetchState,
     *,
     reason: str,
     timestamp: str,
@@ -111,7 +111,7 @@ def mark_images_failed(
 
 
 def refresh_state_summary(
-    state: Phase1State,
+    state: ProductsState,
     products: list[ProductSummary],
     *,
     target_total: int,
@@ -129,7 +129,7 @@ def refresh_state_summary(
 
 def build_today_pool_from_state(
     products: list[ProductSummary],
-    state: Phase1State,
+    state: ProductsState,
     *,
     limit: int | None,
     target_count: int,
@@ -180,7 +180,7 @@ def build_today_pool_from_state(
 
 
 def sync_product_states(
-    state: Phase1State,
+    state: ProductsState,
     products: list[ProductSummary],
 ) -> None:
     discovered_ids = {product.id for product in products}
@@ -189,7 +189,7 @@ def sync_product_states(
     for product in products:
         product_state = state.products.get(product.id)
         if product_state is None:
-            product_state = Phase1ProductState(
+            product_state = ProductFetchState(
                 product_id=product.id,
                 product_name=product.name,
             )
@@ -205,18 +205,18 @@ def sync_product_states(
         product_state.list_discovered = False
 
 
-def run_phase1(
+def run_fetch_products(
     *,
     limit: int = 10,
     images_per_product: int = 3,
     headless: bool | None = None,
     force_download: bool = False,
     settings: Settings | None = None,
-) -> Phase1ExecutionResult:
+) -> FetchProductsExecutionResult:
     del images_per_product
     settings = settings or Settings()
     settings.ensure_directories()
-    state = load_phase1_state(settings)
+    state = load_products_state(settings)
     state.started_at = now_iso()
     state.completed_at = None
     state.run_status = "running"
@@ -239,7 +239,7 @@ def run_phase1(
         ensure_clean_image_dir(settings, candidate_products, force_download=force_download)
         sync_product_states(state, candidate_products)
         refresh_state_summary(state, candidate_products, target_total=limit, skipped_count=skipped_count)
-        save_phase1_state(settings, state)
+        save_products_state(settings, state)
 
         for product in candidate_products:
             product_state = state.products[product.id]
@@ -267,7 +267,7 @@ def run_phase1(
                         target_total=limit,
                         skipped_count=skipped_count,
                     )
-                    save_phase1_state(settings, state)
+                    save_products_state(settings, state)
                     current_today_pool = build_today_pool_from_state(
                         candidate_products,
                         state,
@@ -285,7 +285,7 @@ def run_phase1(
             product_state.fetch_status = "in_progress"
             product_state.attempt_count += 1
             product_state.updated_at = now_iso()
-            save_phase1_state(settings, state)
+            save_products_state(settings, state)
 
             try:
                 bundle = list_page.get_product_images(
@@ -309,7 +309,7 @@ def run_phase1(
                 target_total=limit,
                 skipped_count=skipped_count,
             )
-            save_phase1_state(settings, state)
+            save_products_state(settings, state)
             current_today_pool = build_today_pool_from_state(
                 candidate_products,
                 state,
@@ -337,13 +337,13 @@ def run_phase1(
     )
     state.completed_at = now_iso()
     state.run_status = "complete" if len(today_pool.products) >= limit else "partial"
-    save_phase1_state(settings, state)
+    save_products_state(settings, state)
     save_today_pool(settings, today_pool)
 
-    return Phase1ExecutionResult(
+    return FetchProductsExecutionResult(
         date=str(date.today()),
         run_status="complete" if state.run_status == "complete" else "partial",
-        progress_ref=str(settings.phase1_state_path),
+        progress_ref=str(settings.products_state_path),
         today_pool_path=str(settings.today_pool_path),
         total_products=limit,
         success_count=len(today_pool.products),
@@ -352,12 +352,12 @@ def run_phase1(
         failed_products=today_pool.failed_products,
         today_pool=today_pool,
         warnings=[
-            "参数 --images-per-product 已废弃；phase1 现总是下载每个商品的全部去重图片。"
+            "参数 --images-per-product 已废弃；fetch-products 现总是下载每个商品的全部去重图片。"
         ],
     )
 
 
-def build_phase1_payload(
+def build_fetch_products_payload(
     *,
     limit: int = 10,
     images_per_product: int = 3,
@@ -365,19 +365,19 @@ def build_phase1_payload(
 ) -> tuple[dict, int]:
     try:
         warnings.warn(
-            "--images-per-product 已废弃；phase1 现在总是下载商品主图和详情页图片的全部去重原图。",
+            "--images-per-product 已废弃；fetch-products 现在总是下载商品主图和详情页图片的全部去重原图。",
             UserWarning,
             stacklevel=2,
         )
-        result = run_phase1(
+        result = run_fetch_products(
             limit=limit,
             images_per_product=images_per_product,
             force_download=force_download,
         )
         if result.success_count == 0:
             payload = SkillError(
-                error="PHASE1_EMPTY",
-                message="prepare-products 未成功准备任何商品，请检查 phase1-state.json 中的失败详情。",
+                error="FETCH_PRODUCTS_EMPTY",
+                message="fetch-products 未成功准备任何商品，请检查 products-state.json 中的失败详情。",
                 site="merchant",
                 details={
                     "progress_ref": result.progress_ref,
@@ -388,7 +388,7 @@ def build_phase1_payload(
             )
             return payload.model_dump(mode="json"), 1
 
-        payload = Phase1Success(
+        payload = FetchProductsResult(
             status="ok" if result.run_status == "complete" else "partial",
             data=result,
         )
@@ -403,7 +403,7 @@ def build_phase1_payload(
         return payload.model_dump(mode="json"), 2
     except Exception as exc:
         payload = SkillError(
-            error="PHASE1_FAILED",
+            error="FETCH_PRODUCTS_FAILED",
             message=str(exc),
             site="merchant",
         )
@@ -411,7 +411,7 @@ def build_phase1_payload(
 
 
 def main() -> None:
-    payload, exit_code = build_phase1_payload()
+    payload, exit_code = build_fetch_products_payload()
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     raise SystemExit(exit_code)
 

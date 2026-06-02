@@ -4,29 +4,29 @@ import json
 from datetime import date
 from pathlib import Path
 
-from .config import Settings
-from .content_gen import generate_product_contents
-from .image_allocation import allocate_image_paths
-from .image_semantics import analyze_product_image_semantics, load_image_semantic_facts, save_image_semantic_facts
-from .models import (
+from ..config import Settings
+from .llm import generate_product_contents
+from .images import allocate_image_paths
+from .vision import analyze_product_image_semantics, load_image_semantic_facts, save_image_semantic_facts
+from ..models import (
     ContentDraft,
     ContentGenerationMeta,
     ContentsBundle,
-    Phase2ExecutionResult,
-    Phase2Success,
+    GenerateContentExecutionResult,
+    GenerateContentResult,
     ProductFailure,
     SkillError,
     TodayPool,
 )
-from .originality import check_draft_similarity
+from ..originality import check_draft_similarity
 
 
 def load_today_pool(settings: Settings) -> TodayPool:
-    if not settings.today_pool_path.exists():
+    if not settings.products_path.exists():
         raise RuntimeError(
-            f"未找到 today-pool.json，请先执行 prepare-products：{settings.today_pool_path}"
+            f"未找到 products.json，请先执行 fetch-products：{settings.products_path}"
         )
-    return TodayPool.model_validate_json(settings.today_pool_path.read_text(encoding="utf-8"))
+    return TodayPool.model_validate_json(settings.products_path.read_text(encoding="utf-8"))
 
 
 def save_json_atomic(path, payload: dict) -> None:
@@ -73,16 +73,16 @@ def resolve_image_paths(
     return existing[:limit] if limit is not None else existing
 
 
-def build_phase2_outputs(
+def build_generate_content_outputs(
     *,
     contents_per_product: int = 5,
     settings: Settings | None = None,
-) -> Phase2ExecutionResult:
+) -> GenerateContentExecutionResult:
     settings = settings or Settings()
     settings.ensure_directories()
     today_pool = load_today_pool(settings)
     if not today_pool.products:
-        raise RuntimeError("today-pool.json 中没有可用商品。")
+        raise RuntimeError("products.json 中没有可用商品。")
 
     semantic_bundle = load_image_semantic_facts(settings)
 
@@ -149,7 +149,7 @@ def build_phase2_outputs(
     save_image_semantic_facts(settings, semantic_bundle)
 
     if not contents:
-        raise RuntimeError("未能基于 today-pool.json 生成任何商品内容。")
+        raise RuntimeError("未能基于 products.json 生成任何商品内容。")
 
     bundle = ContentsBundle(
         date=str(date.today()),
@@ -162,9 +162,9 @@ def build_phase2_outputs(
     )
     save_json_atomic(settings.contents_path, bundle.model_dump(mode="json"))
 
-    return Phase2ExecutionResult(
+    return GenerateContentExecutionResult(
         date=str(date.today()),
-        image_semantic_facts_path=str(settings.image_semantic_facts_path),
+        image_semantic_facts_path=str(settings.image_analysis_path),
         contents_path=str(settings.contents_path),
         contents=contents,
         generation=generation,
@@ -175,21 +175,21 @@ def build_phase2_outputs(
     )
 
 
-def build_phase2_payload(
+def build_generate_content_payload(
     *,
     contents_per_product: int = 5,
 ) -> tuple[dict, int]:
     try:
-        result = build_phase2_outputs(contents_per_product=contents_per_product)
-        payload = Phase2Success(data=result)
+        result = build_generate_content_outputs(contents_per_product=contents_per_product)
+        payload = GenerateContentResult(data=result)
         return payload.model_dump(mode="json"), 0
     except Exception as exc:
-        payload = SkillError(error="PHASE2_FAILED", message=str(exc))
+        payload = SkillError(error="GENERATE_CONTENT_FAILED", message=str(exc))
         return payload.model_dump(mode="json"), 1
 
 
 def main() -> None:
-    payload, exit_code = build_phase2_payload()
+    payload, exit_code = build_generate_content_payload()
     print(json.dumps(payload, ensure_ascii=False, indent=2))
     raise SystemExit(exit_code)
 

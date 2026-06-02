@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Project Overview
 
 小红书商品笔记自动发布工具。CLI 三阶段流程：
-1. `prepare-products` — 用 Playwright 从商家后台抓取商品与主图
+1. `fetch-products` — 用 Playwright 从商家后台抓取商品与主图
 2. `generate-content` — 调 LLM 生成种草文案
 3. `plan-publish` + `run-publish-plan` — 生成发布计划并执行发布
 
@@ -26,8 +26,7 @@ uv run xhs-poster login merchant
 uv run xhs-poster auth export merchant --output ./merchant-state.json
 uv run xhs-poster auth import merchant --input ./merchant-state.json
 uv run xhs-poster auth probe merchant
-uv run xhs-poster prepare-products --limit 10 --images-per-product 3
-uv run xhs-poster prepare-trends --keyword 抓夹   # 可选
+uv run xhs-poster fetch-products --limit 10
 uv run xhs-poster generate-content --contents-per-product 5
 uv run xhs-poster list-publish-candidates
 uv run xhs-poster plan-publish
@@ -38,32 +37,37 @@ uv run xhs-poster run-publish-plan --count 1
 
 ```
 src/xhs_poster/
-  cli.py            — Typer 入口，注册所有子命令，输出全部为 JSON
+  cli.py            — Typer 入口，注册所有子命令，输出全部为 JSON（待 M4 改造）
   config.py         — Settings（pydantic-settings），集中管理所有路径与 env 变量
-  phase1.py         — prepare-products 实现（Playwright 爬取，断点续传，收敛执行）
-  phase2.py         — generate-content 实现（LLM 文案生成）
-  phase3.py         — plan-publish / run-publish-plan / publish-note 实现
-  auth.py           — login / export / import / probe 实现
+  auth.py           — login / export / import / probe 实现（商家端单站点）
   browser.py        — Playwright 浏览器封装
   models.py         — 共享 Pydantic 模型
-  content_gen.py    — LLM 调用封装（OpenAI 兼容接口）
-  image_semantics.py — 视觉 LLM 图片语义分析，结果长期缓存
-  trend_signals.py  — prepare-trends 实现
-  facts_builder.py / image_facts.py / hot_notes.py / history_notes.py / merchant.py
-                    — 各类辅助数据构建器
+  originality.py    — 相似度查重（与已发布/已生成草稿比对）
+  merchant.py       — 商家端页面对象：ProductDetailPage / ProductListPage / PublishPage
+                      （ProductListPage 被 fetch 与 publish 共用，待 M5 拆分）
+  image_pipeline.py — 图片下载/去重底层（被 merchant 使用，待 M5 归位）
+  phase3.py         — plan-publish / run-publish-plan / publish-note 实现（待 M5 重写为 publish/）
+  products/         — 商品信息获取
+    fetch.py        — fetch-products 实现（Playwright 爬取，断点续传，收敛执行）
+    images.py       — 本地图片资产构建
+  content/          — 内容生成
+    generate.py     — generate-content 编排：图片分析 → 文案 → 配图
+    vision.py       — 视觉 LLM 图片语义分析，结果长期缓存
+    llm.py          — LLM 文案调用封装（OpenAI 兼容接口）
+    images.py       — 配图分配
 ```
 
 **数据目录** `xiaohongshu-data/`（运行时产物，不是源码）：
 
 | 文件 | 阶段 | 说明 |
 |------|------|------|
-| `today-pool.json` | phase1 输出 | 当日商品池，带 `date` 字段 |
-| `phase1-state.json` | phase1 检查点 | 断点续传状态，可轮询 |
-| `contents.json` | phase2 输出 | 文案内容，带 `date` 字段 |
-| `publish-plan.json` | phase3 计划 | 当日发布计划 |
-| `phase3/YYYY-MM-DD/publish-records.json` | phase3 记录 | 当日发布账本 |
-| `images/{product_id}/` | phase1 下载 | 商品主图 |
-| `image-semantic-facts.json` | 视觉分析缓存 | 长期缓存，避免重复调用视觉 LLM |
+| `products.json` | fetch-products 输出 | 当日商品池，带 `date` 字段 |
+| `products-state.json` | fetch-products 检查点 | 断点续传状态，可轮询 |
+| `contents.json` | generate-content 输出 | 文案内容，带 `date` 字段 |
+| `publish-plan.json` | plan-publish 输出 | 当日发布计划 |
+| `phase3/YYYY-MM-DD/publish-records.json` | run-publish-plan 记录 | 当日发布账本（路径待 M5 改 `publish/`） |
+| `images/{product_id}/` | fetch-products 下载 | 商品主图 |
+| `image-analysis.json` | 视觉分析缓存 | 长期缓存，避免重复调用视觉 LLM |
 
 ## Configuration (`.env`)
 
@@ -84,8 +88,8 @@ LLM 相关变量支持多种别名（见 `config.py`）：
 
 ## Key Behaviors to Preserve
 
-- `prepare-products --limit N` 语义是"得到 N 个成功商品"，不是"只看前 N 个"；只有 0 张图的商品才排除
+- `fetch-products --limit N` 语义是"得到 N 个成功商品"，不是"只看前 N 个"；只有 0 张图的商品才排除
 - `plan-publish` 不传 `--count` 时，默认选今天剩余全部可发候选
 - `publish-note` 是底层调试命令，AI 发布入口应走 `plan-publish` + `run-publish-plan`
 - 阶段完成判断：文件存在 **且** `date == 今天`，结构合法
-- `image-semantic-facts.json` 是长期缓存，不要随意清除
+- `image-analysis.json` 是长期缓存，不要随意清除
