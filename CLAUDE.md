@@ -37,7 +37,8 @@ uv run xhs-poster run-publish-plan --count 1
 
 ```
 src/xhs_poster/
-  cli.py            — Typer 入口，注册所有子命令，输出全部为 JSON（待 M4 改造）
+  cli.py            — Typer 入口，注册所有子命令；输出人读日志（stderr）+ 退出码（无 JSON）
+  logging.py        — 统一日志 seam（log_summary / log_error，输出 stderr；M8 再扩 --verbose）
   config.py         — Settings（pydantic-settings），集中管理所有路径与 env 变量
   auth.py           — login / export / import / probe 实现（商家端单站点）
   browser.py        — Playwright 浏览器封装
@@ -83,7 +84,7 @@ LLM 相关变量支持多种别名（见 `config.py`）：
 - Python 3.13+，`from __future__ import annotations`，4-space 缩进，类型注解
 - 新文件按阶段命名，保持职责单一
 - Pydantic 模型/Settings 类用 `PascalCase`，其余 `snake_case`
-- CLI 子命令均通过 `emit_json()` 输出，exit code 0 = 成功，2 = 未登录/失败
+- CLI 子命令输出人读日志到 stderr + 退出码（0 成功 / 1 失败 / 2 登录态失效；publish 批量 ≥1 成功即 0）
 - 提交信息使用中文短句，按阶段或模块范围描述（参照 git log 风格）
 
 ## Key Behaviors to Preserve

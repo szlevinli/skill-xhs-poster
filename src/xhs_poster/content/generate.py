@@ -13,9 +13,7 @@ from ..models import (
     ContentGenerationMeta,
     ContentsBundle,
     GenerateContentExecutionResult,
-    GenerateContentResult,
     ProductFailure,
-    SkillError,
     TodayPool,
 )
 from ..originality import check_draft_similarity
@@ -164,7 +162,7 @@ def build_generate_content_outputs(
 
     return GenerateContentExecutionResult(
         date=str(date.today()),
-        image_semantic_facts_path=str(settings.image_analysis_path),
+        image_analysis_path=str(settings.image_analysis_path),
         contents_path=str(settings.contents_path),
         contents=contents,
         generation=generation,
@@ -173,26 +171,3 @@ def build_generate_content_outputs(
         total_products=len(today_pool.products),
         contents_per_product=contents_per_product,
     )
-
-
-def build_generate_content_payload(
-    *,
-    contents_per_product: int = 5,
-) -> tuple[dict, int]:
-    try:
-        result = build_generate_content_outputs(contents_per_product=contents_per_product)
-        payload = GenerateContentResult(data=result)
-        return payload.model_dump(mode="json"), 0
-    except Exception as exc:
-        payload = SkillError(error="GENERATE_CONTENT_FAILED", message=str(exc))
-        return payload.model_dump(mode="json"), 1
-
-
-def main() -> None:
-    payload, exit_code = build_generate_content_payload()
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
-    raise SystemExit(exit_code)
-
-
-if __name__ == "__main__":
-    main()

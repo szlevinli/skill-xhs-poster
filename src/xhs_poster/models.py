@@ -112,7 +112,7 @@ class FetchProductsExecutionResult(BaseModel):
     date: str
     run_status: Literal["complete", "partial"]
     progress_ref: str
-    today_pool_path: str
+    products_path: str
     total_products: int
     success_count: int
     failed_count: int
@@ -139,14 +139,6 @@ class SessionInfo(BaseModel):
     auth_state_path: str | None = None
     home_url: str
     message: str
-
-
-class SkillError(BaseModel):
-    status: Literal["error"] = "error"
-    error: str
-    message: str
-    login: SessionInfo | None = None
-    details: dict | None = None
 
 
 class ContentDraft(BaseModel):
@@ -249,11 +241,6 @@ class Phase3ExecutionResult(BaseModel):
     publish_result: dict = Field(default_factory=dict)
     log_path: str | None = None
     artifacts: dict | None = None
-
-
-class Phase3Success(BaseModel):
-    status: Literal["ok"] = "ok"
-    data: Phase3ExecutionResult
 
 
 Phase3DedupScope = Literal["today", "ever"]
@@ -370,38 +357,13 @@ class Phase3RunPlanResult(BaseModel):
     results: list[Phase3RunPlanItemResult] = Field(default_factory=list)
 
 
-class Phase3CandidatesSuccess(BaseModel):
-    status: Literal["ok"] = "ok"
-    data: Phase3CandidatesResult
-
-
-class Phase3PlanSuccess(BaseModel):
-    status: Literal["ok"] = "ok"
-    data: Phase3PlanResult
-
-
-class Phase3RunPlanSuccess(BaseModel):
-    status: Literal["ok"] = "ok"
-    data: Phase3RunPlanResult
-
-
 class GenerateContentExecutionResult(BaseModel):
     date: str
     total_products: int
     contents_per_product: int
-    image_semantic_facts_path: str | None = None
+    image_analysis_path: str | None = None
     contents_path: str
     contents: dict[str, list[ContentDraft]] = Field(default_factory=dict)
     generation: dict[str, ContentGenerationMeta] = Field(default_factory=dict)
     statuses: dict[str, str] = Field(default_factory=dict)
     warnings: dict[str, list[str]] = Field(default_factory=dict)
-
-
-class GenerateContentResult(BaseModel):
-    status: Literal["ok"] = "ok"
-    data: GenerateContentExecutionResult
-
-
-class FetchProductsResult(BaseModel):
-    status: Literal["ok", "partial"] = "ok"
-    data: FetchProductsExecutionResult

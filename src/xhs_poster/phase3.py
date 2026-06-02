@@ -6,7 +6,7 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-from .auth import LoginRequiredError, require_authenticated_session
+from .auth import require_authenticated_session
 from .browser import get_alive_page, merchant_context, open_product_list_page
 from .config import Settings
 from .merchant import ProductListPage
@@ -15,21 +15,16 @@ from .models import (
     ContentsBundle,
     Phase3Candidate,
     Phase3CandidatesResult,
-    Phase3CandidatesSuccess,
     Phase3DailyRecords,
     Phase3DedupScope,
     Phase3ExecutionResult,
     Phase3PlanItem,
     Phase3PlanMode,
     Phase3PlanResult,
-    Phase3PlanSuccess,
     Phase3PublishRecord,
     Phase3RunPlanItemResult,
     Phase3RunPlanResult,
-    Phase3RunPlanSuccess,
-    Phase3Success,
     ProductSummary,
-    SkillError,
     TodayPool,
 )
 
@@ -646,138 +641,3 @@ def run_phase3_plan(
         seed=plan.seed,
         results=results,
     )
-
-
-def build_phase3_payload(
-    *,
-    product_id: str | None = None,
-    angle: int | None = None,
-    title: str | None = None,
-    content: str | None = None,
-    topic_keywords: list[str] | None = None,
-    image_paths: list[str] | None = None,
-) -> tuple[dict, int]:
-    try:
-        result = run_phase3(
-            product_id=product_id,
-            angle=angle,
-            title=title,
-            content=content,
-            topic_keywords=topic_keywords,
-            image_paths=image_paths,
-        )
-        if result.publish_result.get("success"):
-            payload = Phase3Success(data=result)
-            return payload.model_dump(mode="json"), 0
-
-        payload = SkillError(
-            error="PHASE3_PUBLISH_FAILED",
-            message="笔记发布失败或成功信号不明确，已保留结构化结果与失败证据。",
-            site="merchant",
-            details=result.model_dump(mode="json"),
-        )
-        return payload.model_dump(mode="json"), 1
-    except LoginRequiredError as exc:
-        payload = SkillError(
-            error="LOGIN_REQUIRED",
-            message=exc.session.message,
-            site=exc.session.site,
-            login=exc.session,
-        )
-        return payload.model_dump(mode="json"), 2
-    except Exception as exc:
-        payload = SkillError(
-            error="PHASE3_FAILED",
-            message=str(exc),
-            site="merchant",
-        )
-        return payload.model_dump(mode="json"), 1
-
-
-def build_phase3_candidates_payload(
-    *,
-    date: str | None = None,
-    exclude_published: Phase3DedupScope = "today",
-) -> tuple[dict, int]:
-    try:
-        result = list_phase3_candidates(
-            date=date,
-            exclude_published=exclude_published,
-        )
-        return Phase3CandidatesSuccess(data=result).model_dump(mode="json"), 0
-    except Exception as exc:
-        payload = SkillError(
-            error="PHASE3_CANDIDATES_FAILED",
-            message=str(exc),
-        )
-        return payload.model_dump(mode="json"), 1
-
-
-def build_phase3_plan_payload(
-    *,
-    mode: Phase3PlanMode,
-    count: int | None,
-    date: str | None = None,
-    dedupe_scope: Phase3DedupScope = "today",
-    seed: int | None = None,
-) -> tuple[dict, int]:
-    try:
-        result = build_phase3_plan(
-            mode=mode,
-            count=count,
-            date=date,
-            dedupe_scope=dedupe_scope,
-            seed=seed,
-        )
-        return Phase3PlanSuccess(data=result).model_dump(mode="json"), 0
-    except Exception as exc:
-        payload = SkillError(
-            error="PHASE3_PLAN_FAILED",
-            message=str(exc),
-        )
-        return payload.model_dump(mode="json"), 1
-
-
-def build_phase3_run_plan_payload(
-    *,
-    mode: Phase3PlanMode,
-    count: int,
-    date: str | None = None,
-    dedupe_scope: Phase3DedupScope = "today",
-    seed: int | None = None,
-) -> tuple[dict, int]:
-    try:
-        result = run_phase3_plan(
-            mode=mode,
-            count=count,
-            date=date,
-            dedupe_scope=dedupe_scope,
-            seed=seed,
-        )
-        exit_code = 0 if result.count_failed == 0 else 1
-        return Phase3RunPlanSuccess(data=result).model_dump(mode="json"), exit_code
-    except LoginRequiredError as exc:
-        payload = SkillError(
-            error="LOGIN_REQUIRED",
-            message=exc.session.message,
-            site=exc.session.site,
-            login=exc.session,
-        )
-        return payload.model_dump(mode="json"), 2
-    except Exception as exc:
-        payload = SkillError(
-            error="PHASE3_RUN_PLAN_FAILED",
-            message=str(exc),
-            site="merchant",
-        )
-        return payload.model_dump(mode="json"), 1
-
-
-def main() -> None:
-    payload, exit_code = build_phase3_payload()
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
-    raise SystemExit(exit_code)
-
-
-if __name__ == "__main__":
-    main()

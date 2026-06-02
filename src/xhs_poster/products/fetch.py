@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-import json
-import warnings
 from datetime import date, datetime
 from pathlib import Path
 from typing import Sequence
 
-from ..auth import LoginRequiredError, require_authenticated_session
+from ..auth import require_authenticated_session
 from ..browser import get_alive_page, merchant_context, open_product_list_page
 from ..config import Settings
 from .images import build_local_assets
@@ -16,10 +14,8 @@ from ..models import (
     ProductImageAsset,
     ProductFetchState,
     ProductsState,
-    FetchProductsResult,
     ProductFailure,
     ProductSummary,
-    SkillError,
     TodayPool,
 )
 
@@ -54,7 +50,7 @@ def save_products_state(settings: Settings, state: ProductsState) -> None:
 
 def save_today_pool(settings: Settings, today_pool: TodayPool) -> None:
     settings.ensure_directories()
-    save_json_atomic(settings.today_pool_path, today_pool.model_dump_json(indent=2))
+    save_json_atomic(settings.products_path, today_pool.model_dump_json(indent=2))
 
 
 def ensure_clean_image_dir(
@@ -344,7 +340,7 @@ def run_fetch_products(
         date=str(date.today()),
         run_status="complete" if state.run_status == "complete" else "partial",
         progress_ref=str(settings.products_state_path),
-        today_pool_path=str(settings.today_pool_path),
+        products_path=str(settings.products_path),
         total_products=limit,
         success_count=len(today_pool.products),
         failed_count=state.failed_count,
@@ -355,66 +351,3 @@ def run_fetch_products(
             "参数 --images-per-product 已废弃；fetch-products 现总是下载每个商品的全部去重图片。"
         ],
     )
-
-
-def build_fetch_products_payload(
-    *,
-    limit: int = 10,
-    images_per_product: int = 3,
-    force_download: bool = False,
-) -> tuple[dict, int]:
-    try:
-        warnings.warn(
-            "--images-per-product 已废弃；fetch-products 现在总是下载商品主图和详情页图片的全部去重原图。",
-            UserWarning,
-            stacklevel=2,
-        )
-        result = run_fetch_products(
-            limit=limit,
-            images_per_product=images_per_product,
-            force_download=force_download,
-        )
-        if result.success_count == 0:
-            payload = SkillError(
-                error="FETCH_PRODUCTS_EMPTY",
-                message="fetch-products 未成功准备任何商品，请检查 products-state.json 中的失败详情。",
-                site="merchant",
-                details={
-                    "progress_ref": result.progress_ref,
-                    "total_products": result.total_products,
-                    "failed_count": result.failed_count,
-                    "skipped_count": result.skipped_count,
-                },
-            )
-            return payload.model_dump(mode="json"), 1
-
-        payload = FetchProductsResult(
-            status="ok" if result.run_status == "complete" else "partial",
-            data=result,
-        )
-        return payload.model_dump(mode="json"), 0
-    except LoginRequiredError as exc:
-        payload = SkillError(
-            error="LOGIN_REQUIRED",
-            message=exc.session.message,
-            site=exc.session.site,
-            login=exc.session,
-        )
-        return payload.model_dump(mode="json"), 2
-    except Exception as exc:
-        payload = SkillError(
-            error="FETCH_PRODUCTS_FAILED",
-            message=str(exc),
-            site="merchant",
-        )
-        return payload.model_dump(mode="json"), 1
-
-
-def main() -> None:
-    payload, exit_code = build_fetch_products_payload()
-    print(json.dumps(payload, ensure_ascii=False, indent=2))
-    raise SystemExit(exit_code)
-
-
-if __name__ == "__main__":
-    main()
