@@ -28,7 +28,7 @@
 | M1 | 文案链路精简 + originality 简化 | ✅ | 8be265c |
 | M2 | consumer/SiteName 移除 | ✅ | b86ae02 |
 | M3 | 术语统一 + 命名重构（products/content） | ✅ | 9779964 |
-| M4 | 输出契约改造 | ⬜ | |
+| M4 | 输出契约改造 | ✅ | 8934e3b |
 | M5 | 发布会话复用 + publish 命名落位 | ⬜ | |
 | M6 | 条件等待改造 | ⬜ | |
 | M7 | 反检测间隔 | ⬜ | |
@@ -309,7 +309,55 @@
 
 ---
 
-## M5–M10
+## M5 — 发布会话复用 + publish 命名落位
+
+**目标**：把"每篇发布冷启动一次浏览器"改为"整批共享一个浏览器会话"，拿到性能首跳；同时把 publish 链路从 `phase3.py` / `merchant.py`(发布部分) 重写落位到 `publish/` 子包并完成语义命名（发现 F：留到重写时一起做，不给将被重写的代码白搬）。**本里程碑只做会话复用 + 命名/结构落位，不动死 sleep（留 M6）、不加反检测间隔（留 M7）、不丰富证据/trace（留 M8）。** 行为对外等价（仍能发布、仍写计划/账本、仍能续传），冒烟全绿。
+
+> ⚠️ **会话复用 vs 风控权衡（发现 C）**：单一长会话高频发 20 篇的指纹 ≠ 每篇独立冷启动。M5 预留 `publish_session_recycle_every` 配置（每发 N 篇重建一次会话；很大=整批一会话，1=退化回每篇一会话），默认值上线后按风控反馈调。这是旋钮不是非此即彼。
+
+**前置状态**：M4 已完成（8934e3b）。当前发布链路实测形态（务必先懂，已勘察）：
+- `cli.py` 命令 `publish-note`→`run_phase3`、`list-publish-candidates`→`list_phase3_candidates`、`plan-publish`→`build_phase3_plan`、`run-publish-plan`→`run_phase3_plan`，全部 import 自顶层 `phase3.py`。
+- **冷启动根因**：`run_phase3_plan`（`phase3.py:544`）循环 `pending_items`，每篇调 `run_phase3`（`phase3.py:448`），后者每篇 `with merchant_context(...)`（`:483`）重启 Chromium + `open_product_list_page`（`:486`）重进列表页。20 篇 = 20 次冷启动。
+- **续传已有雏形（保留强化）**：`run_phase3_plan` 每篇 `save_publish_plan` + 失败 `append_phase3_record`；批前 `reconcile_publish_plan_with_records`（`phase3.py:417`）。
+- **页面对象边界**：`merchant.py`（1199 行）含 `ProductDetailPage`(抓图)、`ProductListPage`(**fetch+publish 共用**，`:422`)、`PublishPage`(发布，`:528`)。`list_page.open_publish_page(product_id)`(`:501`) 返回 `PublishPage`。`ProductListPage` 仍被 `products/fetch.py` import，**不能整体搬走**——M5 把 `PublishPage` 抽到 `publish/page.py`，`ProductListPage`/`ProductDetailPage` 留 `merchant.py`（或后续里程碑再议）。
+- **publish 链路死 sleep 仍在 `PublishPage`**（`merchant.py` 内 `wait_for_timeout`），M5 搬运时**原样保留**，M6 再改条件等待。
+
+**涉及文件**：
+
+新增子包（空 `__init__.py`，不写 `__all__`）：
+- `src/xhs_poster/publish/__init__.py`
+- `src/xhs_poster/publish/plan.py` — 候选/计划/续传：搬 `load_contents_bundle`/`list_phase3_candidates`/`build_phase3_plan`/`load_publish_plan`/`save_publish_plan`/`reconcile_publish_plan_with_records` 及计划相关 helper。
+- `src/xhs_poster/publish/records.py` — 账本：搬 `load_phase3_daily_records`/`save_phase3_daily_records`/`append_phase3_record`/`save_phase3_artifacts`、`_save_json_atomic`。
+- `src/xhs_poster/publish/session.py` — **会话复用核心（新写）**：`PublishSession` 负责 `merchant_context` + `open_product_list_page` + `ProductListPage` **只初始化一次**；提供 `publish_one(item)`（每篇独立 tab 开 PublishPage→上传→填写→话题→绑品→发布→校验→失败打证据→关 tab）；`run_publish_plan(...)` 改为：建会话 → for pending → publish_one → 即时写 plan/records → （M7 才加 sleep）→ `recycle_every` 到点重建会话 → 关浏览器 → 汇总。
+- `src/xhs_poster/publish/page.py` — 从 `merchant.py` 抽出 `PublishPage`（连同其 `wait_for_timeout` 原样）。`merchant.py` 改为 `from .publish.page import PublishPage` 或反向，**注意 `ProductListPage.open_publish_page` 与 `PublishPage` 的循环依赖**：建议 `open_publish_page` 改为返回 page 句柄、由 session 侧构造 `PublishPage`，解开环。
+
+改写：
+- `cli.py`：命令重命名 `run-publish-plan`→`publish`、删 `publish-note` 与 `list-publish-candidates`（信息并入 `plan-publish` 输出/日志，见 refactor §4.7）；import 改自 `publish/`。
+- `config.py`：`phase3_records_dir/path`→`publish_records_dir/path`，路径 `phase3/<date>/publish-records.json`→`publish/<date>/records.json`；`phase3_artifacts_dir`→证据目录 `publish/<date>/evidence/`（结构细化留 M8，M5 先改路径名）；`phase3_published_path` 评估是否更名；加 `publish_session_recycle_every`（int，默认很大=整批一会话）。
+- `models.py`：`Phase3*` 系列（`Phase3Candidate`/`Phase3PlanItem`/`Phase3PlanResult`/`Phase3PublishRecord`/`Phase3DailyRecords`/`Phase3RunPlan*`/`Phase3ExecutionResult`/`Phase3DedupScope`/`Phase3PlanMode` 等）改 publish 语义名；`grep -rn "phase3\|Phase3" src/` 清零。
+- `originality.py`：保持，仅更新 import 名（若引用 Phase3* 模型）。
+- `deploy/`（若已存在）/`CLAUDE.md`：命令名 `run-publish-plan`→`publish`、数据路径同步。
+
+**验收**（新 session 可独立执行）：
+- `bash scripts/smoke.sh` 绿；`uv run ruff check src/xhs_poster` 过；`uv run pyright src/xhs_poster` 零新增；
+- `grep -rn "phase3\|Phase3" src/xhs_poster` 无残留；`merchant.py` 不再含 `PublishPage`；
+- `uv run xhs-poster --help` 出现 `publish`、无 `run-publish-plan`/`publish-note`/`list-publish-candidates`；
+- **会话复用证据**：`publish --count 2`（或对着测试桩/跑到"点发布前"为止，发现 D：不为测耗时真发线上）确认整批只 `sync_playwright()`/`open_product_list_page` 一次（日志或断点验证），单篇失败隔离、即时写 plan/records、可续传；
+- `fetch-products` 仍能 `from ..merchant import ProductListPage` 跑通（products 侧未被打断）。
+
+**回滚**：`git revert` 本里程碑提交。
+
+**收尾清单**：
+- [ ] smoke + ruff + pyright 绿；`phase3/Phase3` grep 清零
+- [ ] 会话复用与续传实测/桩验通过（不真发污染线上）
+- [ ] git 提交：`M5：发布链路重写落位 publish/ + 整批共享浏览器会话（发现 C 预留 recycle 旋钮）`
+- [ ] 进度表 M5 → ✅；**展开 M6 的详细小节**（M6 死 sleep 改条件等待，长在 M5 的 publish/page.py 上）
+- [ ] 若发现新隐藏耦合（尤其 PublishPage↔ProductListPage 循环依赖的解法），更新 `memory/refactor-v2.md`
+- [ ] 提示用户 `/clear` 继续 M6
+
+---
+
+## M6–M10
 
 概览见 `docs/refactor-plan.md` §9。每个里程碑在其**前一个里程碑收尾时**展开为上面的详细格式。
 
