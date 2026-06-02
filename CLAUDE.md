@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 小红书商品笔记自动发布工具。CLI 三阶段流程：
 1. `fetch-products` — 用 Playwright 从商家后台抓取商品与主图
 2. `generate-content` — 调 LLM 生成种草文案
-3. `plan-publish` + `run-publish-plan` — 生成发布计划并执行发布
+3. `plan-publish` + `publish` — 生成发布计划并执行发布（整批共享一个浏览器会话）
 
 **所有命令必须在仓库根目录执行**（`SettingsConfigDict(env_file=".env")` 按进程 cwd 查找 `.env`）。
 
@@ -28,9 +28,8 @@ uv run xhs-poster auth import merchant --input ./merchant-state.json
 uv run xhs-poster auth probe merchant
 uv run xhs-poster fetch-products --limit 10
 uv run xhs-poster generate-content --contents-per-product 5
-uv run xhs-poster list-publish-candidates
 uv run xhs-poster plan-publish
-uv run xhs-poster run-publish-plan --count 1
+uv run xhs-poster publish --count 1
 ```
 
 ## Architecture
@@ -44,10 +43,9 @@ src/xhs_poster/
   browser.py        — Playwright 浏览器封装
   models.py         — 共享 Pydantic 模型
   originality.py    — 相似度查重（与已发布/已生成草稿比对）
-  merchant.py       — 商家端页面对象：ProductDetailPage / ProductListPage / PublishPage
-                      （ProductListPage 被 fetch 与 publish 共用，待 M5 拆分）
-  image_pipeline.py — 图片下载/去重底层（被 merchant 使用，待 M5 归位）
-  phase3.py         — plan-publish / run-publish-plan / publish-note 实现（待 M5 重写为 publish/）
+  merchant.py       — 商家端页面对象：ProductDetailPage / ProductListPage
+                      （ProductListPage 被 fetch 与 publish 共用；open_publish_popup 返回弹窗 Page，由 publish/ 包装为 PublishPage）
+  image_pipeline.py — 图片下载/去重底层（被 merchant 使用）
   products/         — 商品信息获取
     fetch.py        — fetch-products 实现（Playwright 爬取，断点续传，收敛执行）
     images.py       — 本地图片资产构建
@@ -56,6 +54,11 @@ src/xhs_poster/
     vision.py       — 视觉 LLM 图片语义分析，结果长期缓存
     llm.py          — LLM 文案调用封装（OpenAI 兼容接口）
     images.py       — 配图分配
+  publish/          — 发布链路
+    plan.py         — 候选/计划/续传：list_publish_candidates / build_publish_plan / reconcile
+    records.py      — 当日发布账本与失败证据落盘
+    page.py         — PublishPage 发布页对象（M6 再把死 sleep 改条件等待）
+    session.py      — PublishSession 整批共享一个浏览器会话 + run_publish_plan 编排
 ```
 
 **数据目录** `xiaohongshu-data/`（运行时产物，不是源码）：
@@ -66,7 +69,8 @@ src/xhs_poster/
 | `products-state.json` | fetch-products 检查点 | 断点续传状态，可轮询 |
 | `contents.json` | generate-content 输出 | 文案内容，带 `date` 字段 |
 | `publish-plan.json` | plan-publish 输出 | 当日发布计划 |
-| `phase3/YYYY-MM-DD/publish-records.json` | run-publish-plan 记录 | 当日发布账本（路径待 M5 改 `publish/`） |
+| `publish/YYYY-MM-DD/records.json` | publish 记录 | 当日发布账本 |
+| `publish/YYYY-MM-DD/evidence/` | publish 失败证据 | 失败时落盘截图 + HTML |
 | `images/{product_id}/` | fetch-products 下载 | 商品主图 |
 | `image-analysis.json` | 视觉分析缓存 | 长期缓存，避免重复调用视觉 LLM |
 
@@ -91,6 +95,7 @@ LLM 相关变量支持多种别名（见 `config.py`）：
 
 - `fetch-products --limit N` 语义是"得到 N 个成功商品"，不是"只看前 N 个"；只有 0 张图的商品才排除
 - `plan-publish` 不传 `--count` 时，默认选今天剩余全部可发候选
-- `publish-note` 是底层调试命令，AI 发布入口应走 `plan-publish` + `run-publish-plan`
+- AI 发布入口走 `plan-publish` + `publish`（已删除 `publish-note` / `list-publish-candidates` 调试命令）
+- `publish` 整批共享一个浏览器会话提速；`publish_session_recycle_every` 控制每 N 篇重建会话（默认很大=整批一会话）
 - 阶段完成判断：文件存在 **且** `date == 今天`，结构合法
 - `image-analysis.json` 是长期缓存，不要随意清除

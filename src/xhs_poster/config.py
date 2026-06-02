@@ -101,6 +101,14 @@ class Settings(BaseSettings):
         ),
         description="商家端 auth-state 文件路径，默认位于 data_dir/auth/merchant-state.json。",
     )
+    publish_session_recycle_every: int = Field(
+        default=10_000,
+        validation_alias=AliasChoices(
+            "XHS_POSTER_PUBLISH_SESSION_RECYCLE_EVERY",
+            "PUBLISH_SESSION_RECYCLE_EVERY",
+        ),
+        description="发布每 N 篇后重建一次浏览器会话以平衡提速与风控；很大=整批共用一会话，1=每篇一会话。",
+    )
     @property
     def data_dir(self) -> Path:
         return self.project_root / self.data_subdir
@@ -142,23 +150,18 @@ class Settings(BaseSettings):
         return self.data_dir / "publish-log.json"
 
     @property
-    def phase3_published_path(self) -> Path:
-        return self.data_dir / "phase3-published.json"
-
-    @property
     def publish_plan_path(self) -> Path:
         return self.data_dir / "publish-plan.json"
 
     @property
-    def phase3_records_dir(self) -> Path:
-        return self.data_dir / "phase3"
+    def publish_records_dir(self) -> Path:
+        return self.data_dir / "publish"
 
-    def phase3_records_path(self, record_date: str) -> Path:
-        return self.phase3_records_dir / record_date / "publish-records.json"
+    def publish_records_path(self, record_date: str) -> Path:
+        return self.publish_records_dir / record_date / "records.json"
 
-    @property
-    def phase3_artifacts_dir(self) -> Path:
-        return self.data_dir / "artifacts" / "phase3"
+    def publish_evidence_dir(self, record_date: str) -> Path:
+        return self.publish_records_dir / record_date / "evidence"
 
     @property
     def auth_artifacts_dir(self) -> Path:
@@ -185,6 +188,5 @@ class Settings(BaseSettings):
         self.merchant_auth_state_path.parent.mkdir(parents=True, exist_ok=True)
         self.merchant_profile_dir.mkdir(parents=True, exist_ok=True)
         self.images_dir.mkdir(parents=True, exist_ok=True)
-        self.phase3_records_dir.mkdir(parents=True, exist_ok=True)
-        self.phase3_artifacts_dir.mkdir(parents=True, exist_ok=True)
+        self.publish_records_dir.mkdir(parents=True, exist_ok=True)
         self.auth_artifacts_dir.mkdir(parents=True, exist_ok=True)

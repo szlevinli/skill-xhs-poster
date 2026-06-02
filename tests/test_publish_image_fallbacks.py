@@ -7,10 +7,10 @@ from datetime import date
 from pathlib import Path
 
 from xhs_poster.config import Settings
-from xhs_poster.phase3 import load_contents_bundle, resolve_image_paths, resolve_publish_inputs
+from xhs_poster.publish.plan import load_contents_bundle, resolve_image_paths, resolve_publish_inputs
 
 
-class Phase3ImageFallbackTests(unittest.TestCase):
+class PublishImageFallbackTests(unittest.TestCase):
     def setUp(self) -> None:
         self.temp_dir = tempfile.TemporaryDirectory()
         self.project_root = Path(self.temp_dir.name)
@@ -24,7 +24,7 @@ class Phase3ImageFallbackTests(unittest.TestCase):
         self.fallback_path = self.images_dir / "002.jpg"
         self.fallback_path.write_bytes(b"fallback")
 
-        (self.data_dir / "today-pool.json").write_text(
+        (self.data_dir / "products.json").write_text(
             json.dumps(
                 {
                     "date": self.today,
@@ -65,7 +65,7 @@ class Phase3ImageFallbackTests(unittest.TestCase):
 
     def test_resolve_image_paths_prefers_image_assets_over_legacy_images(self) -> None:
         settings = self._settings()
-        today_pool = json.loads((self.data_dir / "today-pool.json").read_text(encoding="utf-8"))
+        today_pool = json.loads((self.data_dir / "products.json").read_text(encoding="utf-8"))
         from xhs_poster.models import TodayPool
 
         resolved = resolve_image_paths(settings, TodayPool.model_validate(today_pool), "product-1")
@@ -128,7 +128,7 @@ class Phase3ImageFallbackTests(unittest.TestCase):
         assert draft is not None
         self.assertEqual(draft.selected_image_paths, [])
 
-        today_pool = TodayPool.model_validate_json((self.data_dir / "today-pool.json").read_text(encoding="utf-8"))
+        today_pool = TodayPool.model_validate_json((self.data_dir / "products.json").read_text(encoding="utf-8"))
         resolved = resolve_image_paths(
             settings,
             today_pool,

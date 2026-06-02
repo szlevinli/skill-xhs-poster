@@ -14,19 +14,15 @@ from .auth import (
     probe_site_session,
 )
 from .logging import log_error, log_summary
-from .models import Phase3DedupScope, Phase3PlanMode
+from .models import PublishDedupScope, PublishPlanMode
 from .products.fetch import run_fetch_products
 from .content.generate import build_generate_content_outputs
-from .phase3 import (
-    build_phase3_plan,
-    list_phase3_candidates,
-    run_phase3,
-    run_phase3_plan,
-)
+from .publish.plan import build_publish_plan
+from .publish.session import run_publish_plan
 
 APP_HELP = """小红书商家端自动发帖工具。输出为人读日志（stderr）+ 退出码（0 成功 / 1 失败 / 2 登录态失效）。
 
-流程：fetch-products（拉商品与主图，支持断点续传）→ generate-content（生成文案）→ plan-publish（生成当天发布计划）→ run-publish-plan（执行当天计划）。
+流程：fetch-products（拉商品与主图，支持断点续传）→ generate-content（生成文案）→ plan-publish（生成当天发布计划）→ publish（执行当天计划，整批共享一个浏览器会话）。
 首次使用需先执行 login merchant 完成本机登录；云服务器部署推荐使用 auth export / auth import 迁移登录态。"""
 auth_app = typer.Typer(add_completion=False, no_args_is_help=True, help="探测商家端是否已登录。")
 login_app = typer.Typer(add_completion=False, no_args_is_help=True, help="拉起浏览器，等待人工完成扫码登录。")
@@ -144,74 +140,19 @@ def generate_content_command(
     raise typer.Exit(code=0)
 
 
-@app.command("publish-note", help="直接发布单条笔记的底层调试命令；默认不作为 AI 发布入口。需已登录商家端。")
-def publish_note_command(
-    product_id: Annotated[str | None, typer.Option("--product-id", help="要发笔记的商品 ID，不传则取 products 第一个")] = None,
-    angle: Annotated[int | None, typer.Option("--angle", help="使用 contents.json 中该商品的第几条草稿（1～N）")] = None,
-    title: Annotated[str | None, typer.Option("--title", help="直接指定标题（与 --content 一起用时忽略 contents.json）")] = None,
-    content: Annotated[str | None, typer.Option("--content", help="直接指定正文（与 --title 一起用时忽略 contents.json）")] = None,
-    topic_keywords: Annotated[list[str] | None, typer.Option("--topic-keyword", help="指定话题关键词，可多次传入；不传则从草稿 tags 提取全部 #")] = None,
-    image_paths: Annotated[list[str] | None, typer.Option("--image-path", help="指定图片路径，可多次传入；不传则优先用草稿绑定的 selected_image_paths，再回退到 products")] = None,
-) -> None:
-    cmd = "publish-note"
-    try:
-        result = run_phase3(
-            product_id=product_id,
-            angle=angle,
-            title=title,
-            content=content,
-            topic_keywords=topic_keywords,
-            image_paths=image_paths,
-        )
-    except LoginRequiredError as exc:
-        log_error(f"[{cmd}] 登录态失效：{exc.session.message}")
-        raise typer.Exit(code=2)
-    except Exception as exc:
-        log_error(f"[{cmd}] 失败：{exc}")
-        raise typer.Exit(code=1)
-    if result.publish_result.get("success"):
-        log_summary(f"[{cmd}] 已发布：{result.title}")
-        raise typer.Exit(code=0)
-    log_error(f"[{cmd}] 发布失败或成功信号不明确：{result.title}")
-    raise typer.Exit(code=1)
-
-
-@app.command("list-publish-candidates", help="列出 contents.json 中全部可发布候选，并结合当日/历史发布记录标记是否可发布；用于编排前查看候选池。")
-def list_publish_candidates_command(
-    date: Annotated[str | None, typer.Option("--date", help="按指定日期评估去重，默认今天")] = None,
-    exclude_published: Annotated[
-        Phase3DedupScope, typer.Option("--exclude-published", help="去重范围：today 或 ever")
-    ] = "today",
-) -> None:
-    cmd = "list-publish-candidates"
-    try:
-        result = list_phase3_candidates(
-            date=date,
-            exclude_published=exclude_published,
-        )
-    except Exception as exc:
-        log_error(f"[{cmd}] 失败：{exc}")
-        raise typer.Exit(code=1)
-    eligible = sum(1 for candidate in result.candidates if candidate.eligible)
-    log_summary(
-        f"[{cmd}] 候选 {len(result.candidates)} 条，可发 {eligible} 条（去重范围={result.exclude_published}）"
-    )
-    raise typer.Exit(code=0)
-
-
 @app.command("plan-publish", help="按顺序或随机策略生成并保存待发布计划，但不执行发布；推荐作为 AI 发布前的编排步骤。")
 def plan_publish_command(
-    mode: Annotated[Phase3PlanMode, typer.Option("--mode", help="计划模式：sequential 或 random")] = "sequential",
+    mode: Annotated[PublishPlanMode, typer.Option("--mode", help="计划模式：sequential 或 random")] = "sequential",
     count: Annotated[int | None, typer.Option("--count", help="计划选择的候选数量；不传则默认选择今天剩余全部可发布候选")] = None,
     date: Annotated[str | None, typer.Option("--date", help="按指定日期评估去重，默认今天")] = None,
     dedupe_scope: Annotated[
-        Phase3DedupScope, typer.Option("--dedupe-scope", help="去重范围：today 或 ever")
+        PublishDedupScope, typer.Option("--dedupe-scope", help="去重范围：today 或 ever")
     ] = "today",
     seed: Annotated[int | None, typer.Option("--seed", help="随机模式的随机种子")] = None,
 ) -> None:
     cmd = "plan-publish"
     try:
-        result = build_phase3_plan(
+        result = build_publish_plan(
             mode=mode,
             count=count,
             date=date,
@@ -227,19 +168,19 @@ def plan_publish_command(
     raise typer.Exit(code=0)
 
 
-@app.command("run-publish-plan", help="执行已保存的发布计划，并写入当日 publish-records.json；AI 使用前应先确保当天已执行 plan-publish。")
-def run_publish_plan_command(
-    mode: Annotated[Phase3PlanMode, typer.Option("--mode", help="执行模式：sequential 或 random")] = "sequential",
+@app.command("publish", help="执行已保存的发布计划，整批共享一个浏览器会话，并写入当日 publish/<date>/records.json；AI 使用前应先确保当天已执行 plan-publish。")
+def publish_command(
+    mode: Annotated[PublishPlanMode, typer.Option("--mode", help="执行模式：sequential 或 random")] = "sequential",
     count: Annotated[int, typer.Option("--count", help="本次尝试发布的数量")] = 1,
     date: Annotated[str | None, typer.Option("--date", help="按指定日期评估去重，默认今天")] = None,
     dedupe_scope: Annotated[
-        Phase3DedupScope, typer.Option("--dedupe-scope", help="去重范围：today 或 ever")
+        PublishDedupScope, typer.Option("--dedupe-scope", help="去重范围：today 或 ever")
     ] = "today",
     seed: Annotated[int | None, typer.Option("--seed", help="随机模式的随机种子")] = None,
 ) -> None:
-    cmd = "run-publish-plan"
+    cmd = "publish"
     try:
-        result = run_phase3_plan(
+        result = run_publish_plan(
             mode=mode,
             count=count,
             date=date,

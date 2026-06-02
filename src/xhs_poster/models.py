@@ -224,7 +224,7 @@ class ProductFailure(BaseModel):
     reason: str
 
 
-class Phase3ExecutionResult(BaseModel):
+class PublishExecutionResult(BaseModel):
     product_id: str
     product_name: str
     title: str
@@ -243,31 +243,13 @@ class Phase3ExecutionResult(BaseModel):
     artifacts: dict | None = None
 
 
-Phase3DedupScope = Literal["today", "ever"]
-Phase3PlanMode = Literal["sequential", "random"]
-Phase3PlanItemStatus = Literal["pending", "published", "failed", "skipped"]
-Phase3RecordStatus = Literal["success", "failed", "skipped"]
+PublishDedupScope = Literal["today", "ever"]
+PublishPlanMode = Literal["sequential", "random"]
+PublishPlanItemStatus = Literal["pending", "published", "failed", "skipped"]
+PublishRecordStatus = Literal["success", "failed", "skipped"]
 
 
-class Phase3PublishedRecord(BaseModel):
-    date: str
-    published_at: str
-    product_id: str
-    product_name: str
-    angle: int
-    angle_name: str | None = None
-    title: str
-    topic_keywords: list[str] = Field(default_factory=list)
-    status: Literal["success"] = "success"
-    publish_log_path: str | None = None
-    dedupe_key: str
-
-
-class Phase3PublishedLedger(BaseModel):
-    records: list[Phase3PublishedRecord] = Field(default_factory=list)
-
-
-class Phase3Candidate(BaseModel):
+class PublishCandidate(BaseModel):
     date: str
     product_id: str
     product_name: str
@@ -282,13 +264,13 @@ class Phase3Candidate(BaseModel):
     ineligible_reason: str | None = None
 
 
-class Phase3CandidatesResult(BaseModel):
+class PublishCandidatesResult(BaseModel):
     date: str
-    exclude_published: Phase3DedupScope
-    candidates: list[Phase3Candidate] = Field(default_factory=list)
+    exclude_published: PublishDedupScope
+    candidates: list[PublishCandidate] = Field(default_factory=list)
 
 
-class Phase3PlanItem(BaseModel):
+class PublishPlanItem(BaseModel):
     sequence: int = 0
     product_id: str
     product_name: str
@@ -297,23 +279,23 @@ class Phase3PlanItem(BaseModel):
     title: str
     topic_keywords: list[str] = Field(default_factory=list)
     selection_reason: str
-    status: Phase3PlanItemStatus = "pending"
+    status: PublishPlanItemStatus = "pending"
     published_at: str | None = None
     error: str | None = None
 
 
-class Phase3PlanResult(BaseModel):
+class PublishPlanResult(BaseModel):
     date: str
-    mode: Phase3PlanMode
-    dedupe_scope: Phase3DedupScope
+    mode: PublishPlanMode
+    dedupe_scope: PublishDedupScope
     count_requested: int
     count_selected: int
     seed: int | None = None
-    items: list[Phase3PlanItem] = Field(default_factory=list)
+    items: list[PublishPlanItem] = Field(default_factory=list)
     plan_path: str | None = None
 
 
-class Phase3PublishRecord(BaseModel):
+class PublishRecord(BaseModel):
     attempted_at: str
     product_id: str
     product_name: str
@@ -322,39 +304,39 @@ class Phase3PublishRecord(BaseModel):
     title: str
     topic_keywords: list[str] = Field(default_factory=list)
     skipped_topics: list[dict] = Field(default_factory=list)
-    status: Phase3RecordStatus
+    status: PublishRecordStatus
     dedupe_key: str
     error: str | None = None
     publish_result: dict = Field(default_factory=dict)
     artifacts: dict | None = None
 
 
-class Phase3DailyRecords(BaseModel):
+class PublishDailyRecords(BaseModel):
     date: str
-    records: list[Phase3PublishRecord] = Field(default_factory=list)
+    records: list[PublishRecord] = Field(default_factory=list)
 
 
-class Phase3RunPlanItemResult(BaseModel):
+class PublishRunItemResult(BaseModel):
     product_id: str
     product_name: str
     angle: int
     angle_name: str
     status: Literal["success", "failed"]
-    phase3_result: Phase3ExecutionResult | None = None
+    execution_result: PublishExecutionResult | None = None
     error: str | None = None
 
 
-class Phase3RunPlanResult(BaseModel):
+class PublishRunResult(BaseModel):
     date: str
-    mode: Phase3PlanMode
-    dedupe_scope: Phase3DedupScope
+    mode: PublishPlanMode
+    dedupe_scope: PublishDedupScope
     count_requested: int
     count_selected: int
     count_attempted: int
     count_succeeded: int
     count_failed: int
     seed: int | None = None
-    results: list[Phase3RunPlanItemResult] = Field(default_factory=list)
+    results: list[PublishRunItemResult] = Field(default_factory=list)
 
 
 class GenerateContentExecutionResult(BaseModel):
