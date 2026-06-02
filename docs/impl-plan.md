@@ -27,7 +27,7 @@
 | M0 | 基线固化 | ✅ | fda7355 |
 | M1 | 文案链路精简 + originality 简化 | ✅ | 8be265c |
 | M2 | consumer/SiteName 移除 | ✅ | b86ae02 |
-| M3 | 术语统一 + 命名重构（products/content） | ⬜ | |
+| M3 | 术语统一 + 命名重构（products/content） | ✅ | 9779964 |
 | M4 | 输出契约改造 | ⬜ | |
 | M5 | 发布会话复用 + publish 命名落位 | ⬜ | |
 | M6 | 条件等待改造 | ⬜ | |
