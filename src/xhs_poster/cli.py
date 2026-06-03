@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from pathlib import Path
 from typing import Annotated
 
@@ -91,19 +90,12 @@ def login_merchant(
 @app.command("fetch-products", help="从商家后台同步商品图片，下载商品主图全部图片与详情页图片全部图片，实时写出 products-state.json，并收敛更新 products.json；支持断点续传，需已登录商家端。")
 def fetch_products_command(
     limit: Annotated[int, typer.Option("--limit", help="目标成功商品数量；会在当前列表中继续补位，直到凑够或候选耗尽")] = 10,
-    images_per_product: Annotated[int, typer.Option("--images-per-product", help="兼容废弃参数：保留旧脚本调用，但不再限制每个商品下载图片数量")] = 3,
     force_download: Annotated[bool, typer.Option("--force-download", help="强制重新下载图片，覆盖已有")] = False,
 ) -> None:
     cmd = "fetch-products"
-    warnings.warn(
-        "--images-per-product 已废弃；fetch-products 现在总是下载商品主图和详情页图片的全部去重原图。",
-        UserWarning,
-        stacklevel=2,
-    )
     try:
         result = run_fetch_products(
             limit=limit,
-            images_per_product=images_per_product,
             force_download=force_download,
         )
     except LoginRequiredError as exc:

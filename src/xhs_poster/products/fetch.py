@@ -204,12 +204,10 @@ def sync_product_states(
 def run_fetch_products(
     *,
     limit: int = 10,
-    images_per_product: int = 3,
     headless: bool | None = None,
     force_download: bool = False,
     settings: Settings | None = None,
 ) -> FetchProductsExecutionResult:
-    del images_per_product
     settings = settings or Settings()
     settings.ensure_directories()
     state = load_products_state(settings)
