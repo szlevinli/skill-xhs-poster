@@ -115,3 +115,34 @@ systemctl --user disable --now xhs-prepare.timer xhs-publish.timer   # 停用
 ```
 
 排错全程实时日志：临时 `uv run xhs-poster publish --count 1 --verbose`，每篇含成功都落 `trace.zip` + `steps.jsonl` 到 `xiaohongshu-data/publish/<date>/evidence/`。
+
+## 7. 飞书通知（可选）
+
+无人值守时，让每个命令收尾主动推一条飞书群消息：准备各阶段完成（绿卡）、发布批次摘要（成功/失败计数）、任意命令异常退出（红卡，含掉登录 exit 2）。**不配置则零行为**——`FEISHU_WEBHOOK_URL` 未设时全程静默，不发任何请求。
+
+设计与协议细节见 `docs/feishu-notify-design.md`。
+
+**启用步骤**：
+
+1. 飞书群 → 群设置 → 群机器人 → 添加「自定义机器人」，复制 webhook URL。建议同时开启「签名校验」拿到 secret（比仅靠 URL 保密更稳）。
+2. 在仓库根 `~/xhs-poster/.env` 追加（被现有 `EnvironmentFile=` 自动加载，**无需改任何 service unit**）：
+
+   ```
+   FEISHU_WEBHOOK_URL=https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxxx
+   # 机器人开了签名校验再加：
+   FEISHU_WEBHOOK_SECRET=xxxxxxxx
+   # 多套部署时区分来源：
+   FEISHU_NOTIFY_LABEL=xhs-prod
+   ```
+
+   可选降噪：`FEISHU_NOTIFY_EVENTS=publish_summary,error`（只留发布摘要与错误，准备阶段成功静默）。可选超时：`FEISHU_NOTIFY_TIMEOUT_SECONDS=5`。
+
+3. VPS 需能出网到 `open.feishu.cn:443`；内网受限环境要放行。
+
+> **安全**：webhook URL 即密钥，谁拿到谁能往群里发消息。`.env` 已在 `.gitignore`，勿提交、勿外泄。
+>
+> **失败隔离**：通知是副信道，发送失败（网络不通 / 4xx / 5xx / 超时）只在 stderr（journal）留一行日志，**绝不改变命令退出码或发布结果**。
+
+**进阶（可选，本轮未做代码）：systemd `OnFailure=` 兜底进程暴毙**
+
+应用层通知靠 Python 在进程内发卡，抓不到硬崩溃（OOM、SIGKILL、解释器在发卡前就挂）。这类「进程暴毙」需 systemd 层兜底：给 service 加 `OnFailure=` 指向一个发飞书的 oneshot unit。两层互补——应用层报业务结果，systemd 层报进程非零退出/暴毙。本仓库暂未内置该 unit，需要时另开小任务实现。

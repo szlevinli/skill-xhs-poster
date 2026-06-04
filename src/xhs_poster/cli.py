@@ -12,8 +12,15 @@ from .auth import (
     login_site,
     probe_site_session,
 )
+from .config import Settings
 from .logging import log_error, log_summary
 from .models import PublishDedupScope, PublishPlanMode
+from .notify import (
+    build_notifier,
+    error_event,
+    publish_summary_event,
+    stage_done_event,
+)
 from .products.fetch import run_fetch_products
 from .content.generate import build_generate_content_outputs
 from .publish.plan import build_publish_plan
@@ -93,6 +100,7 @@ def fetch_products_command(
     force_download: Annotated[bool, typer.Option("--force-download", help="强制重新下载图片，覆盖已有")] = False,
 ) -> None:
     cmd = "fetch-products"
+    notifier = build_notifier(Settings())
     try:
         result = run_fetch_products(
             limit=limit,
@@ -100,17 +108,37 @@ def fetch_products_command(
         )
     except LoginRequiredError as exc:
         log_error(f"[{cmd}] 登录态失效：{exc.session.message}")
+        notifier.send(error_event(cmd, exc.session.message, exit_code=2))
         raise typer.Exit(code=2)
     except Exception as exc:
         log_error(f"[{cmd}] 失败：{exc}")
+        notifier.send(error_event(cmd, str(exc), exit_code=1))
         raise typer.Exit(code=1)
     if result.success_count == 0:
         log_error(
             f"[{cmd}] 未成功准备任何商品（失败 {result.failed_count} / 跳过 {result.skipped_count}），详情见 {result.progress_ref}"
         )
+        notifier.send(
+            error_event(
+                cmd,
+                f"未成功准备任何商品（失败 {result.failed_count} / 跳过 {result.skipped_count}）",
+                exit_code=1,
+            )
+        )
         raise typer.Exit(code=1)
     log_summary(
         f"[{cmd}] 就绪 {result.success_count} / 失败 {result.failed_count} / 跳过 {result.skipped_count}，状态={result.run_status}"
+    )
+    notifier.send(
+        stage_done_event(
+            cmd,
+            "商品信息获取完成",
+            [
+                ("就绪", str(result.success_count)),
+                ("失败", str(result.failed_count)),
+                ("跳过", str(result.skipped_count)),
+            ],
+        )
     )
     raise typer.Exit(code=0)
 
@@ -120,14 +148,26 @@ def generate_content_command(
     contents_per_product: Annotated[int, typer.Option("--contents-per-product", help="每个商品生成的文案条数")] = 5,
 ) -> None:
     cmd = "generate-content"
+    notifier = build_notifier(Settings())
     try:
         result = build_generate_content_outputs(contents_per_product=contents_per_product)
     except Exception as exc:
         log_error(f"[{cmd}] 失败：{exc}")
+        notifier.send(error_event(cmd, str(exc), exit_code=1))
         raise typer.Exit(code=1)
     total_drafts = sum(len(drafts) for drafts in result.contents.values())
     log_summary(
         f"[{cmd}] {result.total_products} 个商品生成 {total_drafts} 条草稿 → {result.contents_path}"
+    )
+    notifier.send(
+        stage_done_event(
+            cmd,
+            "内容生成完成",
+            [
+                ("商品", str(result.total_products)),
+                ("草稿", str(total_drafts)),
+            ],
+        )
     )
     raise typer.Exit(code=0)
 
@@ -143,6 +183,7 @@ def plan_publish_command(
     seed: Annotated[int | None, typer.Option("--seed", help="随机模式的随机种子")] = None,
 ) -> None:
     cmd = "plan-publish"
+    notifier = build_notifier(Settings())
     try:
         result = build_publish_plan(
             mode=mode,
@@ -153,9 +194,17 @@ def plan_publish_command(
         )
     except Exception as exc:
         log_error(f"[{cmd}] 失败：{exc}")
+        notifier.send(error_event(cmd, str(exc), exit_code=1))
         raise typer.Exit(code=1)
     log_summary(
         f"[{cmd}] 计划 {result.count_selected} 篇 → {result.plan_path or 'publish-plan.json'}"
+    )
+    notifier.send(
+        stage_done_event(
+            cmd,
+            "发布计划就绪",
+            [("计划", f"{result.count_selected} 篇")],
+        )
     )
     raise typer.Exit(code=0)
 
@@ -174,6 +223,7 @@ def publish_command(
     ] = False,
 ) -> None:
     cmd = "publish"
+    notifier = build_notifier(Settings())
     try:
         result = run_publish_plan(
             mode=mode,
@@ -185,13 +235,17 @@ def publish_command(
         )
     except LoginRequiredError as exc:
         log_error(f"[{cmd}] 登录态失效：{exc.session.message}")
+        notifier.send(error_event(cmd, exc.session.message, exit_code=2))
         raise typer.Exit(code=2)
     except Exception as exc:
         log_error(f"[{cmd}] 失败：{exc}")
+        notifier.send(error_event(cmd, str(exc), exit_code=1))
         raise typer.Exit(code=1)
     log_summary(
         f"[{cmd}] {result.count_succeeded}/{result.count_attempted} 成功，{result.count_failed} 失败"
     )
+    # 批次摘要总发（含部分失败 / 全失败），卡片级别由 publish_summary_event 按成败判定。
+    notifier.send(publish_summary_event(result))
     # 发现 B：≥1 篇成功即 0；无 pending（no-op）也按 0；尝试了但全失败才 1。
     if result.count_attempted == 0 or result.count_succeeded >= 1:
         raise typer.Exit(code=0)
