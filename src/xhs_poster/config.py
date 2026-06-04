@@ -125,6 +125,47 @@ class Settings(BaseSettings):
         ),
         description="整批发布时每篇之间随机间隔的上限（秒），反检测用；若 min>max 则 clamp 到 min。",
     )
+    feishu_webhook_url: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "XHS_POSTER_FEISHU_WEBHOOK_URL",
+            "FEISHU_WEBHOOK_URL",
+        ),
+        description="飞书群机器人 webhook 完整 URL；未设置则全程不发通知（NullNotifier）。",
+    )
+    feishu_webhook_secret: str | None = Field(
+        default=None,
+        validation_alias=AliasChoices(
+            "XHS_POSTER_FEISHU_WEBHOOK_SECRET",
+            "FEISHU_WEBHOOK_SECRET",
+        ),
+        description="飞书机器人「签名校验」密钥；设置后按飞书算法在请求体带 timestamp+sign。机器人若开了签名校验则必填。",
+    )
+    feishu_notify_label: str = Field(
+        default="",
+        validation_alias=AliasChoices(
+            "XHS_POSTER_FEISHU_NOTIFY_LABEL",
+            "FEISHU_NOTIFY_LABEL",
+        ),
+        description="部署标识（如 xhs-prod / 主机名），进卡片副标题，区分多套部署。",
+    )
+    feishu_notify_events: str = Field(
+        default="stage_done,publish_summary,error",
+        validation_alias=AliasChoices(
+            "XHS_POSTER_FEISHU_NOTIFY_EVENTS",
+            "FEISHU_NOTIFY_EVENTS",
+        ),
+        description="逗号分隔的启用事件白名单；用于降噪（如只留 publish_summary,error）。",
+    )
+    feishu_notify_timeout_seconds: float = Field(
+        default=5.0,
+        validation_alias=AliasChoices(
+            "XHS_POSTER_FEISHU_NOTIFY_TIMEOUT_SECONDS",
+            "FEISHU_NOTIFY_TIMEOUT_SECONDS",
+        ),
+        description="发卡片 HTTP 超时（秒），防飞书抖动拖住进程。",
+    )
+
     @property
     def data_dir(self) -> Path:
         return self.project_root / self.data_subdir
