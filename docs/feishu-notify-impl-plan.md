@@ -110,6 +110,7 @@
 **涉及文件**：
 - **改** `src/xhs_poster/cli.py`
 - **改** `deploy/README.md`
+- **改** `.env.example`（补飞书可选配置注释块，与 deploy 文档同步）
 - **改** `docs/refactor-plan.md`（决策记录补一条反转说明）
 - **改** `memory/refactor-v2.md`（记录告警决策反转 + 本特性完成）
 - **可选新增** `tests/test_cli_notify.py`
@@ -129,11 +130,13 @@
 
 2. **`deploy/README.md`**：加「飞书通知（可选）」一节——`.env` 配 `FEISHU_WEBHOOK_URL`（被现有 `EnvironmentFile=` 自动加载，**无需改 service unit**）+ 可选 `FEISHU_WEBHOOK_SECRET`/`FEISHU_NOTIFY_LABEL`；VPS 需出网到 `open.feishu.cn:443`；附「进阶：systemd `OnFailure=` 兜底进程暴毙」一段（标为后续可选，本轮不做代码）。
 
-3. **`docs/refactor-plan.md`**：决策记录处补一行——「飞书主动告警（2026-06）反转 M8『不做主动告警』，详见 `docs/feishu-notify-design.md`」。
+3. **`.env.example`**：在 LLM 配置块之后补一段注释化的「飞书通知（可选）」——`FEISHU_WEBHOOK_URL`（必填才启用）、可选 `FEISHU_WEBHOOK_SECRET` / `FEISHU_NOTIFY_LABEL` / `FEISHU_NOTIFY_EVENTS` / `FEISHU_NOTIFY_TIMEOUT_SECONDS`，全部以 `#` 注释、不影响默认（不配=NullNotifier）。与 `deploy/README.md` 那节保持口径一致。
 
-4. **`memory/refactor-v2.md`**：补一句记录该反转 + 飞书特性已落地，并 `[[link]]` 到设计稿/本计划（保持记忆与现状一致）。
+4. **`docs/refactor-plan.md`**：决策记录处补一行——「飞书主动告警（2026-06）反转 M8『不做主动告警』，详见 `docs/feishu-notify-design.md`」。
 
-5. **可选 `tests/test_cli_notify.py`**：monkeypatch `cli.build_notifier` 返回一个 recorder notifier，用 Typer `CliRunner` 跑命令，断言成功路径发 `publish_summary`/`stage_done`、失败路径发 `error`，且**退出码与未接通知时一致**（仿 `test_run_publish_plan_exit_code.py`，不真发笔记、不打真网络）。
+5. **`memory/refactor-v2.md`**：补一句记录该反转 + 飞书特性已落地，并 `[[link]]` 到设计稿/本计划（保持记忆与现状一致）。
+
+6. **可选 `tests/test_cli_notify.py`**：monkeypatch `cli.build_notifier` 返回一个 recorder notifier，用 Typer `CliRunner` 跑命令，断言成功路径发 `publish_summary`/`stage_done`、失败路径发 `error`，且**退出码与未接通知时一致**（仿 `test_run_publish_plan_exit_code.py`，不真发笔记、不打真网络）。
 
 **验收**（新 session 可独立执行）：
 - `uv run python -m compileall src` 绿；`uv run ruff check src tests` 过；`uv run pyright src/xhs_poster/cli.py` 零新增；`uv run pytest -q` 绿。
