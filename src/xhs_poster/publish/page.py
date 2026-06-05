@@ -20,7 +20,7 @@ class PublishPage:
 
     def wait_until_ready(self) -> None:
         self.page.wait_for_url("**/app-note/publish**", timeout=20_000)
-        self.page.wait_for_load_state("domcontentloaded")
+        self.page.wait_for_load_state("domcontentloaded", timeout=15_000)
         # 发布页是 SPA，domcontentloaded 后仍在水合；用网络空闲取代固定 2s 保险等待。
         try:
             self.page.wait_for_load_state("networkidle", timeout=8_000)
@@ -668,26 +668,52 @@ class PublishPage:
 
         raise RuntimeError(str(last_error) if last_error else f"商品 {product_id} 绑定失败")
 
+    def _handle_publish_settings_panel(self) -> bool:
+        # 部分商品点击发布后会出现发布设置中间面板，需在面板内再次点击发布才能真正提交。
+        # 等待最多 3s，判断是跳转成功（不处理）还是面板出现（再次点击发布）。
+        deadline = time.monotonic() + 3
+        while time.monotonic() < deadline:
+            if "/app-note/publish-success" in self.page.url:
+                return False
+            has_panel = self.page.evaluate(
+                "() => ['\u53d1\u5e03\u8bbe\u7f6e', '\u67e5\u770b\u53d1\u5e03\u8ba1\u5212', '\u5b9a\u65f6\u53d1\u5e03\u6b21\u6570'].some("
+                "    t => document.body.innerText.includes(t))"
+            )
+            if has_panel:
+                break
+            self.page.wait_for_timeout(300)
+        else:
+            return False
+
+        # 面板出现：点击面板底部的发布按鈕（取最后一个可见的 exact=发布元素）
+        buttons = self.page.get_by_text("\u53d1\u5e03", exact=True).all()
+        for btn in reversed(buttons):
+            if locator_is_visible(btn):
+                btn.click()
+                return True
+        return False
+
     def click_publish(self) -> None:
-        publish_button = self.page.get_by_text("发布", exact=True).first
+        publish_button = self.page.get_by_text("\u53d1\u5e03", exact=True).first
         if not locator_is_visible(publish_button):
-            raise RuntimeError("发布页未找到“发布”按钮。")
+            raise RuntimeError("\u53d1\u5e03\u9875\u672a\u627e\u5230\u201c\u53d1\u5e03\u201d\u6309\u9215\u3002")
         publish_button.click()
+        self._handle_publish_settings_panel()
 
     def verify_success(self, timeout_ms: int = 15_000) -> dict:
         url_before = self.page.url
         try:
-            self.page.wait_for_url("**/app-note/note-list**", timeout=timeout_ms)
+            self.page.wait_for_url("**/app-note/publish-success**", timeout=timeout_ms)
         except Error:
             pass
 
-        # 等跳转后的列表页基本渲染完再读 body 判定成功，取代固定 2s。
+        # 等跳转后的页面基本渲染完再读 body 判定成功，取代固定 2s。
         try:
             self.page.wait_for_load_state("networkidle", timeout=5_000)
         except Error:
             pass
         body_text = self.page.locator("body").inner_text(timeout=3_000)
-        success_markers = ["发布成功", "笔记管理", "笔记列表", "发布完成"]
+        success_markers = ["\u53d1\u5e03\u6210\u529f", "\u7b14\u8bb0\u7ba1\u7406", "\u7b14\u8bb0\u5217\u8868", "\u53d1\u5e03\u5b8c\u6210"]
         success_signals = [
             marker for marker in success_markers if marker in body_text or marker in self.page.url
         ]
@@ -696,7 +722,7 @@ class PublishPage:
             "url_after": self.page.url,
             "title_after": self.page.title(),
             "success_signals": success_signals,
-            "success": "/app-note/note-list" in self.page.url or bool(success_signals),
+            "success": "/app-note/publish-success" in self.page.url or "/app-note/note-list" in self.page.url or bool(success_signals),
         }
 
     def screenshot_on_failure(self, path: str) -> None:
