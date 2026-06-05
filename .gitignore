@@ -234,3 +234,4 @@ references/
 .codex/skills/.system/**
 !.codex/prompts/
 !.codex/prompts/**
+.codegraph/
