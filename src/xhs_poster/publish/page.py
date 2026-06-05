@@ -676,7 +676,7 @@ class PublishPage:
             if "/app-note/publish-success" in self.page.url:
                 return False
             has_panel = self.page.evaluate(
-                "() => ['\u53d1\u5e03\u8bbe\u7f6e', '\u67e5\u770b\u53d1\u5e03\u8ba1\u5212', '\u5b9a\u65f6\u53d1\u5e03\u6b21\u6570'].some("
+                "() => ['发布设置', '查看发布计划', '定时发布次数'].some("
                 "    t => document.body.innerText.includes(t))"
             )
             if has_panel:
@@ -685,8 +685,8 @@ class PublishPage:
         else:
             return False
 
-        # 面板出现：点击面板底部的发布按鈕（取最后一个可见的 exact=发布元素）
-        buttons = self.page.get_by_text("\u53d1\u5e03", exact=True).all()
+        # 面板出现：点击面板底部的发布按钮（取最后一个可见的 exact=发布元素）
+        buttons = self.page.get_by_text("发布", exact=True).all()
         for btn in reversed(buttons):
             if locator_is_visible(btn):
                 btn.click()
@@ -694,9 +694,9 @@ class PublishPage:
         return False
 
     def click_publish(self) -> None:
-        publish_button = self.page.get_by_text("\u53d1\u5e03", exact=True).first
+        publish_button = self.page.get_by_text("发布", exact=True).first
         if not locator_is_visible(publish_button):
-            raise RuntimeError("\u53d1\u5e03\u9875\u672a\u627e\u5230\u201c\u53d1\u5e03\u201d\u6309\u9215\u3002")
+            raise RuntimeError("发布页未找到“发布”按钮。")
         publish_button.click()
         self._handle_publish_settings_panel()
 
@@ -713,7 +713,7 @@ class PublishPage:
         except Error:
             pass
         body_text = self.page.locator("body").inner_text(timeout=3_000)
-        success_markers = ["\u53d1\u5e03\u6210\u529f", "\u7b14\u8bb0\u7ba1\u7406", "\u7b14\u8bb0\u5217\u8868", "\u53d1\u5e03\u5b8c\u6210"]
+        success_markers = ["发布成功", "笔记管理", "笔记列表", "发布完成"]
         success_signals = [
             marker for marker in success_markers if marker in body_text or marker in self.page.url
         ]
