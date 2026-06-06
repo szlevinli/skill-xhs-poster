@@ -64,13 +64,15 @@ mkdir -p ~/.config/systemd/user
 cp deploy/xhs-*.service deploy/xhs-*.timer ~/.config/systemd/user/
 ```
 
-**编辑 4 个文件，替换占位符**（`~/.config/systemd/user/` 下）：
+**编辑 5 个文件，替换占位符**（`~/.config/systemd/user/` 下）：
 
-- `xhs-prepare.service` / `xhs-publish.service`：
+- `xhs-prepare.service` / `xhs-publish.service` / `xhs-notify-failure@.service`：
   - `%h/xhs-poster` → 仓库实际路径（在 home 下保持默认即可；否则写绝对路径，两处 `WorkingDirectory` 与 `EnvironmentFile`）
   - `%h/.local/bin/uv` → 第 1 步 `which uv` 的实际路径（所有 `ExecStart` 行）
 - `xhs-prepare.timer`：`<HH:MM>` → 准备批钟点，如 `03:00`
 - `xhs-publish.timer`：两行 `<HH:MM>` → 两个黄金时段，如 `12:30` 和 `20:30`
+
+> `xhs-notify-failure@.service` 是模板单元（带 `@`），无需 enable、无 timer——由两个主单元的 `OnFailure=` 在它们异常退出时自动实例化拉起，只需替换上面两个占位符即可。
 
 > `OnCalendar` 还支持星期/日期等更复杂表达，详见 `man systemd.time`；`systemd-analyze calendar "12:30"` 可预览下次触发时间。
 
@@ -143,6 +145,12 @@ systemctl --user disable --now xhs-prepare.timer xhs-publish.timer   # 停用
 >
 > **失败隔离**：通知是副信道，发送失败（网络不通 / 4xx / 5xx / 超时）只在 stderr（journal）留一行日志，**绝不改变命令退出码或发布结果**。
 
-**进阶（可选，本轮未做代码）：systemd `OnFailure=` 兜底进程暴毙**
+**systemd `OnFailure=` 兜底进程暴毙（已内置）**
 
-应用层通知靠 Python 在进程内发卡，抓不到硬崩溃（OOM、SIGKILL、解释器在发卡前就挂）。这类「进程暴毙」需 systemd 层兜底：给 service 加 `OnFailure=` 指向一个发飞书的 oneshot unit。两层互补——应用层报业务结果，systemd 层报进程非零退出/暴毙。本仓库暂未内置该 unit，需要时另开小任务实现。
+应用层通知靠 Python 在进程内发卡，抓不到硬崩溃（OOM、SIGKILL、被 `RuntimeMaxSec` 超时杀、解释器在发卡前就挂）。这类「进程暴毙」由 systemd 层兜底：两个主单元都带 `OnFailure=xhs-notify-failure@%n.service`，进 failed 态时自动拉起 `xhs-notify-failure@.service` 发一条飞书 error 卡。两层互补——应用层报业务结果，systemd 层报进程暴毙。
+
+配套的进程保护（两个主单元均已设）：
+
+- `RuntimeMaxSec=3600`：整批硬墙，超 1 小时 systemd 强杀。根治线上出现过的「publish 卡死 11 小时、把第二个黄金时段也堵掉」。publish 内还有**单篇看门狗**（`PUBLISH_ITEM_TIMEOUT_SECONDS`，默认 240s）：单篇超时即弃该篇、重建会话继续，正常整批根本碰不到 1 小时墙。
+- `SuccessExitStatus=1 2`（publish）/ `SuccessExitStatus=1`（prepare）：业务失败（exit 1/2，已自行发飞书摘要）不算 systemd 失败，避免与应用层通知重复、避免误触发 `OnFailure`。只有被杀/超时/崩溃才进 failed 态、才补发暴毙告警。
+- `TimeoutStopSec=30` + `KillMode=control-group`：强杀时连同 chromium 子进程树一起收尾，30s 内不退再 SIGKILL，不留僵尸浏览器。

@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import json
 import random
+import signal
+import threading
 import time
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -63,6 +65,42 @@ def _step(name: str, steps: list[dict], *, verbose: bool) -> Iterator[None]:
         elapsed_ms = int((time.monotonic() - start) * 1000)
         steps.append({"step": name, "status": status, "elapsed_ms": elapsed_ms})
         log_step(f"[publish] {name} {status} {elapsed_ms}ms", verbose=verbose)
+
+
+class PublishItemTimeout(Exception):
+    """单篇发布触发硬超时（看门狗强制中止），区别于普通单篇失败。"""
+
+
+@contextmanager
+def _item_deadline(seconds: float) -> Iterator[None]:
+    """给一段发布操作套硬超时（SIGALRM 看门狗）：超过 ``seconds`` 抛 ``PublishItemTimeout``。
+
+    存在的意义：Playwright sync 调用各自有默认超时，但浏览器被 OOM 杀掉后，下一次 sync 调用会卡在
+    死掉的 CDP 管道上**永久阻塞**（线上实测可达数小时），任何 per-call timeout 都救不了。SIGALRM 在
+    C 层 read 上以 EINTR 打断阻塞调用，是唯一可靠的兜底。
+
+    用 ``setitimer`` 设初始 + 5s 重复触发：首次打断后异常会沿 ``publish_one`` 的 finally（``popup.close`` /
+    ``tracing.stop``）回溯，而这些清理在死浏览器上同样会再次永久阻塞——重复触发确保每次阻塞都被打断，
+    直到异常冒出函数体。仅在主线程可用（CLI 发布走主线程）；非主线程或无 SIGALRM 的平台退化为无超时。
+    """
+    if (
+        seconds <= 0
+        or not hasattr(signal, "SIGALRM")
+        or threading.current_thread() is not threading.main_thread()
+    ):
+        yield
+        return
+
+    def _handler(_signum: int, _frame: object) -> None:
+        raise PublishItemTimeout(f"单篇发布超过 {seconds:.0f}s 硬超时，已强制中止该篇")
+
+    previous = signal.signal(signal.SIGALRM, _handler)
+    signal.setitimer(signal.ITIMER_REAL, seconds, 5.0)
+    try:
+        yield
+    finally:
+        signal.setitimer(signal.ITIMER_REAL, 0.0)
+        signal.signal(signal.SIGALRM, previous)
 
 
 class PublishSession:
@@ -171,6 +209,13 @@ class PublishSession:
         if self.list_page_is_healthy():
             return
         log_summary("列表页异常，重建会话以自愈后继续发布")
+        self._close_context()
+        self._open_context()
+
+    def force_rebuild(self) -> None:
+        """无条件重建会话：单篇硬超时后浏览器状态未知（可能已被 OOM 杀掉/卡死），
+        不能依赖 ``ensure_list_page_healthy`` 的健康探测（探测本身会在死浏览器上再次卡住）。
+        """
         self._close_context()
         self._open_context()
 
@@ -360,11 +405,45 @@ def run_publish_plan(
                     session.maybe_recycle()
                     session.ensure_list_page_healthy()
                     _sleep_interval(settings)
-                try:
-                    execution_result = session.publish_one(
-                        product_id=item.product_id,
-                        angle=item.angle,
+                def _record_failure(error: str) -> None:
+                    item.status = "failed"
+                    item.error = error
+                    append_record(
+                        settings,
+                        record_date=current_date,
+                        record=PublishRecord(
+                            attempted_at=datetime.now().isoformat(),
+                            product_id=item.product_id,
+                            product_name=item.product_name,
+                            angle=item.angle,
+                            angle_name=item.angle_name,
+                            title=item.title,
+                            topic_keywords=item.topic_keywords,
+                            status="failed",
+                            dedupe_key=f"{current_date}:{item.product_id}:{item.angle}",
+                            error=error,
+                        ),
                     )
+                    save_publish_plan(settings, plan)
+                    results.append(
+                        PublishRunItemResult(
+                            product_id=item.product_id,
+                            product_name=item.product_name,
+                            angle=item.angle,
+                            angle_name=item.angle_name,
+                            status="failed",
+                            error=error,
+                        )
+                    )
+
+                try:
+                    # 单篇硬超时看门狗：超时即抛 PublishItemTimeout，避免单篇卡死（典型为浏览器被 OOM
+                    # 杀掉后 sync 调用永久阻塞）把整批拖成数小时僵尸。
+                    with _item_deadline(settings.publish_item_timeout_seconds):
+                        execution_result = session.publish_one(
+                            product_id=item.product_id,
+                            angle=item.angle,
+                        )
                     publish_succeeded = bool(execution_result.publish_result.get("success"))
                     if publish_succeeded:
                         item.status = "published"
@@ -385,36 +464,21 @@ def run_publish_plan(
                             error=None if publish_succeeded else item.error,
                         )
                     )
+                except PublishItemTimeout as exc:
+                    # 超时后浏览器状态未知（可能已 OOM/卡死），强制重建会话再继续下一篇；
+                    # 不走 detect_login_lost（它会读列表页，在死浏览器上同样会卡住）。
+                    log_summary(str(exc))
+                    _record_failure(str(exc))
+                    try:
+                        with _item_deadline(settings.publish_item_timeout_seconds):
+                            session.force_rebuild()
+                    except PublishItemTimeout:
+                        # 连重建都卡死说明环境已不可用，整批中止（冒泡到 cli → exit 1）；
+                        # systemd 的 RuntimeMaxSec + OnFailure 是最后兜底。
+                        log_summary("单篇超时后重建会话仍卡住，中止整批发布")
+                        raise
                 except Exception as exc:
-                    item.status = "failed"
-                    item.error = str(exc)
-                    append_record(
-                        settings,
-                        record_date=current_date,
-                        record=PublishRecord(
-                            attempted_at=datetime.now().isoformat(),
-                            product_id=item.product_id,
-                            product_name=item.product_name,
-                            angle=item.angle,
-                            angle_name=item.angle_name,
-                            title=item.title,
-                            topic_keywords=item.topic_keywords,
-                            status="failed",
-                            dedupe_key=f"{current_date}:{item.product_id}:{item.angle}",
-                            error=str(exc),
-                        ),
-                    )
-                    save_publish_plan(settings, plan)
-                    results.append(
-                        PublishRunItemResult(
-                            product_id=item.product_id,
-                            product_name=item.product_name,
-                            angle=item.angle,
-                            angle_name=item.angle_name,
-                            status="failed",
-                            error=str(exc),
-                        )
-                    )
+                    _record_failure(str(exc))
                     # 区分"掉登录"与"普通单篇失败"：掉登录是全局前提崩了，继续发只会篇篇失败
                     # 且在小红书侧刷异常行为——立刻整批中止（冒泡到 cli → exit 2）。已发成功篇不回滚，
                     # plan/records 保持续传可恢复态。普通失败则不中止，下一篇照常尝试。

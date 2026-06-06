@@ -252,6 +252,28 @@ def publish_command(
     raise typer.Exit(code=1)
 
 
+@app.command(
+    "notify-failure",
+    hidden=True,
+    help="内部命令：供 systemd OnFailure 调用，发送一条飞书告警，覆盖进程被超时/OOM/信号杀掉、Python 自身来不及发通知的盲区。",
+)
+def notify_failure_command(
+    unit: Annotated[str, typer.Option("--unit", help="触发告警的 systemd unit 名")] = "unknown",
+    result: Annotated[
+        str | None, typer.Option("--result", help="systemd $SERVICE_RESULT，如 timeout / signal / oom-kill")
+    ] = None,
+) -> None:
+    notifier = build_notifier(Settings())
+    reason = f"systemd 判定异常退出（result={result or '未知'}）" if result else "systemd 判定异常退出"
+    message = (
+        f"{reason}；通常是超时被 RuntimeMaxSec 杀、被 OOM 杀或崩溃。"
+        f"请检查 journalctl --user -u {unit}"
+    )
+    notifier.send(error_event(unit, message, exit_code=-1))
+    # 通知器本身永不抛（失败隔离）；此命令始终 0 退出，避免拖垮 OnFailure 单元。
+    raise typer.Exit(code=0)
+
+
 app.add_typer(auth_app, name="auth")
 app.add_typer(login_app, name="login")
 

@@ -125,6 +125,18 @@ class Settings(BaseSettings):
         ),
         description="整批发布时每篇之间随机间隔的上限（秒），反检测用；若 min>max 则 clamp 到 min。",
     )
+    publish_item_timeout_seconds: float = Field(
+        default=240.0,
+        validation_alias=AliasChoices(
+            "XHS_POSTER_PUBLISH_ITEM_TIMEOUT_SECONDS",
+            "PUBLISH_ITEM_TIMEOUT_SECONDS",
+        ),
+        description=(
+            "单篇发布的硬超时（秒）。超时即强制中止该篇、重建会话后继续下一篇，"
+            "防止单篇卡死拖垮整批——典型场景：浏览器被 OOM 杀掉后 Playwright sync 调用"
+            "在死掉的 CDP 管道上永久阻塞。<=0 关闭（不建议）。仅在主线程生效（SIGALRM）。"
+        ),
+    )
     feishu_webhook_url: str | None = Field(
         default=None,
         validation_alias=AliasChoices(

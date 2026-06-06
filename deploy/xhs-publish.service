@@ -5,6 +5,9 @@
 #   %h/.local/bin/uv   → `which uv` 的实际绝对路径
 [Unit]
 Description=xhs-poster 发布批：发布当日剩余可发笔记
+# 进程异常退出（被 RuntimeMaxSec 杀 / 被 OOM 杀 / 崩溃）时发飞书告警。
+# Python 自身只能在"正常结束"时发通知，被杀时来不及——靠 OnFailure 补这个盲区。
+OnFailure=xhs-notify-failure@%n.service
 
 [Service]
 Type=oneshot
@@ -13,3 +16,12 @@ EnvironmentFile=%h/xhs-poster/.env
 ExecStart=%h/.local/bin/uv run xhs-poster publish --count 20
 # 故意不设 Restart=：publish 退出码 0=≥1篇成功 / 1=全失败 / 2=掉登录。
 # 掉登录时反复重试只会在小红书侧刷异常行为，等下次 timer 即可（掉登录需人工重新导入 auth-state）。
+# 退出码 1/2 是 publish 的正常业务结果（已自行发飞书摘要），不算 systemd 失败，否则会和 Python
+# 通知重复、且误触发 OnFailure。只有被杀/超时/崩溃才进 failed 态、才走 OnFailure。
+SuccessExitStatus=1 2
+# 整批硬墙：单篇看门狗已把每篇限到 PUBLISH_ITEM_TIMEOUT_SECONDS（默认 240s），正常整批 20 篇约
+# 30 分钟。1 小时是"整体已失控"的兜底，超时 systemd 强杀，杜绝出现过的 11 小时僵尸进程。
+RuntimeMaxSec=3600
+# 强杀时给 cgroup（含 chromium 子进程树）30s 收尾，超时再 SIGKILL。
+TimeoutStopSec=30
+KillMode=control-group

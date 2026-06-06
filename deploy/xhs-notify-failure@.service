@@ -1,0 +1,18 @@
+# 异常退出飞书告警（模板单元）：由 xhs-prepare.service / xhs-publish.service 的 OnFailure 拉起。
+# 实例名 %i 即触发告警的 unit 名（OnFailure=xhs-notify-failure@%n.service 传入）。
+# 用户级 unit：装到 ~/.config/systemd/user/，用 `systemctl --user` 管理。
+# 安装前需替换占位符：
+#   %h/xhs-poster      → 你的实际仓库目录（若不在 home 下，改成绝对路径）
+#   %h/.local/bin/uv   → `which uv` 的实际绝对路径
+#
+# 覆盖的盲区：主批进程被 RuntimeMaxSec 超时杀、被内核 OOM 杀、或崩溃时，Python 来不及发通知，
+# 飞书会完全静默——只能靠 systemd 在主单元进入 failed 态后拉起本单元补发告警。
+# 注意：主单元设了 SuccessExitStatus，业务失败（exit 1/2）不算 failed，不会重复触发本告警。
+[Unit]
+Description=xhs-poster 异常退出飞书告警（%i）
+
+[Service]
+Type=oneshot
+WorkingDirectory=%h/xhs-poster
+EnvironmentFile=%h/xhs-poster/.env
+ExecStart=%h/.local/bin/uv run xhs-poster notify-failure --unit %i
