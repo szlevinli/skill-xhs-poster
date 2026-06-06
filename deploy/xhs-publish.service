@@ -7,7 +7,7 @@
 Description=xhs-poster 发布批：发布当日剩余可发笔记
 # 进程异常退出（被 RuntimeMaxSec 杀 / 被 OOM 杀 / 崩溃）时发飞书告警。
 # Python 自身只能在"正常结束"时发通知，被杀时来不及——靠 OnFailure 补这个盲区。
-OnFailure=xhs-notify-failure@%n.service
+OnFailure=xhs-notify-failure@%N.service
 
 [Service]
 Type=oneshot

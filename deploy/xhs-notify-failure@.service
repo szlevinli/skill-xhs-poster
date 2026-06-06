@@ -1,5 +1,5 @@
 # 异常退出飞书告警（模板单元）：由 xhs-prepare.service / xhs-publish.service 的 OnFailure 拉起。
-# 实例名 %i 即触发告警的 unit 名（OnFailure=xhs-notify-failure@%n.service 传入）。
+# 实例名 %i 即触发告警的 unit 名（OnFailure=xhs-notify-failure@%N.service 传入，%N 不含 .service 后缀）。
 # 用户级 unit：装到 ~/.config/systemd/user/，用 `systemctl --user` 管理。
 # 安装前需替换占位符：
 #   %h/xhs-poster      → 你的实际仓库目录（若不在 home 下，改成绝对路径）

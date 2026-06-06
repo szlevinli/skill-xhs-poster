@@ -147,7 +147,7 @@ systemctl --user disable --now xhs-prepare.timer xhs-publish.timer   # 停用
 
 **systemd `OnFailure=` 兜底进程暴毙（已内置）**
 
-应用层通知靠 Python 在进程内发卡，抓不到硬崩溃（OOM、SIGKILL、被 `RuntimeMaxSec` 超时杀、解释器在发卡前就挂）。这类「进程暴毙」由 systemd 层兜底：两个主单元都带 `OnFailure=xhs-notify-failure@%n.service`，进 failed 态时自动拉起 `xhs-notify-failure@.service` 发一条飞书 error 卡。两层互补——应用层报业务结果，systemd 层报进程暴毙。
+应用层通知靠 Python 在进程内发卡，抓不到硬崩溃（OOM、SIGKILL、被 `RuntimeMaxSec` 超时杀、解释器在发卡前就挂）。这类「进程暴毙」由 systemd 层兜底：两个主单元都带 `OnFailure=xhs-notify-failure@%N.service`（`%N`＝不含 `.service` 后缀的单元名），进 failed 态时自动拉起 `xhs-notify-failure@.service` 发一条飞书 error 卡。两层互补——应用层报业务结果，systemd 层报进程暴毙。
 
 配套的进程保护（两个主单元均已设）：
 
