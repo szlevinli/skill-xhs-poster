@@ -65,15 +65,12 @@ class _FakeSession:
     def __exit__(self, *_exc) -> None:
         return None
 
-    def maybe_recycle(self) -> None:
-        return None
-
-    def ensure_list_page_healthy(self) -> None:
+    def ensure_ready_for_next(self) -> None:
         if self._unhealthy:
             type(self).open_context_calls += 1
             self._unhealthy = False
 
-    def detect_login_lost(self) -> bool:
+    def detect_login_lost_bounded(self) -> bool:
         return self._logged_out
 
     def login_lost_error(self) -> LoginRequiredError:
@@ -86,7 +83,8 @@ class _FakeSession:
                 self._logged_out = True
             if self.unhealthy_after == product_id:
                 self._unhealthy = True
-            raise RuntimeError(f"boom {product_id}")
+            # 真实的 publish_one 失败时已自行记账+留证，统一抛 PublishItemError。
+            raise session_mod.PublishItemError(f"boom {product_id}")
         return PublishExecutionResult(
             product_id=product_id,
             product_name=product_id,

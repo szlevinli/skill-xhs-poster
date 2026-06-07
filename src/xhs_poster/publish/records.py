@@ -56,30 +56,36 @@ def build_evidence_dir(
     return evidence_dir
 
 
-def save_publish_evidence(
-    page,
+def save_steps_evidence(
     evidence_dir: Path,
     *,
-    steps: list[dict] | None = None,
+    steps: list[dict] | None,
+    meta: dict,
 ) -> dict:
-    """落盘单篇证据：截图、HTML，以及（给定时）逐步明细 steps.jsonl。
+    """落盘**内存现场**：逐步明细 steps.jsonl + 概要 meta.json。
 
-    trace.zip 由会话侧 ``context.tracing.stop(path=...)`` 直接写入同目录，不在此处理。
+    只写内存里已有的数据，完全不碰浏览器——所以无论页面是否卡死/崩溃都能成功落盘，
+    是「任何失败都必须留现场」的底线保证。页面截图/HTML 由 ``capture_page_evidence`` 另行尽力采集。
+    """
+    artifacts: dict = {"dir": str(evidence_dir)}
+    steps_path = evidence_dir / "steps.jsonl"
+    steps_path.write_text(
+        "".join(json.dumps(step, ensure_ascii=False) + "\n" for step in (steps or [])),
+        encoding="utf-8",
+    )
+    artifacts["steps"] = str(steps_path)
+    meta_path = evidence_dir / "meta.json"
+    meta_path.write_text(json.dumps(meta, ensure_ascii=False, indent=2), encoding="utf-8")
+    artifacts["meta"] = str(meta_path)
+    return artifacts
+
+
+def capture_page_evidence(page, evidence_dir: Path) -> dict:
+    """采集**页面现场**：截图 + HTML。尽力而为——页面卡死/崩溃时可能抛错或被外层看门狗打断，
+    调用方需用短超时包裹并隔离异常。trace.zip 由会话侧 ``context.tracing.stop(path=...)`` 另写同目录。
     """
     screenshot_path = evidence_dir / "screenshot.png"
     html_path = evidence_dir / "page.html"
     page.screenshot_on_failure(str(screenshot_path))
     html_path.write_text(page.page.content(), encoding="utf-8")
-    artifacts = {
-        "dir": str(evidence_dir),
-        "screenshot": str(screenshot_path),
-        "html": str(html_path),
-    }
-    if steps is not None:
-        steps_path = evidence_dir / "steps.jsonl"
-        steps_path.write_text(
-            "".join(json.dumps(step, ensure_ascii=False) + "\n" for step in steps),
-            encoding="utf-8",
-        )
-        artifacts["steps"] = str(steps_path)
-    return artifacts
+    return {"screenshot": str(screenshot_path), "html": str(html_path)}

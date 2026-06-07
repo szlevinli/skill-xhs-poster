@@ -9,12 +9,12 @@ from typer.testing import CliRunner
 
 import xhs_poster.cli as cli
 from xhs_poster.models import PublishRunResult
-from xhs_poster.publish.records import save_publish_evidence
+from xhs_poster.publish.records import capture_page_evidence, save_steps_evidence
 from xhs_poster.publish.session import _step
 
 
 class _FakePage:
-    """最小桩：满足 save_publish_evidence 对 page 的两个调用点。"""
+    """最小桩：满足 capture_page_evidence 对 page 的两个调用点。"""
 
     def __init__(self) -> None:
         self.page = self
@@ -47,31 +47,49 @@ class StepTimerTests(unittest.TestCase):
         self.assertEqual(steps[0]["step"], "verify_success")
 
 
-class SaveEvidenceTests(unittest.TestCase):
-    def test_writes_steps_jsonl(self) -> None:
+class SaveStepsEvidenceTests(unittest.TestCase):
+    """内存现场（steps.jsonl + meta.json）必落盘——不依赖浏览器，任何失败都能留痕。"""
+
+    def test_writes_steps_and_meta(self) -> None:
         steps = [
             {"step": "upload_images", "status": "success", "elapsed_ms": 12},
             {"step": "verify_success", "status": "failed", "elapsed_ms": 34},
         ]
+        meta = {"product_id": "p1", "angle": 1, "succeeded": False, "reason": "boom"}
         with TemporaryDirectory() as tmp:
-            evidence_dir = Path(tmp) / "p1-0-120000"
+            evidence_dir = Path(tmp) / "p1-1-120000"
             evidence_dir.mkdir()
-            artifacts = save_publish_evidence(_FakePage(), evidence_dir, steps=steps)
+            artifacts = save_steps_evidence(evidence_dir, steps=steps, meta=meta)
 
-            self.assertTrue(Path(artifacts["screenshot"]).exists())
-            self.assertTrue(Path(artifacts["html"]).exists())
             steps_path = Path(artifacts["steps"])
             self.assertTrue(steps_path.exists())
             lines = steps_path.read_text(encoding="utf-8").splitlines()
             self.assertEqual([json.loads(line) for line in lines], steps)
 
-    def test_without_steps_omits_jsonl(self) -> None:
+            meta_path = Path(artifacts["meta"])
+            self.assertTrue(meta_path.exists())
+            self.assertEqual(json.loads(meta_path.read_text(encoding="utf-8")), meta)
+
+    def test_empty_steps_still_writes_jsonl(self) -> None:
         with TemporaryDirectory() as tmp:
             evidence_dir = Path(tmp) / "p1-0-120000"
             evidence_dir.mkdir()
-            artifacts = save_publish_evidence(_FakePage(), evidence_dir)
-            self.assertNotIn("steps", artifacts)
-            self.assertFalse((evidence_dir / "steps.jsonl").exists())
+            artifacts = save_steps_evidence(evidence_dir, steps=None, meta={"reason": "未打开弹窗"})
+            steps_path = Path(artifacts["steps"])
+            self.assertTrue(steps_path.exists())
+            self.assertEqual(steps_path.read_text(encoding="utf-8"), "")
+
+
+class CapturePageEvidenceTests(unittest.TestCase):
+    """页面现场（截图 + HTML）尽力而为。"""
+
+    def test_writes_screenshot_and_html(self) -> None:
+        with TemporaryDirectory() as tmp:
+            evidence_dir = Path(tmp) / "p1-0-120000"
+            evidence_dir.mkdir()
+            artifacts = capture_page_evidence(_FakePage(), evidence_dir)
+            self.assertTrue(Path(artifacts["screenshot"]).exists())
+            self.assertTrue(Path(artifacts["html"]).exists())
 
 
 class VerboseForwardingTests(unittest.TestCase):

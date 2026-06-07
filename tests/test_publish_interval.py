@@ -63,13 +63,10 @@ class _FakeSession:
     def __exit__(self, *_exc) -> None:
         return None
 
-    def maybe_recycle(self) -> None:
+    def ensure_ready_for_next(self) -> None:
         return None
 
-    def ensure_list_page_healthy(self) -> None:
-        return None
-
-    def detect_login_lost(self) -> bool:
+    def detect_login_lost_bounded(self) -> bool:
         return False
 
     def publish_one(self, *, product_id: str, angle: int) -> PublishExecutionResult:

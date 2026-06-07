@@ -48,7 +48,7 @@ from .plan import (
     resolve_publish_inputs,
     save_publish_plan,
 )
-from .records import append_record, build_evidence_dir, save_publish_evidence
+from .records import append_record, build_evidence_dir, capture_page_evidence, save_steps_evidence
 
 
 @contextmanager
@@ -68,34 +68,53 @@ def _step(name: str, steps: list[dict], *, verbose: bool) -> Iterator[None]:
 
 
 class PublishItemTimeout(Exception):
-    """单篇发布触发硬超时（看门狗强制中止），区别于普通单篇失败。"""
+    """某段发布操作触发硬超时（看门狗强制中止），区别于普通失败。"""
+
+
+class PublishItemError(Exception):
+    """单篇发布已失败**且已记账+留证**：编排层据此只更新计划/结果、不重复记账。
+
+    ``artifacts`` 携带本篇证据目录信息（供日志/排查）；``recorded`` 恒为真，提醒编排层不要再 append。
+    """
+
+    def __init__(self, message: str, *, artifacts: dict | None = None) -> None:
+        super().__init__(message)
+        self.artifacts = artifacts
+        self.recorded = True
+
+
+def _format_exc(exc: BaseException) -> str:
+    """异常压成单行原因串（带类型名），用于记账 error 字段与 meta.reason。"""
+    text = str(exc).strip()
+    return f"{type(exc).__name__}: {text}" if text else type(exc).__name__
+
+
+def _can_use_alarm() -> bool:
+    return hasattr(signal, "SIGALRM") and threading.current_thread() is threading.main_thread()
 
 
 @contextmanager
-def _item_deadline(seconds: float) -> Iterator[None]:
-    """给一段发布操作套硬超时（SIGALRM 看门狗）：超过 ``seconds`` 抛 ``PublishItemTimeout``。
+def _watchdog(seconds: float, message: str) -> Iterator[None]:
+    """给一段操作套**单次触发**的硬超时（SIGALRM）：超过 ``seconds`` 抛 ``PublishItemTimeout``。
 
     存在的意义：Playwright sync 调用各自有默认超时，但浏览器被 OOM 杀掉后，下一次 sync 调用会卡在
     死掉的 CDP 管道上**永久阻塞**（线上实测可达数小时），任何 per-call timeout 都救不了。SIGALRM 在
     C 层 read 上以 EINTR 打断阻塞调用，是唯一可靠的兜底。
 
-    用 ``setitimer`` 设初始 + 5s 重复触发：首次打断后异常会沿 ``publish_one`` 的 finally（``popup.close`` /
-    ``tracing.stop``）回溯，而这些清理在死浏览器上同样会再次永久阻塞——重复触发确保每次阻塞都被打断，
-    直到异常冒出函数体。仅在主线程可用（CLI 发布走主线程）；非主线程或无 SIGALRM 的平台退化为无超时。
+    **单次触发（无重复间隔）**：早先用重复触发是为了打断回溯路径上的清理，但那会把「失败后采集证据」
+    也一并打断、导致超时失败留不下现场。改为单次后，调用方必须把「证据采集 / 清理 / 重建」等各步**各自**
+    用独立的 ``_watchdog`` 串行包裹（彼此不嵌套），从而每步都有界、又互不打断。仅主线程可用；
+    非主线程或无 SIGALRM 的平台退化为无超时。
     """
-    if (
-        seconds <= 0
-        or not hasattr(signal, "SIGALRM")
-        or threading.current_thread() is not threading.main_thread()
-    ):
+    if seconds <= 0 or not _can_use_alarm():
         yield
         return
 
     def _handler(_signum: int, _frame: object) -> None:
-        raise PublishItemTimeout(f"单篇发布超过 {seconds:.0f}s 硬超时，已强制中止该篇")
+        raise PublishItemTimeout(message)
 
     previous = signal.signal(signal.SIGALRM, _handler)
-    signal.setitimer(signal.ITIMER_REAL, seconds, 5.0)
+    signal.setitimer(signal.ITIMER_REAL, seconds)
     try:
         yield
     finally:
@@ -158,17 +177,11 @@ class PublishSession:
                 self._context = None
                 self._list_page = None
 
-    def maybe_recycle(self) -> None:
-        recycle_every = self.settings.publish_session_recycle_every
-        if recycle_every > 0 and self._since_recycle >= recycle_every:
-            self._close_context()
-            self._open_context()
-
     def detect_login_lost(self) -> bool:
         """判断是否**确凿掉登录**（区别于普通单篇失败 / 页面崩溃）。
 
         只有列表页仍存活、却已被重定向到登录态以外（customer/login/非 ark 鉴权页）时返回 True。
-        页面已关闭/读取异常时返回 False——那是页面健康问题，交给 ``ensure_list_page_healthy`` 自愈，
+        页面已关闭/读取异常时返回 False——那是页面健康问题，交给 ``ensure_ready_for_next`` 自愈，
         不能误判成掉登录把整批中止。正常单篇失败时列表页仍停在 app-item/list，也返回 False。
         """
         if self._list_page is None:
@@ -201,23 +214,59 @@ class PublishSession:
         except Exception:
             return False
 
-    def ensure_list_page_healthy(self) -> None:
-        """进下一篇前自愈：列表页不健康（页面崩/跳走）就重建会话，避免一篇坏页拖垮整批。
-
-        与 ``maybe_recycle`` 正交——recycle 是"到点重建"，本方法是"坏了才重建"，两者幂等可共存。
+    def detect_login_lost_bounded(self) -> bool:
+        """带超时的掉登录探测：读列表页可能在卡死浏览器上阻塞，故套短看门狗；
+        探测超时/异常一律返回 False（不确定就**不**中止整批，宁可继续发到自然结束）。
         """
-        if self.list_page_is_healthy():
+        recovery = self.settings.publish_recovery_timeout_seconds
+        try:
+            with _watchdog(recovery, "掉登录探测超时"):
+                return self.detect_login_lost()
+        except Exception:
+            return False
+
+    def force_rebuild_bounded(self) -> bool:
+        """无条件重建会话，关闭与重开各套短看门狗，**绝不抛**。返回是否重建出可用列表页。
+
+        单篇失败后浏览器状态未知（可能已 OOM/卡死），不能依赖健康探测（探测本身会在死浏览器上卡住）。
+        即便重建失败也不抛——交给下一篇在自己的看门狗下快速失败并记账，绝不因重建失败中止整批。
+        """
+        recovery = self.settings.publish_recovery_timeout_seconds
+        try:
+            with _watchdog(recovery, "关闭会话超时"):
+                self._close_context()
+        except Exception as exc:
+            # 关闭卡住：丢弃引用，让 playwright 资源随进程回收，别拦住重开
+            log_summary(f"关闭会话异常（已跳过）：{_format_exc(exc)}")
+            self._context = None
+            self._list_page = None
+        try:
+            with _watchdog(recovery, "重建会话超时"):
+                self._open_context()
+            return True
+        except Exception as exc:
+            log_summary(f"重建会话失败（下一篇将重试）：{_format_exc(exc)}")
+            return False
+
+    def ensure_ready_for_next(self) -> None:
+        """进下一篇前确保会话可用：到点回收 / 列表页不健康都重建，全程有界、**绝不抛**。
+
+        与旧的 ``maybe_recycle`` + ``ensure_list_page_healthy`` 合一，且把健康探测也套了看门狗——
+        探测在死浏览器上会卡住，不能让"自愈"动作本身把整批拖死。
+        """
+        recycle_every = self.settings.publish_session_recycle_every
+        if recycle_every > 0 and self._since_recycle >= recycle_every:
+            self.force_rebuild_bounded()
             return
-        log_summary("列表页异常，重建会话以自愈后继续发布")
-        self._close_context()
-        self._open_context()
-
-    def force_rebuild(self) -> None:
-        """无条件重建会话：单篇硬超时后浏览器状态未知（可能已被 OOM 杀掉/卡死），
-        不能依赖 ``ensure_list_page_healthy`` 的健康探测（探测本身会在死浏览器上再次卡住）。
-        """
-        self._close_context()
-        self._open_context()
+        recovery = self.settings.publish_recovery_timeout_seconds
+        try:
+            with _watchdog(recovery, "列表页健康探测超时"):
+                healthy = self.list_page_is_healthy()
+        except Exception:
+            healthy = False
+        if not healthy:
+            log_summary("列表页异常，重建会话以自愈后继续发布")
+            self.force_rebuild_bounded()
 
     def publish_one(
         self,
@@ -250,26 +299,33 @@ class PublishSession:
         )
 
         record_angle = draft.angle if draft else angle
+        attempted_at = datetime.now().isoformat()
         steps: list[dict] = []
         evidence_dir: Path | None = None
-
-        def capture_evidence() -> dict:
-            nonlocal evidence_dir
-            evidence_dir = build_evidence_dir(
-                settings, record_date=publish_date, product_id=product.id, angle=record_angle
-            )
-            return save_publish_evidence(publish_page, evidence_dir, steps=steps)
+        popup = None
+        publish_page: PublishPage | None = None
+        publish_result: dict = {}
+        title_selector: str | None = None
+        content_selector: str | None = None
+        topic_results: list[dict] = []
+        product_binding: dict = {}
+        failure: Exception | None = None
+        recovery = settings.publish_recovery_timeout_seconds
 
         # trace 是 context 级，每篇 start/stop 一份；默认仅失败保留、verbose 全留，成功非 verbose 丢弃。
         tracing = self._context.tracing if self._context is not None else None
         if tracing is not None:
             tracing.start(screenshots=True, snapshots=True, sources=True)
 
-        popup = self._list_page.open_publish_popup(product.id)
-        publish_page = PublishPage(popup, settings)
-        self._since_recycle += 1
+        # 单篇硬超时只圈住「真正发布」这段（含打开弹窗——线上正是卡在这里）。证据采集/清理另起独立的
+        # 短看门狗串行兜底，这样即便发布段卡死，后续仍能在有界时间内留下现场并清理，不会被同一看门狗反复打断。
+        item_timeout = settings.publish_item_timeout_seconds
         try:
-            try:
+            with _watchdog(item_timeout, f"单篇发布超过 {item_timeout:.0f}s 硬超时，已强制中止该篇"):
+                with _step("open_publish_popup", steps, verbose=self.verbose):
+                    popup = self._list_page.open_publish_popup(product.id)
+                publish_page = PublishPage(popup, settings)
+                self._since_recycle += 1
                 with _step("upload_images", steps, verbose=self.verbose):
                     publish_page.upload_images(final_image_paths)
                 with _step("fill_title", steps, verbose=self.verbose):
@@ -284,63 +340,108 @@ class PublishSession:
                     publish_page.click_publish()
                 with _step("verify_success", steps, verbose=self.verbose):
                     publish_result = publish_page.verify_success()
-                artifacts = None
-                if not publish_result.get("success") or self.verbose:
-                    artifacts = capture_evidence()
-            except Exception as exc:
-                artifacts = capture_evidence()
-                raise RuntimeError(f"{exc} artifacts={json.dumps(artifacts, ensure_ascii=False)}") from exc
-        finally:
-            if tracing is not None:
+        except Exception as exc:
+            failure = exc
+
+        succeeded = failure is None and bool(publish_result.get("success"))
+        reason = (
+            None
+            if succeeded
+            else _format_exc(failure)
+            if failure is not None
+            else f"verify_success 未通过：{json.dumps(publish_result, ensure_ascii=False)}"
+        )
+
+        # 现场采集（失败 / 未成功 / verbose）：内存现场（steps + meta）**一定**落盘；
+        # 页面现场（截图 / HTML）尽力而为，套短看门狗，卡死也只记一行 error 不再阻塞。
+        artifacts: dict | None = None
+        if not succeeded or self.verbose:
+            evidence_dir = build_evidence_dir(
+                settings, record_date=publish_date, product_id=product.id, angle=record_angle
+            )
+            artifacts = save_steps_evidence(
+                evidence_dir,
+                steps=steps,
+                meta={
+                    "attempted_at": attempted_at,
+                    "product_id": product.id,
+                    "angle": record_angle,
+                    "succeeded": succeeded,
+                    "reason": reason,
+                    "failed_step": steps[-1]["step"] if (not succeeded and steps) else None,
+                },
+            )
+            if publish_page is None:
+                artifacts["page_evidence_error"] = "发布弹窗未打开，无页面可截图"
+            else:
                 try:
+                    with _watchdog(recovery, "页面证据采集超时"):
+                        artifacts.update(capture_page_evidence(publish_page, evidence_dir))
+                except Exception as cap_exc:
+                    artifacts["page_evidence_error"] = _format_exc(cap_exc)
+
+        # 清理：停 trace（落证据目录）、关弹窗，各自短看门狗、绝不抛。
+        if tracing is not None:
+            try:
+                with _watchdog(recovery, "停 trace 超时"):
                     if evidence_dir is not None:
                         tracing.stop(path=str(evidence_dir / "trace.zip"))
                     else:
                         tracing.stop()
-                except Exception:
-                    pass
-            if not popup.is_closed():
-                try:
-                    popup.close(run_before_unload=False)
-                except Exception:
-                    pass
+            except Exception:
+                pass
+        if popup is not None:
+            try:
+                with _watchdog(recovery, "关闭弹窗超时"):
+                    if not popup.is_closed():
+                        popup.close(run_before_unload=False)
+            except Exception:
+                pass
 
-        skipped_topics = extract_skipped_topics(topic_results)
+        # 记账：成败都写一条（失败带 reason + 证据）。这是唯一记账点，编排层不再重复 append。
+        log_path = append_record(
+            settings,
+            record_date=publish_date,
+            record=PublishRecord(
+                attempted_at=attempted_at,
+                product_id=product.id,
+                product_name=product.name,
+                angle=record_angle or 0,
+                angle_name=draft.angle_name if draft else None,
+                title=final_title,
+                topic_keywords=final_topics,
+                skipped_topics=extract_skipped_topics(topic_results),
+                status="success" if succeeded else "failed",
+                dedupe_key=f"{publish_date}:{product.id}:{record_angle or 0}",
+                error=reason,
+                publish_result=publish_result,
+                artifacts=artifacts,
+            ),
+        )
+
+        if not succeeded:
+            # 已记账 + 留证：抛 PublishItemError，编排层只更新计划/结果、**不**重复记账、**不**中止整批。
+            raise PublishItemError(reason or "发布失败", artifacts=artifacts)
+
+        assert title_selector is not None and content_selector is not None
         result = PublishExecutionResult(
             product_id=product.id,
             product_name=product.name,
             title=final_title,
             content=final_content,
             topic_keywords=final_topics,
-            angle=draft.angle if draft else angle,
+            angle=record_angle,
             angle_name=draft.angle_name if draft else None,
             image_paths=final_image_paths,
             title_selector=title_selector,
             content_selector=content_selector,
             topic_results=topic_results,
-            skipped_topics=skipped_topics,
+            skipped_topics=extract_skipped_topics(topic_results),
             product_binding=product_binding,
             publish_result=publish_result,
             artifacts=artifacts,
         )
-        result.log_path = append_record(
-            settings,
-            record_date=publish_date,
-            record=PublishRecord(
-                attempted_at=datetime.now().isoformat(),
-                product_id=result.product_id,
-                product_name=result.product_name,
-                angle=result.angle or 0,
-                angle_name=result.angle_name,
-                title=result.title,
-                topic_keywords=result.topic_keywords,
-                skipped_topics=result.skipped_topics,
-                status="success" if publish_result.get("success") else "failed",
-                dedupe_key=f"{publish_date}:{result.product_id}:{result.angle or 0}",
-                publish_result=result.publish_result,
-                artifacts=result.artifacts,
-            ),
-        )
+        result.log_path = log_path
         return result
 
 
@@ -402,12 +503,38 @@ def run_publish_plan(
         with PublishSession(settings, headless=headless, verbose=verbose) as session:
             for index, item in enumerate(pending_items):
                 if index > 0:
-                    session.maybe_recycle()
-                    session.ensure_list_page_healthy()
+                    # 进下一篇前确保会话可用（到点回收 / 坏页重建，全程有界、绝不抛），再插反检测间隔。
+                    session.ensure_ready_for_next()
                     _sleep_interval(settings)
-                def _record_failure(error: str) -> None:
-                    item.status = "failed"
-                    item.error = error
+                try:
+                    execution_result = session.publish_one(
+                        product_id=item.product_id,
+                        angle=item.angle,
+                    )
+                    # publish_one 只在成功时返回；失败一律抛 PublishItemError（已自行记账+留证）。
+                    item.status = "published"
+                    item.published_at = datetime.now().isoformat()
+                    item.error = None
+                    save_publish_plan(settings, plan)
+                    results.append(
+                        PublishRunItemResult(
+                            product_id=item.product_id,
+                            product_name=item.product_name,
+                            angle=item.angle,
+                            angle_name=item.angle_name,
+                            status="success",
+                            execution_result=execution_result,
+                            error=None,
+                        )
+                    )
+                    continue
+                except PublishItemError as exc:
+                    # 已在 publish_one 内记账 + 留证（含超时/崩溃/未通过）：这里只更新计划与结果，不重复 append。
+                    error = str(exc)
+                except Exception as exc:
+                    # 记账前就崩了（极少数，如 resolve 阶段 / 会话已不可用）：兜底补一条失败记录。
+                    error = _format_exc(exc)
+                    log_summary(f"[publish] 单篇异常（记账前，已兜底记录）：{error}")
                     append_record(
                         settings,
                         record_date=current_date,
@@ -424,67 +551,27 @@ def run_publish_plan(
                             error=error,
                         ),
                     )
-                    save_publish_plan(settings, plan)
-                    results.append(
-                        PublishRunItemResult(
-                            product_id=item.product_id,
-                            product_name=item.product_name,
-                            angle=item.angle,
-                            angle_name=item.angle_name,
-                            status="failed",
-                            error=error,
-                        )
-                    )
 
-                try:
-                    # 单篇硬超时看门狗：超时即抛 PublishItemTimeout，避免单篇卡死（典型为浏览器被 OOM
-                    # 杀掉后 sync 调用永久阻塞）把整批拖成数小时僵尸。
-                    with _item_deadline(settings.publish_item_timeout_seconds):
-                        execution_result = session.publish_one(
-                            product_id=item.product_id,
-                            angle=item.angle,
-                        )
-                    publish_succeeded = bool(execution_result.publish_result.get("success"))
-                    if publish_succeeded:
-                        item.status = "published"
-                        item.published_at = datetime.now().isoformat()
-                        item.error = None
-                    else:
-                        item.status = "failed"
-                        item.error = json.dumps(execution_result.publish_result, ensure_ascii=False)
-                    save_publish_plan(settings, plan)
-                    results.append(
-                        PublishRunItemResult(
-                            product_id=item.product_id,
-                            product_name=item.product_name,
-                            angle=item.angle,
-                            angle_name=item.angle_name,
-                            status="success" if publish_succeeded else "failed",
-                            execution_result=execution_result,
-                            error=None if publish_succeeded else item.error,
-                        )
+                # —— 失败收尾（两类失败共用）——
+                item.status = "failed"
+                item.error = error
+                save_publish_plan(settings, plan)
+                results.append(
+                    PublishRunItemResult(
+                        product_id=item.product_id,
+                        product_name=item.product_name,
+                        angle=item.angle,
+                        angle_name=item.angle_name,
+                        status="failed",
+                        error=error,
                     )
-                except PublishItemTimeout as exc:
-                    # 超时后浏览器状态未知（可能已 OOM/卡死），强制重建会话再继续下一篇；
-                    # 不走 detect_login_lost（它会读列表页，在死浏览器上同样会卡住）。
-                    log_summary(str(exc))
-                    _record_failure(str(exc))
-                    try:
-                        with _item_deadline(settings.publish_item_timeout_seconds):
-                            session.force_rebuild()
-                    except PublishItemTimeout:
-                        # 连重建都卡死说明环境已不可用，整批中止（冒泡到 cli → exit 1）；
-                        # systemd 的 TimeoutStartSec + OnFailure 是最后兜底。
-                        log_summary("单篇超时后重建会话仍卡住，中止整批发布")
-                        raise
-                except Exception as exc:
-                    _record_failure(str(exc))
-                    # 区分"掉登录"与"普通单篇失败"：掉登录是全局前提崩了，继续发只会篇篇失败
-                    # 且在小红书侧刷异常行为——立刻整批中止（冒泡到 cli → exit 2）。已发成功篇不回滚，
-                    # plan/records 保持续传可恢复态。普通失败则不中止，下一篇照常尝试。
-                    if session.detect_login_lost():
-                        log_summary("检测到商家端登录态失效，中止整批发布")
-                        raise session.login_lost_error() from exc
+                )
+                # 唯一允许中止整批的情形：**确凿**掉登录（带超时探测，测不出就当没掉、继续）。掉登录后
+                # 继续发只会篇篇失败、且在小红书侧刷异常行为。其余任何单篇失败都继续——绝不因一篇拖垮整批；
+                # 坏掉的会话由下一轮开头的 ensure_ready_for_next 重建。
+                if session.detect_login_lost_bounded():
+                    log_summary("检测到商家端登录态失效，中止整批发布")
+                    raise session.login_lost_error()
 
     success_count = sum(1 for result in results if result.status == "success")
     failed_count = len(results) - success_count

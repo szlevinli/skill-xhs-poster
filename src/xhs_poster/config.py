@@ -137,6 +137,18 @@ class Settings(BaseSettings):
             "在死掉的 CDP 管道上永久阻塞。<=0 关闭（不建议）。仅在主线程生效（SIGALRM）。"
         ),
     )
+    publish_recovery_timeout_seconds: float = Field(
+        default=30.0,
+        validation_alias=AliasChoices(
+            "XHS_POSTER_PUBLISH_RECOVERY_TIMEOUT_SECONDS",
+            "PUBLISH_RECOVERY_TIMEOUT_SECONDS",
+        ),
+        description=(
+            "失败处理各步（页面证据采集 / 关闭弹窗 / 停 trace / 重建会话 / 掉登录探测）的单步硬超时（秒）。"
+            "比单篇超时短得多，保证「采集现场、清理、重建」即便在卡死的浏览器上也能快速兜底而不再次永久阻塞。"
+            "<=0 关闭（不建议）。仅主线程生效（SIGALRM）。"
+        ),
+    )
     feishu_webhook_url: str | None = Field(
         default=None,
         validation_alias=AliasChoices(
