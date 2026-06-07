@@ -147,10 +147,10 @@ systemctl --user disable --now xhs-prepare.timer xhs-publish.timer   # 停用
 
 **systemd `OnFailure=` 兜底进程暴毙（已内置）**
 
-应用层通知靠 Python 在进程内发卡，抓不到硬崩溃（OOM、SIGKILL、被 `RuntimeMaxSec` 超时杀、解释器在发卡前就挂）。这类「进程暴毙」由 systemd 层兜底：两个主单元都带 `OnFailure=xhs-notify-failure@%N.service`（`%N`＝不含 `.service` 后缀的单元名），进 failed 态时自动拉起 `xhs-notify-failure@.service` 发一条飞书 error 卡。两层互补——应用层报业务结果，systemd 层报进程暴毙。
+应用层通知靠 Python 在进程内发卡，抓不到硬崩溃（OOM、SIGKILL、被 `TimeoutStartSec` 超时杀、解释器在发卡前就挂）。这类「进程暴毙」由 systemd 层兜底：两个主单元都带 `OnFailure=xhs-notify-failure@%N.service`（`%N`＝不含 `.service` 后缀的单元名），进 failed 态时自动拉起 `xhs-notify-failure@.service` 发一条飞书 error 卡。两层互补——应用层报业务结果，systemd 层报进程暴毙。
 
 配套的进程保护（两个主单元均已设）：
 
-- `RuntimeMaxSec=3600`：整批硬墙，超 1 小时 systemd 强杀。根治线上出现过的「publish 卡死 11 小时、把第二个黄金时段也堵掉」。publish 内还有**单篇看门狗**（`PUBLISH_ITEM_TIMEOUT_SECONDS`，默认 240s）：单篇超时即弃该篇、重建会话继续，正常整批根本碰不到 1 小时墙。
+- `TimeoutStartSec=`（publish 1h / prepare 2h）：整批硬墙。**注意必须用 `TimeoutStartSec` 而非 `RuntimeMaxSec`**——`Type=oneshot` 默认无启动超时（这正是当初能挂 11 小时的底层原因），而 `RuntimeMaxSec` 对 oneshot 直接被忽略（systemd 会打印 `MaxRuntimeSec= has no effect ... Ignoring`）。超时 systemd 强杀，根治「publish 卡死把第二个黄金时段也堵掉」。publish 内还有**单篇看门狗**（`PUBLISH_ITEM_TIMEOUT_SECONDS`，默认 240s）：单篇超时即弃该篇、重建会话继续，正常整批根本碰不到这道墙。
 - `SuccessExitStatus=1 2`（publish）/ `SuccessExitStatus=1`（prepare）：业务失败（exit 1/2，已自行发飞书摘要）不算 systemd 失败，避免与应用层通知重复、避免误触发 `OnFailure`。只有被杀/超时/崩溃才进 failed 态、才补发暴毙告警。
 - `TimeoutStopSec=30` + `KillMode=control-group`：强杀时连同 chromium 子进程树一起收尾，30s 内不退再 SIGKILL，不留僵尸浏览器。

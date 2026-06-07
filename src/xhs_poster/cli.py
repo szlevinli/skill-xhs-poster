@@ -266,7 +266,7 @@ def notify_failure_command(
     notifier = build_notifier(Settings())
     reason = f"systemd 判定异常退出（result={result or '未知'}）" if result else "systemd 判定异常退出"
     message = (
-        f"{reason}；通常是超时被 RuntimeMaxSec 杀、被 OOM 杀或崩溃。"
+        f"{reason}；通常是超时被 TimeoutStartSec 杀、被 OOM 杀或崩溃。"
         f"请检查 journalctl --user -u {unit}"
     )
     notifier.send(error_event(unit, message, exit_code=-1))

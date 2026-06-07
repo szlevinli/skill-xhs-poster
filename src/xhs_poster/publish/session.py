@@ -474,7 +474,7 @@ def run_publish_plan(
                             session.force_rebuild()
                     except PublishItemTimeout:
                         # 连重建都卡死说明环境已不可用，整批中止（冒泡到 cli → exit 1）；
-                        # systemd 的 RuntimeMaxSec + OnFailure 是最后兜底。
+                        # systemd 的 TimeoutStartSec + OnFailure 是最后兜底。
                         log_summary("单篇超时后重建会话仍卡住，中止整批发布")
                         raise
                 except Exception as exc:

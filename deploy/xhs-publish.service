@@ -5,7 +5,7 @@
 #   %h/.local/bin/uv   → `which uv` 的实际绝对路径
 [Unit]
 Description=xhs-poster 发布批：发布当日剩余可发笔记
-# 进程异常退出（被 RuntimeMaxSec 杀 / 被 OOM 杀 / 崩溃）时发飞书告警。
+# 进程异常退出（被 TimeoutStartSec 杀 / 被 OOM 杀 / 崩溃）时发飞书告警。
 # Python 自身只能在"正常结束"时发通知，被杀时来不及——靠 OnFailure 补这个盲区。
 OnFailure=xhs-notify-failure@%N.service
 
@@ -19,9 +19,11 @@ ExecStart=%h/.local/bin/uv run xhs-poster publish --count 20
 # 退出码 1/2 是 publish 的正常业务结果（已自行发飞书摘要），不算 systemd 失败，否则会和 Python
 # 通知重复、且误触发 OnFailure。只有被杀/超时/崩溃才进 failed 态、才走 OnFailure。
 SuccessExitStatus=1 2
-# 整批硬墙：单篇看门狗已把每篇限到 PUBLISH_ITEM_TIMEOUT_SECONDS（默认 240s），正常整批 20 篇约
-# 30 分钟。1 小时是"整体已失控"的兜底，超时 systemd 强杀，杜绝出现过的 11 小时僵尸进程。
-RuntimeMaxSec=3600
+# 整批硬墙：oneshot 默认无启动超时（这正是当初能挂 11 小时的底层原因）；RuntimeMaxSec 对 oneshot
+# 无效（systemd 会打印 "MaxRuntimeSec= has no effect ... Ignoring"），必须用 TimeoutStartSec。
+# 单篇看门狗已把每篇限到 PUBLISH_ITEM_TIMEOUT_SECONDS（默认 240s），正常整批 20 篇约 45 分钟；
+# 1 小时是"整体已失控"的兜底，超时 systemd 强杀，杜绝 11 小时僵尸进程。
+TimeoutStartSec=3600
 # 强杀时给 cgroup（含 chromium 子进程树）30s 收尾，超时再 SIGKILL。
 TimeoutStopSec=30
 KillMode=control-group
