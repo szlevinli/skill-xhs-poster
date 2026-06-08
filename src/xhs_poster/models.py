@@ -2,7 +2,25 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+
+# 小红书发布页标题硬上限 20 字，超出会被前端静默拦截、发布按钮无效。
+MAX_TITLE_LEN = 20
+_TITLE_BREAK_CHARS = "，。！？、；,.!?;"
+
+
+def clip_title(title: str) -> str:
+    """把标题压到 20 字内：优先在标点边界截断，保留完整短句；否则硬截。"""
+    text = title.strip()
+    if len(text) <= MAX_TITLE_LEN:
+        return text
+    window = text[:MAX_TITLE_LEN]
+    for idx in range(len(window) - 1, 5, -1):
+        if window[idx] in _TITLE_BREAK_CHARS:
+            trimmed = window[:idx].rstrip(_TITLE_BREAK_CHARS + " ")
+            if len(trimmed) >= 6:
+                return trimmed
+    return window.rstrip(_TITLE_BREAK_CHARS + " ")
 
 
 class ProductSummary(BaseModel):
@@ -150,6 +168,11 @@ class ContentDraft(BaseModel):
     reference_notes: list[str] = Field(default_factory=list)
     selected_image_paths: list[str] = Field(default_factory=list)
     selected_image_count: int = 0
+
+    @field_validator("title")
+    @classmethod
+    def _enforce_title_limit(cls, value: str) -> str:
+        return clip_title(value)
 
 
 class ContentGenerationMeta(BaseModel):

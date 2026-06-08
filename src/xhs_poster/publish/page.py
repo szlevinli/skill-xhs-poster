@@ -6,6 +6,7 @@ import time
 from playwright.sync_api import Error, Page
 
 from ..config import Settings
+from ..models import clip_title
 from ..merchant import (
     _dismiss_blocking_modal,
     _wait_for_modal_mask_to_clear,
@@ -166,6 +167,8 @@ class PublishPage:
 
     def fill_title(self, title: str) -> str:
         self.open_note_info_step()
+        # 最后一道闸：标题超 20 字会被发布页静默拦截，落浏览器前硬截（兜底历史计划里的超长标题）。
+        title = clip_title(title)
         selectors = [
             "input[placeholder*='填写标题']",
             "input[placeholder*='标题']",
