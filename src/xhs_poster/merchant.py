@@ -480,22 +480,30 @@ class ProductListPage:
     def _wait_for_modal_mask_to_clear(self, timeout_ms: int = 5_000) -> bool:
         return _wait_for_modal_mask_to_clear(self.page, timeout_ms)
 
-    def _prepare_publish_click(self) -> None:
-        if self._wait_for_modal_mask_to_clear(timeout_ms=1_500):
-            return
+    def _clear_blocking_mask(self, timeout_s: float = 8.0) -> bool:
+        """尽力清掉商品列表页的运营弹窗遮罩（``d-modal-mask``），返回遮罩是否已消失。**不抛**。
 
-        deadline = time.monotonic() + 8
+        遮罩会拦截一切 pointer 事件，导致「去发布」「搜索」等按钮点击卡满默认 30s 超时。
+        关弹窗 → 等遮罩消失 → 仍在则按 Escape，循环至清掉或超时。``_prepare_publish_click``
+        与 ``_search_product`` 共用此逻辑。
+        """
+        if self._wait_for_modal_mask_to_clear(timeout_ms=1_500):
+            return True
+        deadline = time.monotonic() + timeout_s
         while time.monotonic() < deadline:
             dismissed = self._dismiss_blocking_modal()
             if self._wait_for_modal_mask_to_clear(timeout_ms=1_500):
-                return
+                return True
             if not dismissed:
                 self.page.keyboard.press("Escape")
                 self.page.wait_for_timeout(500)
                 if self._wait_for_modal_mask_to_clear(timeout_ms=1_500):
-                    return
+                    return True
+        return False
 
-        raise RuntimeError("商品列表页存在未关闭的弹窗遮罩，无法点击“去发布”。")
+    def _prepare_publish_click(self) -> None:
+        if not self._clear_blocking_mask():
+            raise RuntimeError("商品列表页存在未关闭的弹窗遮罩，无法点击“去发布”。")
 
     def _search_product(self, product_id: str) -> bool:
         """用列表页顶部搜索框按商品 ID 精准过滤，等目标行出现。返回是否真正执行了搜索。
@@ -507,12 +515,30 @@ class ProductListPage:
         search = self.page.locator("input.d-text[placeholder*='商品货号']").first
         if search.count() == 0:
             return False
+        # 运营弹窗遮罩(d-modal-mask)会拦截搜索框/按钮的点击，导致 click 卡满 30s 超时（线上批量发布尾部
+        # 实测翻车）。与「去发布」同源：交互前先尽力清遮罩，点击套有界超时 + 拦截重试一次。
+        self._clear_blocking_mask()
         search.fill(product_id)
         button = self.page.get_by_role("button", name="搜索", exact=True).first
-        if button.count() > 0:
-            button.click()
-        else:
-            search.press("Enter")
+        clicked = False
+        last_error: Error | None = None
+        for _ in range(2):
+            self._clear_blocking_mask()
+            try:
+                if button.count() > 0:
+                    button.click(timeout=5_000)
+                else:
+                    search.press("Enter")
+                clicked = True
+                break
+            except Error as exc:
+                last_error = exc
+                if "intercepts pointer events" not in str(exc):
+                    raise
+                self._dismiss_blocking_modal()
+                self.page.wait_for_timeout(800)
+        if not clicked and last_error is not None:
+            raise last_error
         # 等列表刷新到目标行出现（轮询，避开 f-string 选择器转义）；超时不抛，交由调用方按 count==0 报错。
         deadline = time.monotonic() + 10
         while time.monotonic() < deadline:
