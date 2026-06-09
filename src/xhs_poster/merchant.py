@@ -497,10 +497,44 @@ class ProductListPage:
 
         raise RuntimeError("商品列表页存在未关闭的弹窗遮罩，无法点击“去发布”。")
 
+    def _search_product(self, product_id: str) -> bool:
+        """用列表页顶部搜索框按商品 ID 精准过滤，等目标行出现。返回是否真正执行了搜索。
+
+        默认列表页只渲染第 1 页（每页 20 条、最新在前）；fetch 之后商家若上新，计划里较老的商品会被
+        挤到后页，``filter(has_text=...)`` 在当前 DOM 里就找不到。搜索框支持「商品名称/ID/货号/编码」，
+        按 24 位 ID 搜必得唯一结果，彻底摆脱分页与排序。搜索框不存在时返回 False，调用方退回旧的当页定位。
+        """
+        search = self.page.locator("input.d-text[placeholder*='商品货号']").first
+        if search.count() == 0:
+            return False
+        search.fill(product_id)
+        button = self.page.get_by_role("button", name="搜索", exact=True).first
+        if button.count() > 0:
+            button.click()
+        else:
+            search.press("Enter")
+        # 等列表刷新到目标行出现（轮询，避开 f-string 选择器转义）；超时不抛，交由调用方按 count==0 报错。
+        deadline = time.monotonic() + 10
+        while time.monotonic() < deadline:
+            if self.page.locator("table tbody tr").filter(has_text=product_id).count() > 0:
+                break
+            self.page.wait_for_timeout(300)
+        self.page.wait_for_timeout(500)
+        return True
+
+    def _locate_product_row(self, product_id: str):
+        """定位目标商品行：当前页已渲染则直接用（快路径），否则用搜索框精准过滤后重新定位。"""
+        row = self.page.locator("table tbody tr").filter(has_text=product_id).first
+        if row.count() > 0:
+            return row
+        if self._search_product(product_id):
+            row = self.page.locator("table tbody tr").filter(has_text=product_id).first
+        return row
+
     def open_publish_popup(self, product_id: str) -> Page:
         """点击“去发布”并返回弹出的发布页 Page 句柄；由调用方包装为 PublishPage（解开循环依赖）。"""
         self.wait_until_ready()
-        row = self.page.locator("table tbody tr").filter(has_text=product_id).first
+        row = self._locate_product_row(product_id)
         if row.count() == 0:
             raise RuntimeError(f"未在商品列表中找到商品 {product_id}。")
 
