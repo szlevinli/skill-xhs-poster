@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import os
 import random
 import signal
+import subprocess
 import threading
 import time
 from collections.abc import Iterator
@@ -225,10 +227,50 @@ class PublishSession:
         except Exception:
             return False
 
-    def force_rebuild_bounded(self) -> bool:
-        """无条件重建会话，关闭与重开各套短看门狗，**绝不抛**。返回是否重建出可用列表页。
+    def _kill_orphan_chromium(self) -> None:
+        """尽力杀掉本用户残留的 headless chromium。绝不抛。
 
-        单篇失败后浏览器状态未知（可能已 OOM/卡死），不能依赖健康探测（探测本身会在死浏览器上卡住）。
+        重启 playwright 时若旧 driver 卡死被放弃引用，它 spawn 的 chromium 会变孤儿进程；
+        1.8G 专机上几次重建累积下来就会 OOM。部署为单用户专机，此刻又没有要保留的浏览器，
+        故 pkill 当前用户的 headless chromium 是安全的。
+        """
+        for pattern in ("chrome-headless", "headless_shell"):
+            try:
+                subprocess.run(
+                    ["pkill", "-9", "-u", str(os.getuid()), "-f", pattern],
+                    timeout=10,
+                    check=False,
+                )
+            except Exception:
+                pass
+
+    def _restart_playwright(self) -> None:
+        """重启整个 Playwright 驱动（不只是 browser context）。
+
+        **这是「单篇卡死后整批连环 AssertionError」的根因修复**：单篇硬超时用 SIGALRM 打断 sync 调用后，
+        Playwright 的 driver 管道协议状态会被弄坏——之后在同一个 playwright 实例上连 launch 一个全新浏览器
+        都会卡死（线上实测 close/open 双双撞 90s 看门狗、最终 pipe closed）。只重建 context 复用旧 driver
+        永远救不回来。唯一可靠的恢复＝丢弃旧 driver、起一个全新的；旧 driver/chromium 卡死则放弃引用，
+        孤儿交给 _kill_orphan_chromium 兜底，避免在 1.8G 机器上累积成 OOM。
+        """
+        recovery = self.settings.publish_recovery_timeout_seconds
+        old = self._playwright
+        self._playwright = None
+        if old is not None:
+            try:
+                with _watchdog(recovery, "停 playwright 超时"):
+                    old.stop()
+            except Exception:
+                pass  # driver 卡死：放弃引用，孤儿交给下面的 pkill
+        self._kill_orphan_chromium()
+        self._playwright = sync_playwright().start()
+
+    def force_rebuild_bounded(self) -> bool:
+        """无条件重建会话：关旧 context → **重启整个 playwright** → 开新 context，各套短看门狗，**绝不抛**。
+
+        单篇失败后浏览器/驱动状态未知（可能已 OOM/卡死，或被看门狗 SIGALRM 打断而连接损坏），不能依赖
+        健康探测（探测本身会在死浏览器上卡住）。关键：必须重启整个 playwright 驱动而非仅重建 context，
+        否则 SIGALRM 打断后的损坏连接会让后续每次重建都超时、整批连环失败（见 _restart_playwright）。
         即便重建失败也不抛——交给下一篇在自己的看门狗下快速失败并记账，绝不因重建失败中止整批。
         """
         recovery = self.settings.publish_recovery_timeout_seconds
@@ -236,10 +278,15 @@ class PublishSession:
             with _watchdog(recovery, "关闭会话超时"):
                 self._close_context()
         except Exception as exc:
-            # 关闭卡住：丢弃引用，让 playwright 资源随进程回收，别拦住重开
+            # 关闭卡住：丢弃引用，别拦住后续重启
             log_summary(f"关闭会话异常（已跳过）：{_format_exc(exc)}")
             self._context = None
             self._list_page = None
+        try:
+            self._restart_playwright()
+        except Exception as exc:
+            log_summary(f"重启 playwright 失败（下一篇将重试）：{_format_exc(exc)}")
+            return False
         try:
             with _watchdog(recovery, "重建会话超时"):
                 self._open_context()

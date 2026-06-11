@@ -69,26 +69,37 @@ class FeishuNotifier:
         self._timeout = timeout
         self._enabled_kinds = enabled_kinds
 
+    _MAX_ATTEMPTS = 3
+
     def send(self, event: NotifyEvent) -> None:
-        """构卡 → POST。任何异常只 log_error 到 stderr，绝不抛出（失败隔离）。"""
+        """构卡 → POST，带退避重试。任何异常只 log_error 到 stderr，绝不抛出（失败隔离）。
+
+        飞书对 webhook 有频率限制（瞬时返回 code 11232 ``frequency limited``），单次失败就放弃会丢掉
+        发布摘要/告警（线上实测：批量发布失败那次摘要正好撞上限流、用户什么都没收到）。故非 0 码或网络
+        异常都退避重试（2s、4s），多数瞬时限流二次即过。``sign`` 含 timestamp，每次重试都重新生成。
+        """
         if event.kind not in self._enabled_kinds:
             return
-        try:
-            payload: dict[str, object] = {
-                "msg_type": "interactive",
-                "card": _build_card(event, self._label),
-            }
-            if self._secret:
-                timestamp = str(int(time.time()))
-                payload["timestamp"] = timestamp
-                payload["sign"] = _sign(timestamp, self._secret)
-            response = httpx.post(self._webhook_url, json=payload, timeout=self._timeout)
-            data = response.json()
-            code = data.get("code", data.get("StatusCode"))
-            if code not in (0, "0"):
-                log_error(f"[notify] 飞书返回非 0：{data}")
-        except Exception as exc:  # noqa: BLE001 — 失败隔离：通知永不影响流水线
-            log_error(f"[notify] 发送失败：{exc}")
+        card = _build_card(event, self._label)
+        last: object = None
+        for attempt in range(self._MAX_ATTEMPTS):
+            try:
+                payload: dict[str, object] = {"msg_type": "interactive", "card": card}
+                if self._secret:
+                    timestamp = str(int(time.time()))
+                    payload["timestamp"] = timestamp
+                    payload["sign"] = _sign(timestamp, self._secret)
+                response = httpx.post(self._webhook_url, json=payload, timeout=self._timeout)
+                data = response.json()
+                code = data.get("code", data.get("StatusCode"))
+                if code in (0, "0"):
+                    return
+                last = data
+            except Exception as exc:  # noqa: BLE001 — 失败隔离：通知永不影响流水线
+                last = exc
+            if attempt < self._MAX_ATTEMPTS - 1:
+                time.sleep(2 * (attempt + 1))
+        log_error(f"[notify] 发送失败（重试 {self._MAX_ATTEMPTS} 次仍失败）：{last}")
 
 
 def _build_card(event: NotifyEvent, label: str) -> dict[str, object]:
