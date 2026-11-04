@@ -467,6 +467,12 @@ class PublishPage:
                     .filter((node) => isVisible(node));
                 const dialog = dialogs.find((node) => normalize(node.textContent).includes('选择商品')) || dialogs[dialogs.length - 1];
                 if (!dialog) return false;
+                const confirmButton = Array.from(dialog.querySelectorAll('button.goods-selector-confirm'))
+                    .find((node) => isVisible(node));
+                if (confirmButton) {
+                    confirmButton.click();
+                    return true;
+                }
                 const buttons = Array.from(dialog.querySelectorAll('button, span, div, a'))
                     .filter((node) => isVisible(node) && normalize(node.textContent) === '保存');
                 const button = buttons[buttons.length - 1];
