@@ -425,7 +425,8 @@ class ProductListPage:
 
     def wait_until_ready(self) -> None:
         self.page.wait_for_url("**/app-item/list/**", timeout=15_000)
-        self.page.wait_for_selector("table tbody tr", timeout=15_000)
+        self._clear_blocking_mask()
+        self.page.wait_for_selector("table tbody tr", timeout=30_000)
         self.page.wait_for_timeout(2_000)
 
     def get_products(self, limit: int = 10) -> list[ProductSummary]:
@@ -484,8 +485,8 @@ class ProductListPage:
         """尽力清掉商品列表页的运营弹窗遮罩（``d-modal-mask``），返回遮罩是否已消失。**不抛**。
 
         遮罩会拦截一切 pointer 事件，导致「去发布」「搜索」等按钮点击卡满默认 30s 超时。
-        关弹窗 → 等遮罩消失 → 仍在则按 Escape，循环至清掉或超时。``_prepare_publish_click``
-        与 ``_search_product`` 共用此逻辑。
+        关弹窗 → 等遮罩消失 → 仍在则按 Escape，循环至清掉或超时。``wait_until_ready``、
+        ``_prepare_publish_click`` 与 ``_search_product`` 共用此逻辑。
         """
         if self._wait_for_modal_mask_to_clear(timeout_ms=1_500):
             return True
