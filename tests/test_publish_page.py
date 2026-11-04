@@ -11,6 +11,7 @@ class _FakeLocator:
         self.visible = visible
         self.clicked = False
         self.filled: list[str] = []
+        self.pressed: list[str] = []
 
     @property
     def first(self) -> "_FakeLocator":
@@ -28,6 +29,9 @@ class _FakeLocator:
 
     def fill(self, value: str) -> None:
         self.filled.append(value)
+
+    def press(self, key: str) -> None:
+        self.pressed.append(key)
 
 
 class _FakePage:
@@ -84,6 +88,7 @@ class AddProductSearchInputTests(unittest.TestCase):
                 self.assertIsNotNone(page.search_input)
                 assert page.search_input is not None
                 self.assertEqual(page.search_input.filled, ["", "product-1"])
+                self.assertEqual(page.search_input.pressed, ["Enter"])
 
 
 if __name__ == "__main__":

@@ -655,6 +655,7 @@ class PublishPage:
                 search_input.click()
                 search_input.fill("")
                 search_input.fill(product_id)
+                search_input.press("Enter")
                 # 搜索结果就绪由 _click_product_candidate 轮询等待，不再固定等待。
                 candidate = self._click_product_candidate(product_id)
                 result["candidate"] = candidate
