@@ -621,7 +621,7 @@ class PublishPage:
                         .filter((node) => isVisible(node));
                     const modalStillVisible = visibleDialogs.some((node) => {
                         const text = normalize(node.textContent);
-                        return text.includes('选择商品') || text.includes('搜索商品ID') || text.includes('普通商品');
+                        return node.classList.contains('note-publish-v2-goods-drawer') || text.includes('选择商品') || text.includes('搜索商品ID') || text.includes('普通商品');
                     });
                     const bodyCandidates = Array.from(document.querySelectorAll('body *')).filter((node) => {
                         if (!isVisible(node)) return false;
@@ -638,11 +638,14 @@ class PublishPage:
                         );
                     });
                     const matched = bodyCandidates.sort((a, b) => normalize(a.textContent).length - normalize(b.textContent).length)[0];
+                    const attachedGoods = Array.from(document.querySelectorAll('.goods-panel .goods-item'))
+                        .filter((node) => isVisible(node));
+                    const attachedGoodsBound = !modalStillVisible && attachedGoods.length > 0;
                     return {
-                        bound: Boolean(matched),
-                        reason: matched ? (modalStillVisible ? 'binding_marker_found_modal_still_visible' : 'binding_marker_found') : 'binding_marker_missing',
+                        bound: Boolean(matched) || attachedGoodsBound,
+                        reason: matched ? (modalStillVisible ? 'binding_marker_found_modal_still_visible' : 'binding_marker_found') : (attachedGoodsBound ? 'attached_goods_item_visible' : 'binding_marker_missing'),
                         modal_still_visible: modalStillVisible,
-                        matched_text: matched ? normalize(matched.textContent).slice(0, 200) : '',
+                        matched_text: matched ? normalize(matched.textContent).slice(0, 200) : (attachedGoodsBound ? normalize(attachedGoods[0].textContent).slice(0, 200) : ''),
                     };
                 }
                 """,
