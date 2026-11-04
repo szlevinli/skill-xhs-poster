@@ -105,7 +105,7 @@ class ClickPublishTests(unittest.TestCase):
             publish_page.click_publish()
 
         page.locator.assert_called_once_with("button.publishBtn")
-        button.click.assert_called_once_with()
+        button.click.assert_called_once_with(timeout=10_000, no_wait_after=True)
 
 
 if __name__ == "__main__":

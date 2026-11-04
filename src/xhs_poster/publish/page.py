@@ -731,7 +731,7 @@ class PublishPage:
             buttons = self.page.get_by_text("发布", exact=True).all()
         for btn in reversed(buttons):
             if locator_is_visible(btn):
-                btn.click()
+                btn.click(timeout=10_000, no_wait_after=True)
                 return True
         return False
 
@@ -741,7 +741,7 @@ class PublishPage:
             publish_button = self.page.get_by_text("发布", exact=True).first
         if not locator_is_visible(publish_button):
             raise RuntimeError("发布页未找到“发布”按钮。")
-        publish_button.click()
+        publish_button.click(timeout=10_000, no_wait_after=True)
         self._handle_publish_settings_panel()
 
     def verify_success(self, timeout_ms: int = 15_000) -> dict:
