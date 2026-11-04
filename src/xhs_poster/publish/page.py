@@ -440,6 +440,7 @@ class PublishPage:
         for locator in (
             self.page.get_by_text("取消", exact=True).first,
             self.page.get_by_text("关闭", exact=True).first,
+            self.page.locator(".d-drawer-close").first,
             self.page.locator(".d-modal-close").first,
             self.page.locator(".ant-modal-close").first,
             self.page.locator("[aria-label='Close']").first,
@@ -462,7 +463,7 @@ class PublishPage:
                     const style = window.getComputedStyle(node);
                     return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
                 };
-                const dialogs = Array.from(document.querySelectorAll('[role="dialog"], .d-modal, .ant-modal, .semi-modal, .modal'))
+                const dialogs = Array.from(document.querySelectorAll('[role="dialog"], .d-drawer, .d-modal, .ant-modal, .semi-modal, .modal'))
                     .filter((node) => isVisible(node));
                 const dialog = dialogs.find((node) => normalize(node.textContent).includes('选择商品')) || dialogs[dialogs.length - 1];
                 if (!dialog) return false;
@@ -492,10 +493,29 @@ class PublishPage:
                         const style = window.getComputedStyle(node);
                         return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
                     };
-                    const dialogs = Array.from(document.querySelectorAll('[role="dialog"], .d-modal, .ant-modal, .semi-modal, .modal'))
+                    const dialogs = Array.from(document.querySelectorAll('[role="dialog"], .d-drawer, .d-modal, .ant-modal, .semi-modal, .modal'))
                         .filter((node) => isVisible(node));
                     const scope = dialogs[dialogs.length - 1] || document.body;
                     const checkboxSelector = 'input[type="checkbox"], .d-checkbox-indicator, .ant-checkbox-input, .ant-checkbox, .semi-checkbox, [role="checkbox"]';
+                    const directCheckbox = Array.from(scope.querySelectorAll('input[type="checkbox"][value]'))
+                        .find((node) => node.value === productId);
+                    if (directCheckbox) {
+                        const alreadySelected = directCheckbox.checked;
+                        if (!alreadySelected) {
+                            directCheckbox.scrollIntoView({ block: 'center' });
+                            const target = directCheckbox.closest('label') || directCheckbox;
+                            target.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, cancelable: true }));
+                            target.dispatchEvent(new MouseEvent('mousedown', { bubbles: true, cancelable: true }));
+                            target.dispatchEvent(new MouseEvent('mouseup', { bubbles: true, cancelable: true }));
+                            target.click();
+                        }
+                        return {
+                            found: true,
+                            reason: alreadySelected ? 'already_selected' : 'clicked',
+                            row_count: 1,
+                            row_text: productId,
+                        };
+                    }
                     const rowSelectors = [
                         'tr',
                         '.d-table-row',
@@ -591,7 +611,7 @@ class PublishPage:
                         const style = window.getComputedStyle(node);
                         return rect.width > 0 && rect.height > 0 && style.visibility !== 'hidden' && style.display !== 'none';
                     };
-                    const visibleDialogs = Array.from(document.querySelectorAll('[role="dialog"], .d-modal, .ant-modal, .semi-modal, .modal'))
+                    const visibleDialogs = Array.from(document.querySelectorAll('[role="dialog"], .d-drawer, .d-modal, .ant-modal, .semi-modal, .modal'))
                         .filter((node) => isVisible(node));
                     const modalStillVisible = visibleDialogs.some((node) => {
                         const text = normalize(node.textContent);
