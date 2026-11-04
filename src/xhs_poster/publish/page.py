@@ -725,8 +725,10 @@ class PublishPage:
         else:
             return False
 
-        # 面板出现：点击面板底部的发布按钮（取最后一个可见的 exact=发布元素）
-        buttons = self.page.get_by_text("发布", exact=True).all()
+        # 面板出现：点击面板底部的发布按钮（优先新 class，回退旧版 exact=发布文本）
+        buttons = self.page.locator("button.publishBtn").all()
+        if not buttons:
+            buttons = self.page.get_by_text("发布", exact=True).all()
         for btn in reversed(buttons):
             if locator_is_visible(btn):
                 btn.click()
@@ -734,7 +736,9 @@ class PublishPage:
         return False
 
     def click_publish(self) -> None:
-        publish_button = self.page.get_by_text("发布", exact=True).first
+        publish_button = self.page.locator("button.publishBtn").first
+        if not locator_is_visible(publish_button):
+            publish_button = self.page.get_by_text("发布", exact=True).first
         if not locator_is_visible(publish_button):
             raise RuntimeError("发布页未找到“发布”按钮。")
         publish_button.click()

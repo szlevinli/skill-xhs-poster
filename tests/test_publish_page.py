@@ -91,5 +91,22 @@ class AddProductSearchInputTests(unittest.TestCase):
                 self.assertEqual(page.search_input.pressed, ["Enter"])
 
 
+class ClickPublishTests(unittest.TestCase):
+    def test_uses_publish_button_class_for_new_button_text(self) -> None:
+        page = mock.Mock()
+        button = mock.Mock()
+        button.is_visible.return_value = True
+        page.locator.return_value.first = button
+        publish_page = PublishPage(page, mock.Mock())
+
+        with mock.patch.object(
+            publish_page, "_handle_publish_settings_panel", return_value=False
+        ):
+            publish_page.click_publish()
+
+        page.locator.assert_called_once_with("button.publishBtn")
+        button.click.assert_called_once_with()
+
+
 if __name__ == "__main__":
     unittest.main()
