@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 
 from playwright.sync_api import Error, Page
@@ -14,10 +15,16 @@ from ..merchant import (
 )
 
 
+_PRODUCT_SEARCH_PLACEHOLDER = re.compile(r"^(?:搜索商品ID 或 商品名称|请输入商品ID\/名称)$")
+
+
 class PublishPage:
     def __init__(self, page: Page, settings: Settings):
         self.page = page
         self.settings = settings
+
+    def _add_product_search_input(self):
+        return self.page.get_by_placeholder(_PRODUCT_SEARCH_PLACEHOLDER).first
 
     def wait_until_ready(self) -> None:
         self.page.wait_for_url("**/app-note/publish**", timeout=20_000)
@@ -426,7 +433,7 @@ class PublishPage:
         if not locator_is_visible(add_button):
             raise RuntimeError("发布页未找到“添加商品”按钮。")
         add_button.click()
-        search_input = self.page.get_by_placeholder("搜索商品ID 或 商品名称").first
+        search_input = self._add_product_search_input()
         search_input.wait_for(state="visible", timeout=10_000)
 
     def _dismiss_add_product_dialog(self) -> None:
@@ -640,7 +647,7 @@ class PublishPage:
                 self._open_add_product_dialog()
                 result["add_product_button_clicked"] = True
 
-                search_input = self.page.get_by_placeholder("搜索商品ID 或 商品名称").first
+                search_input = self._add_product_search_input()
                 if not locator_is_visible(search_input):
                     raise RuntimeError("添加商品弹层未找到搜索框。")
                 result["search_box_found"] = True
